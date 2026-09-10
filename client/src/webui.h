@@ -65,6 +65,10 @@ void webui_mark_dirty(void);
 
 void webui_set_console(const char *ip, int connected);
 void webui_set_game(const char *serial, const char *hash, const char *title);
+
+/* The title alone, once rc_client has the set: the serial and the hash
+   the console gave stay as they are. */
+void webui_set_game_title(const char *title);
 void webui_note_unlock(unsigned id, const char *title, const char *badge, unsigned points);
 
 /* Every telemetry datagram, even one that decodes to nothing yet: the

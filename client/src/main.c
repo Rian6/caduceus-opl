@@ -993,7 +993,7 @@ int main(int argc, char **argv)
                 char detail[96];
 
                 if (ra_game_summary(client, title, sizeof(title), &total, &unlocked, &unsupported)) {
-                    webui_set_game(cur_serial, NULL, title);
+                    webui_set_game_title(title);
                     snprintf(detail, sizeof(detail), "%u of %u achievements", unlocked, total);
                     discord_set(title, detail, NULL);
                 }

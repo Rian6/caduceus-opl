@@ -140,5 +140,6 @@
   "ON": "LIGADO",
   "OFF": "DESLIGADO",
   "still loading; the client is busy with RetroAchievements": "ainda carregando; o cliente está ocupado com o RetroAchievements",
-  "try again": "tente novamente"
+  "try again": "tente novamente",
+  "from an image check, not from a running game": "de uma verificação de imagem, não de um jogo em execução"
 }

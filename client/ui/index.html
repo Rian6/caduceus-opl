@@ -354,6 +354,7 @@ const LANG = {
     "OFF": "DESACTIVADO",
     "still loading; the client is busy with RetroAchievements": "todavía cargando; el cliente está ocupado con RetroAchievements",
     "try again": "intentar de nuevo",
+    "from an image check, not from a running game": "de una comprobación de imagen, no de un juego en marcha",
   },
   "pt-BR": {
     "LIVE": "AO VIVO",
@@ -498,6 +499,7 @@ const LANG = {
     "OFF": "DESLIGADO",
     "still loading; the client is busy with RetroAchievements": "ainda carregando; o cliente está ocupado com o RetroAchievements",
     "try again": "tente novamente",
+    "from an image check, not from a running game": "de uma verificação de imagem, não de um jogo em execução",
   },
 };
 /* lang:end */
@@ -824,7 +826,9 @@ function renderLive(s) {
     '<div style="flex:1">' +
     '<h1>' + esc(s.game.title || s.game.serial) + '</h1>' +
     '<div class="bar"><i style="width:' + pct(done, list.length) + '%"></i></div>' +
-    '<div style="display:flex;margin-top:8px;gap:10px;flex-wrap:wrap"><span class="muted">' + esc(s.game.serial || s.game.console || '') + '</span>' +
+    '<div style="display:flex;margin-top:8px;gap:10px;flex-wrap:wrap"><span class="muted">' +
+    (s.game.checked_only ? t('from an image check, not from a running game')
+                         : esc(s.game.serial || s.game.console || '')) + '</span>' +
     '<span class="right">' + done + ' / ' + list.length +
     ' <span class="dimmer">&middot;</span> <span style="color:var(--amber)">' + ptsDone + '</span>' +
     '<span class="dimmer"> / ' + t('{points} pts', { points: ptsAll }) + '</span></span></div></div></div>' +

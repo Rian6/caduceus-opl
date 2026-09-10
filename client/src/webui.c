@@ -120,6 +120,12 @@ void webui_set_game(const char *serial, const char *hash, const char *title)
     snprintf(g.title, sizeof(g.title), "%s", title != NULL ? title : "");
 }
 
+void webui_set_game_title(const char *title)
+{
+    g.dirty = 1;
+    snprintf(g.title, sizeof(g.title), "%s", title != NULL ? title : "");
+}
+
 void webui_note_unlock(unsigned id, const char *title, const char *badge, unsigned points)
 {
     int i;
@@ -512,18 +518,29 @@ static int build_state(char *buf, size_t size, rc_client_t *client)
     }
 
     /* The RA game id lets the page pull the same game's Web API payload
-       (types, median times) and lay it over the live list. */
+       (types, median times) and lay it over the live list.
+
+       The head has to describe the set the page is about to draw, not the
+       last serial the console named: an image check from the menu loads
+       another game's set, and while nothing is running the two drift
+       apart. So the title and the id come from rc_client, and the serial
+       is shown only while the loaded set is the one the console runs. */
     {
         const rc_client_game_t *info = client != NULL ? rc_client_get_game_info(client) : NULL;
+        const char *loaded = ra_loaded_hash();
+        int running = g.hash[0] != '\0' && strcmp(g.hash, loaded) == 0;
 
         p += snprintf(p, (size_t)(end - p), "\"game\":{\"id\":%u,",
                       info != NULL ? info->id : 0);
+        json_field(&p, end, "serial", running ? g.serial : "");
+        p += snprintf(p, (size_t)(end - p), ",");
+        json_field(&p, end, "hash", loaded);
+        p += snprintf(p, (size_t)(end - p), ",");
+        json_field(&p, end, "title",
+                   info != NULL && info->title[0] != '\0' ? info->title : g.title);
+        p += snprintf(p, (size_t)(end - p), ",\"checked_only\":%d",
+                      (info != NULL && !running) ? 1 : 0);
     }
-    json_field(&p, end, "serial", g.serial);
-    p += snprintf(p, (size_t)(end - p), ",");
-    json_field(&p, end, "hash", g.hash);
-    p += snprintf(p, (size_t)(end - p), ",");
-    json_field(&p, end, "title", g.title);
 
     /* Achievements come from rc_client, which is where the live
        progress of a measured achievement lives -- the one thing the
