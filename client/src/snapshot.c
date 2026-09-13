@@ -173,7 +173,15 @@ int snapshot_feed(const char *pkt, size_t len)
     if (g_asm_seen != g_asm_full)
         return 0;
 
-    if ((int)g_asm_bytes != watchlist_bytes()) {
+    /* Two sizes are right: direct values only, from a console that does
+       not follow pointers, and direct values plus one pair per chain
+       from one that does. The size says which, so no handshake is
+       needed; the two are equal when the set has no chains. */
+    if ((int)g_asm_bytes == watchlist_bytes()) {
+        watchlist_set_have_nodes(0);
+    } else if ((int)g_asm_bytes == watchlist_snapshot_bytes()) {
+        watchlist_set_have_nodes(1);
+    } else {
         g_stale = 1;
         g_asm_seen = 0;
         return 0;

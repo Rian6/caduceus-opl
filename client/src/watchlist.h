@@ -15,10 +15,18 @@
 int watchlist_build(rc_client_t *client);
 
 int watchlist_count(void);
-/* Achievements that read through a pointer: active, but they cannot
-   unlock on this console. Reported as "unsupported". */
+/* Achievements reading through a pointer chain the console cannot be
+   asked to follow: active, but they cannot unlock. Reported as
+   "unsupported". Chains that compiled into nodes are not counted. */
 int watchlist_indirect_count(void);
+/* Pointer chains the console resolves every frame. */
+int watchlist_node_count(void);
+/* Direct values in a snapshot. */
 int watchlist_bytes(void);
+/* Direct values plus one (address, value) pair per node: what a console
+   that follows pointers sends. Equal to watchlist_bytes() when the set
+   has no chains. */
+int watchlist_snapshot_bytes(void);
 
 /* Serialises the list in the on-wire/file format the console expects.
    Returns the number of bytes written, 0 if it does not fit. */
@@ -27,6 +35,9 @@ int watchlist_serialize(unsigned char *out, size_t cap);
 /* Snapshot values, in list order. */
 unsigned char *watchlist_values(void);
 void watchlist_set_have_values(int have);
+/* Whether the last snapshot carried the node pairs. An older console
+   sends direct values only. */
+void watchlist_set_have_nodes(int have);
 
 /* rc_client memory callback backed by the last snapshot. */
 uint32_t watchlist_read_memory(uint32_t address, uint8_t *buffer, uint32_t num_bytes,
