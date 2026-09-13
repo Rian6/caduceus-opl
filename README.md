@@ -126,11 +126,12 @@ on to recover. Transformers: The Game is one known case.
 - **Hardcore.** OPL can write to game memory through its cheat engine,
   so the client does not claim hardcore mode. Every unlock is softcore.
   Whether a real-hardware client can ever qualify is the RA team's call.
-- **Pointer chains.** The console reads flat addresses and follows no
-  pointers. An achievement that reads through one stays active but
-  cannot unlock here; the client counts them for you. Most PS2 sets lose
-  few or none: Shadow of the Colossus none of 96, Transformers: The Game
-  5 of 76.
+- **Deep pointer chains.** The console follows pointers now, up to 128
+  chains per game. A set that needs more keeps its direct reads and
+  drops the chains; the client counts what it could not compile and says
+  so. A chain is also left out when its offset is not constant or its
+  parent is a delta read. Beyond Good & Evil, the worst case measured,
+  has 31 of 115 out of reach; X-Men Origins and TMNT have none.
 - **Another subnet.** The console learns the PC's MAC address from the
   discovery reply; a PC behind a router is heard but cannot be answered.
 - **Other image formats.** The check reads plain ISO images whose boot

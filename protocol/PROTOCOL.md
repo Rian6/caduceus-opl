@@ -80,6 +80,21 @@ by `count` 32-bit entries. Each entry packs an address and a read size:
 The client builds this list from the game's achievement set, so the
 agent never needs to know which addresses matter.
 
+After the entries the file may carry a tail of pointer-chain nodes: a
+`struct ra_node_file` header with the magic `RANL` and a count, then
+that many `struct ra_node`. Each node names a parent, a static offset
+and a read size. The parent is either an entry or an earlier node, and
+nodes come in dependency order, so one pass resolves a chain of any
+depth. The version in the file header stays 1: an agent that stops
+after `count` entries never sees the tail and works as before.
+
+An agent that reads the tail resolves every chain in the same frame it
+takes the snapshot, and appends an (address, value) pair per node after
+the direct values. An address of 0 means the chain led outside memory
+that frame. The `bytes` field in the file header counts the direct
+values only; the snapshot header carries the full length, which is how
+the client tells which kind of agent it is talking to.
+
 ## Telemetry
 
     console -> PC   RA15 <text header> <raw values>

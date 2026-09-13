@@ -196,9 +196,9 @@ the client's page and, on the console, as a short gold flash over the
 game. The client may be started or restarted while the game runs; it
 picks the console up from its stream.
 
-Achievements that read through pointer chains stay active but cannot
-unlock on the console (such a read returns 0); the client reports how
-many.
+The console follows pointer chains as it reads, so achievements behind
+one unlock like any other. A game needing more than 128 chains keeps its
+direct reads and loses the rest; the client reports how many.
 
 ## The PC client
 
