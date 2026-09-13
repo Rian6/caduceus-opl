@@ -1473,7 +1473,9 @@ function apply(s) {
                   ].join('|');
       if (sig !== liveSig) { liveSig = sig; renderLive(s); }
     }
-    if (tab === 'boards' && tracking.length) {
+    /* Also when the list empties: the console went away and the
+       tracked rows must go with it. */
+    if (tab === 'boards') {
       const bsig = tracking.map(t => t.id).join(',');
       if (bsig !== boardsSig) { boardsSig = bsig; renderBoards(); }
     }

@@ -597,7 +597,10 @@ static int build_state(char *buf, size_t size, rc_client_t *client)
     /* Leaderboards the console is tracking right now: the value moves
        with the game, and nothing outside a memory feed can show it. */
     p += snprintf(p, (size_t)(end - p), ",\"tracking\":[");
-    if (client != NULL) {
+    /* Only while the console feeds frames: rcheevos leaves a leaderboard
+       active and its tracker holding the last value, so without this the
+       page shows a frozen time long after the link is gone. */
+    if (client != NULL && g.connected) {
         rc_client_leaderboard_list_t *lbs =
             rc_client_create_leaderboard_list(client,
                                               RC_CLIENT_LEADERBOARD_LIST_GROUPING_TRACKING);
@@ -694,7 +697,10 @@ static int build_delta(char *buf, size_t size, rc_client_t *client)
     }
 
     p += snprintf(p, (size_t)(end - p), "],\"tracking\":[");
-    if (client != NULL) {
+    /* Only while the console feeds frames: rcheevos leaves a leaderboard
+       active and its tracker holding the last value, so without this the
+       page shows a frozen time long after the link is gone. */
+    if (client != NULL && g.connected) {
         rc_client_leaderboard_list_t *lbs =
             rc_client_create_leaderboard_list(client,
                                               RC_CLIENT_LEADERBOARD_LIST_GROUPING_TRACKING);
