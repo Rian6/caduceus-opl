@@ -2,7 +2,13 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 static int g_trace = 0;
 static FILE *g_file = NULL;
@@ -15,7 +21,17 @@ void log_to_file(const char *path)
     if (g_file != NULL) {
         time_t now = time(NULL);
 
-        fprintf(g_file, "\n---- %s", ctime(&now));
+        /* Every copy appends to the same file; the pid tells them
+           apart when two ran at once. */
+#ifdef _WIN32
+        unsigned long pid = (unsigned long)GetCurrentProcessId();
+#else
+        unsigned long pid = (unsigned long)getpid();
+#endif
+        char *ts = ctime(&now);
+
+        ts[strcspn(ts, "\n")] = '\0';
+        fprintf(g_file, "\n---- %s (pid %lu)\n", ts, pid);
         fflush(g_file);
     }
 }

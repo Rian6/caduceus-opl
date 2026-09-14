@@ -208,7 +208,24 @@ static int find_running_ui(int skip)
             continue;
         }
         send(s, req, sizeof(req) - 1, 0);
-        n = (int)recv(s, buf, sizeof(buf) - 1, 0);
+        /* Headers and body arrive as separate segments; one read used
+           to see only the headers and miss the running copy, which is
+           how a tester ended up with four of them. Read until the
+           server closes, two seconds at most. */
+        {
+#ifdef _WIN32
+            DWORD tmo = 2000;
+#else
+            struct timeval tmo = {2, 0};
+#endif
+            int got;
+
+            setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tmo, sizeof(tmo));
+            n = 0;
+            while (n < (int)sizeof(buf) - 1 &&
+                   (got = (int)recv(s, buf + n, (int)sizeof(buf) - 1 - n, 0)) > 0)
+                n += got;
+        }
         sock_close(s);
         if (n > 0) {
             buf[n] = '\0';
@@ -221,6 +238,35 @@ static int find_running_ui(int skip)
 
 /* Set by Ctrl-C; the loop ends and queued unlocks get a chance to go out. */
 static volatile int g_stop = 0;
+
+/* A login that failed because the server was unreachable used to stay
+   failed for the life of the process, and every console request then
+   died with "Login required". With a saved token the client tries
+   again: every minute when idle, and at once when the console asks
+   about a game, at most every ten seconds. */
+static void login_retry(rc_client_t *client, int min_gap)
+{
+    static time_t last_try;
+    char user[128], token[256], key[128];
+    time_t now = time(NULL);
+
+    if (client == NULL || rc_client_get_user_info(client) != NULL)
+        return;
+    if (!config_load_credentials(user, sizeof(user), token, sizeof(token)))
+        return;
+    if (last_try != 0 && now - last_try < min_gap)
+        return;
+    last_try = now;
+
+    log_info("trying the saved login again");
+    if (login(client, NULL, NULL)) {
+        const rc_client_user_t *me = rc_client_get_user_info(client);
+
+        webui_set_login(1, me != NULL && me->display_name != NULL ? me->display_name : user);
+        if (config_load_apikey(key, sizeof(key)))
+            raweb_set_credentials(user, key);
+    }
+}
 
 /* Off by default: real unlocks notify the console through ra.c. The
    flag turns the repeating fake notice on for bench runs. */
@@ -875,6 +921,7 @@ int main(int argc, char **argv)
         if (ready == 0) {
             link_idle(1000);
             rc_client_idle(client); /* retries of queued unlocks */
+            login_retry(client, 60);
             /* No console packet this second: following gets its turn,
                and a page sees the result on the next push. */
             follow_tick(game_up);
@@ -896,6 +943,8 @@ int main(int argc, char **argv)
             continue;
         pkt[n] = '\0';
 
+        if (strncmp(head, "RAQ1 ", 5) == 0)
+            login_retry(client, 10);
         served = console_serve(sock, head, (size_t)n, &from, client);
         if (served == 2) {
             link_discovered();
