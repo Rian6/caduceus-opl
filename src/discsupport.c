@@ -163,7 +163,7 @@ static void discCheckWorker(void)
                         info2[0] ? info2 : NULL);
     } else if (q == 1) {
         raHashStep("7-pc-does-not-know-image");
-        guiShowRANotice("RetroAchievements does not know this disc", hash);
+        guiShowRANotice(info[0] ? info : "RetroAchievements does not know this disc", hash);
     } else if (q == -7) {
         raHashStep("7-pc-still-identifying");
         guiShowRANotice("The PC is still identifying the disc",

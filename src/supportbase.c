@@ -1071,7 +1071,7 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
                                 info2[0] ? info2 : "Start the game to track achievements");
             } else if (q == 1) {
                 raHashStep("7-pc-does-not-know-image");
-                guiShowRANotice("RetroAchievements does not know this image", hash);
+                guiShowRANotice(info[0] ? info : "RetroAchievements does not know this image", hash);
             } else if (q == -7) {
                 raHashStep("7-pc-still-identifying");
                 guiShowRANotice("The PC is still identifying the image",

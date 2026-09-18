@@ -90,12 +90,15 @@
 #define RA_RECV_MAX    992   /* cap for one recvfrom; rule 3 */
 #define RA_TRY         12    /* attempts per request */
 #define RA_POLL_MS     25    /* pause between polls for a reply */
-/* How many times to ask again while the PC answers WAIT. Identifying
-   the image is a live request to the RetroAchievements server and
-   takes seconds. We wait only while the PC keeps answering: if it goes
-   silent, ask() gives up within its own three seconds, so "client not
-   running" stays a fast failure. */
-#define RA_WAIT_ROUNDS 8
+/* How many times to ask again while the PC answers WAIT, and the pause
+   between rounds. Identifying the image is a live request to the
+   RetroAchievements server, seconds for a set with subsets. The PC
+   answers WAIT at once now, so without the pause eight rounds were over
+   in half a second. We wait only while the PC keeps answering: if it
+   goes silent, ask() gives up within its own three seconds, so "client
+   not running" stays a fast failure. */
+#define RA_WAIT_ROUNDS   20
+#define RA_WAIT_PAUSE_MS 500
 #define RA_MAX_BYTES   (20 * 1024) /* 4096 entries, 128 chains and the headers */
 
 /* Per-call non-blocking receive. The socket is also set non-blocking via
@@ -284,6 +287,7 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
         for (w = 0; w < RA_WAIT_ROUNDS && strncmp(g_rx, "RAA1 WAIT", 9) == 0; w++) {
             LOG("RA: PC is asking the server, waiting (%d)\n", w + 1);
 
+            DelayThread(RA_WAIT_PAUSE_MS * 1000);
             got = ask(sock, &to, req, g_rx, sizeof(g_rx));
             if (got <= 0) {
                 LOG("RA: PC went silent while identifying the image\n");
@@ -301,6 +305,21 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
 
     if (strncmp(g_rx, "RAA1 OK ", 8) != 0) {
         LOG("RA: PC does not know this image: %s\n", g_rx);
+        /* "RAA1 NO <reason>": a newer PC says why (unknown game, set
+           too big, server down). The sentence goes to the screen in
+           place of the console's own guess. An older PC sends bare NO. */
+        if (strncmp(g_rx, "RAA1 NO ", 8) == 0 && info != NULL && infosz > 0) {
+            char *why = g_rx + 8;
+            int len;
+
+            while (*why == ' ')
+                why++;
+            len = (int)strlen(why);
+            while (len > 0 && why[len - 1] == ' ')
+                why[--len] = '\0';
+            if (len > 0)
+                snprintf(info, infosz, "%s", why);
+        }
         disconnect(sock);
         return 1; /* not an error: the game is unsupported */
     }
