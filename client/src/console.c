@@ -213,6 +213,14 @@ static struct
     char reason[80];
 } g_ident;
 
+static int set_is_empty(rc_client_t *client)
+{
+    rc_client_user_game_summary_t sum;
+
+    rc_client_get_user_game_summary(client, &sum);
+    return sum.num_core_achievements == 0;
+}
+
 /* Runs on the worker thread. Everything it touches -- rc_client, the
    watch list, the serve buffer -- is left alone by the main thread
    while state is not 0. */
@@ -237,6 +245,18 @@ static void ident_run(void *arg)
                      "RetroAchievements did not answer: %s", rc_error_str(rc));
             g_ident.transient = 1;
         }
+    } else if (set_is_empty(g_ident.client)) {
+        /* The server answers a known game with no set for this dump
+           with a placeholder titled "Unsupported Game Version (...)"
+           and zero achievements. "No memory reads" would be true and
+           useless; the player needs to hear "other dump". */
+        const rc_client_game_t *game = rc_client_get_game_info(g_ident.client);
+
+        if (game != NULL && game->title != NULL && strstr(game->title, "Unsupported Game Version") != NULL)
+            snprintf(g_ident.reason, sizeof(g_ident.reason), "Wrong dump: the set is for another version of this game");
+        else
+            snprintf(g_ident.reason, sizeof(g_ident.reason), "No achievements for this image on RetroAchievements");
+        log_warn("%s", g_ident.reason);
     } else if (!watchlist_build(g_ident.client)) {
         snprintf(g_ident.reason, sizeof(g_ident.reason), "%s", watchlist_last_error());
     } else {
