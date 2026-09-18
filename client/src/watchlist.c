@@ -1,5 +1,6 @@
 #include "watchlist.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "log.h"
@@ -279,6 +280,217 @@ static void count_indirect(rc_client_t *client)
     }
 }
 
+/* ---- Survey: the set's needs with no ceiling ----------------------- */
+
+/* A chain the console could follow, ceilings aside: constant offsets
+   all the way up and a plain pointer read at every level. */
+static int chain_compilable(const rc_memref_t *m)
+{
+    const rc_modified_memref_t *mm;
+
+    if (m == NULL || m->value.memref_type != RC_MEMREF_TYPE_MODIFIED_MEMREF)
+        return 1;
+
+    mm = (const rc_modified_memref_t *)m;
+    if (mm->modifier_type != RC_OPERATOR_INDIRECT_READ)
+        return 0;
+    if (mm->modifier.type != RC_OPERAND_CONST)
+        return 0;
+    if (!rc_operand_is_memref(&mm->parent) || mm->parent.type != RC_OPERAND_ADDRESS)
+        return 0;
+
+    return chain_compilable(mm->parent.value.memref);
+}
+
+/* Memrefs that locked achievements and leaderboards read, as a flat
+   set. A chain's link appears in the conditions itself, but marking
+   the parents too keeps the count honest if rcheevos ever changes
+   how it builds them. */
+struct needed {
+    const rc_memref_t **items;
+    int count, cap;
+};
+
+static int needed_has(const struct needed *n, const rc_memref_t *m)
+{
+    int i;
+
+    for (i = 0; i < n->count; i++)
+        if (n->items[i] == m)
+            return 1;
+    return 0;
+}
+
+static void needed_add(struct needed *n, const rc_memref_t *m)
+{
+    const rc_modified_memref_t *mm;
+
+    if (m == NULL || needed_has(n, m) || n->count >= n->cap)
+        return;
+    n->items[n->count++] = m;
+
+    if (m->value.memref_type != RC_MEMREF_TYPE_MODIFIED_MEMREF)
+        return;
+    mm = (const rc_modified_memref_t *)m;
+    if (rc_operand_is_memref(&mm->parent))
+        needed_add(n, mm->parent.value.memref);
+    if (rc_operand_is_memref(&mm->modifier))
+        needed_add(n, mm->modifier.value.memref);
+}
+
+static int memref_needed(rc_client_t *client, const rc_memref_t *m)
+{
+    rc_client_subset_info_t *subset;
+
+    for (subset = client->game->subsets; subset != NULL; subset = subset->next) {
+        rc_client_achievement_info_t *a = subset->achievements;
+        rc_client_achievement_info_t *a_end = a + subset->public_.num_achievements;
+        rc_client_leaderboard_info_t *l = subset->leaderboards;
+        rc_client_leaderboard_info_t *l_end = l + subset->public_.num_leaderboards;
+
+        for (; a < a_end; a++) {
+            if (a->trigger == NULL || a->public_.state != RC_CLIENT_ACHIEVEMENT_STATE_ACTIVE)
+                continue;
+            if (rc_trigger_contains_memref(a->trigger, m))
+                return 1;
+        }
+        for (; l < l_end; l++) {
+            if (l->lboard == NULL)
+                continue;
+            if (rc_trigger_contains_memref(&l->lboard->start, m) ||
+                rc_trigger_contains_memref(&l->lboard->cancel, m) ||
+                rc_trigger_contains_memref(&l->lboard->submit, m) ||
+                rc_value_contains_memref(&l->lboard->value, m))
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+void watchlist_survey(rc_client_t *client, struct watch_survey *out)
+{
+    rc_memrefs_t *pool;
+    rc_memref_list_t *ml;
+    rc_modified_memref_list_t *mml;
+    rc_client_subset_info_t *subset;
+    struct needed need = {NULL, 0, 0};
+    int total = 0;
+
+    memset(out, 0, sizeof(*out));
+    if (client == NULL || client->game == NULL || client->game->runtime.memrefs == NULL)
+        return;
+    pool = client->game->runtime.memrefs;
+
+    for (subset = client->game->subsets; subset != NULL; subset = subset->next) {
+        rc_client_achievement_info_t *a = subset->achievements;
+        rc_client_achievement_info_t *a_end = a + subset->public_.num_achievements;
+        rc_client_leaderboard_info_t *l = subset->leaderboards;
+        rc_client_leaderboard_info_t *l_end = l + subset->public_.num_leaderboards;
+
+        for (; a < a_end; a++) {
+            if (a->trigger == NULL)
+                continue;
+            out->achievements++;
+            if (a->public_.state == RC_CLIENT_ACHIEVEMENT_STATE_ACTIVE)
+                out->locked++;
+        }
+        for (; l < l_end; l++)
+            if (l->lboard != NULL)
+                out->leaderboards++;
+    }
+
+    for (ml = &pool->memrefs; ml != NULL; ml = ml->next)
+        total += ml->count;
+    for (mml = &pool->modified_memrefs; mml != NULL; mml = mml->next)
+        total += mml->count;
+
+    need.cap = total;
+    need.items = calloc((size_t)(total > 0 ? total : 1), sizeof(*need.items));
+    if (need.items == NULL)
+        return;
+
+    /* Pass one: everything a locked achievement or a leaderboard names
+       in a condition, then the parents of every chain among them. */
+    for (ml = &pool->memrefs; ml != NULL; ml = ml->next) {
+        uint16_t k;
+
+        for (k = 0; k < ml->count; k++)
+            if (memref_needed(client, &ml->items[k]))
+                needed_add(&need, &ml->items[k]);
+    }
+    for (mml = &pool->modified_memrefs; mml != NULL; mml = mml->next) {
+        uint16_t k;
+
+        for (k = 0; k < mml->count; k++)
+            if (memref_needed(client, &mml->items[k].memref))
+                needed_add(&need, &mml->items[k].memref);
+    }
+
+    /* Pass two: the totals, with and without the filter. */
+    for (ml = &pool->memrefs; ml != NULL; ml = ml->next) {
+        uint16_t k;
+
+        for (k = 0; k < ml->count; k++) {
+            const rc_memref_t *m = &ml->items[k];
+            int b = memsize_bytes(rc_memref_shared_size(m->value.size));
+
+            out->entries++;
+            out->bytes += b;
+            if (needed_has(&need, m)) {
+                out->need_entries++;
+                out->need_bytes += b;
+            }
+        }
+    }
+    for (mml = &pool->modified_memrefs; mml != NULL; mml = mml->next) {
+        uint16_t k;
+
+        for (k = 0; k < mml->count; k++) {
+            const rc_modified_memref_t *mm = &mml->items[k];
+            int ok;
+
+            if (mm->modifier_type != RC_OPERATOR_INDIRECT_READ)
+                continue;
+            ok = chain_compilable(&mm->memref);
+            out->chains++;
+            out->chains_ok += ok;
+            if (needed_has(&need, &mm->memref)) {
+                out->need_chains++;
+                out->need_chains_ok += ok;
+            }
+        }
+    }
+
+    out->snapshot = out->bytes + out->chains_ok * RA_NODE_PAIR_BYTES;
+    out->need_snapshot = out->need_bytes + out->need_chains_ok * RA_NODE_PAIR_BYTES;
+    free(need.items);
+}
+
+static int parts_for(int bytes)
+{
+    return (bytes + RA_SNAP_CHUNK_BYTES - 1) / RA_SNAP_CHUNK_BYTES;
+}
+
+/* One line per view, the ceilings named, so a log from the field can
+   be read without the source. */
+void watchlist_log_survey(rc_client_t *client)
+{
+    struct watch_survey s;
+    const rc_client_game_t *game = rc_client_get_game_info(client);
+
+    watchlist_survey(client, &s);
+    log_info("survey: %s (id %u): %d achievements, %d locked, %d leaderboards",
+             game != NULL && game->title != NULL ? game->title : "?", game != NULL ? game->id : 0,
+             s.achievements, s.locked, s.leaderboards);
+    log_info("survey: whole set: %d addresses (ceiling %d), %d bytes direct, %d chains (%d compile, ceiling %d), snapshot %d bytes (ceiling %d), %d parts of %d",
+             s.entries, RA_WATCH_MAX, s.bytes, s.chains, s.chains_ok, RA_NODE_MAX,
+             s.snapshot, RA_SNAP_MAX_BYTES, parts_for(s.snapshot), RA_SNAP_CHUNK_BYTES);
+    log_info("survey: locked + leaderboards: %d addresses, %d bytes direct, %d chains (%d compile), snapshot %d bytes, %d parts",
+             s.need_entries, s.need_bytes, s.need_chains, s.need_chains_ok,
+             s.need_snapshot, parts_for(s.need_snapshot));
+}
+
 int watchlist_indirect_count(void)
 {
     return g_indirect;
@@ -318,10 +530,12 @@ int watchlist_build(rc_client_t *client)
 
             if (n >= RA_WATCH_MAX) {
                 log_warn("more than %d addresses, the watch list does not fit", RA_WATCH_MAX);
+                watchlist_log_survey(client);
                 return 0;
             }
             if (off + b > RA_SNAP_MAX_BYTES) {
                 log_warn("snapshot exceeds %d bytes, it does not fit in a packet", RA_SNAP_MAX_BYTES);
+                watchlist_log_survey(client);
                 return 0;
             }
 

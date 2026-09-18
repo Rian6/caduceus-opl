@@ -64,6 +64,8 @@ static void usage(void)
            "  --hashes ID        print the image hashes RA knows for a game and exit\n"
            "  --port N           UDP port to listen on (default %d)\n"
            "  --game SERIAL=HASH remember an image hash for a game serial\n"
+           "  --survey HASH      load the set for this image hash, print what its watch\n"
+           "                     list would need with no ceiling, and exit\n"
            "  --no-sound         no notification sounds\n"
            "  --console          open a console window for this run (the log is always\n"
            "                     also in xerabora.log next to the saved login)\n"
@@ -532,7 +534,7 @@ static void startup_summary(int ui_ok, int ui_port, int signed_in, const char *u
 
 int main(int argc, char **argv)
 {
-    const char *arg_user = NULL, *arg_password = NULL;
+    const char *arg_user = NULL, *arg_password = NULL, *arg_survey = NULL;
     int port = XERABORA_DEFAULT_PORT, sounds = 1;
     int ui_port = XERABORA_UI_PORT, ui_wanted = 1;
     sock_t ui = SOCK_INVALID;
@@ -570,6 +572,8 @@ int main(int argc, char **argv)
                 *eq = '\0';
                 console_remember_game(tmp, eq + 1);
             }
+        } else if (strcmp(argv[i], "--survey") == 0 && i + 1 < argc) {
+            arg_survey = argv[++i];
         } else if (strcmp(argv[i], "--test-unlock") == 0) {
             g_test_unlock = 1;
         } else if (strcmp(argv[i], "--badge") == 0 && i + 1 < argc) {
@@ -635,6 +639,29 @@ int main(int argc, char **argv)
             usage();
             return strcmp(argv[i], "--help") == 0 ? 0 : 2;
         }
+    }
+
+    if (arg_survey != NULL) {
+        /* Sign in, load the set, count, leave. No page, no socket: the
+           question is how big the set is, and the RA server has the
+           definitions. */
+        if (platform_net_init() != 0 || http_init() != 0)
+            return 1;
+        client = ra_create();
+        if (client == NULL)
+            return 1;
+        if (!login(client, arg_user, arg_password)) {
+            log_error("not signed in; the survey needs the game server");
+            ra_destroy(client);
+            return 1;
+        }
+        if (!ra_load_game(client, arg_survey)) {
+            ra_destroy(client);
+            return 1;
+        }
+        watchlist_log_survey(client);
+        ra_destroy(client);
+        return 0;
     }
 
     if (ui_only) {

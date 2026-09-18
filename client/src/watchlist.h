@@ -28,6 +28,22 @@ int watchlist_bytes(void);
    has no chains. */
 int watchlist_snapshot_bytes(void);
 
+/* What the loaded set would need with no ceiling at all, and what the
+   still-locked achievements and the leaderboards alone would need. The
+   numbers decide whether the ceilings move or the wire has to change. */
+struct watch_survey {
+    int achievements, locked, leaderboards;
+    /* Every memref in the pool: direct reads, their bytes, pointer
+       chains, chains the console could follow, snapshot bytes. */
+    int entries, bytes, chains, chains_ok, snapshot;
+    /* The same five numbers for what locked achievements and
+       leaderboards read. */
+    int need_entries, need_bytes, need_chains, need_chains_ok, need_snapshot;
+};
+void watchlist_survey(rc_client_t *client, struct watch_survey *out);
+/* The survey as three log lines. */
+void watchlist_log_survey(rc_client_t *client);
+
 /* Serialises the list in the on-wire/file format the console expects.
    Returns the number of bytes written, 0 if it does not fit. */
 int watchlist_serialize(unsigned char *out, size_t cap);
