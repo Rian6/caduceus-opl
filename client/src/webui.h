@@ -77,8 +77,8 @@ void webui_note_unlock(unsigned id, const char *title, const char *badge, unsign
 void webui_note_packet(void);
 
 /* The console pipeline as one word the page turns into a sentence: "", "no-
-   hash", "telemetry-only", "active", "stale". Mirrors the terminal
-   warnings. */
+   hash", "identifying", "telemetry-only", "active", "stale". Mirrors
+   the terminal warnings. */
 void webui_set_status(const char *status);
 
 void webui_set_stats(unsigned long frames, unsigned long gaps,

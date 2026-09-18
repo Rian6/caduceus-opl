@@ -60,4 +60,11 @@ int platform_wait_readable2(sock_t a, sock_t b, int timeout_ms);
 /* Human-readable text for the last socket error. */
 const char *platform_sock_error(void);
 
+/* One worker thread at a time: the identification of an image runs off
+   the receive loop. Returns 0 when the thread started. Join waits for
+   it and frees the handle. */
+typedef void (*platform_thread_fn)(void *arg);
+int platform_thread_start(platform_thread_fn fn, void *arg);
+void platform_thread_join(void);
+
 #endif

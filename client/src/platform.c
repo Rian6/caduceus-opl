@@ -8,7 +8,9 @@
 #include <windows.h>
 #include <direct.h>
 #include <shlobj.h>
+#include <process.h>
 #else
+#include <pthread.h>
 #include <errno.h>
 #include <signal.h>
 #include <sys/select.h>
@@ -236,3 +238,75 @@ const char *platform_sock_error(void)
     return strerror(errno);
 #endif
 }
+
+/* ---- Worker thread ---------------------------------------------------- */
+
+struct thread_job
+{
+    platform_thread_fn fn;
+    void *arg;
+};
+
+static struct thread_job g_job;
+
+#ifdef _WIN32
+static HANDLE g_thread = NULL;
+
+static unsigned __stdcall thread_main(void *p)
+{
+    struct thread_job *j = (struct thread_job *)p;
+
+    j->fn(j->arg);
+    return 0;
+}
+
+int platform_thread_start(platform_thread_fn fn, void *arg)
+{
+    if (g_thread != NULL)
+        return -1;
+    g_job.fn = fn;
+    g_job.arg = arg;
+    g_thread = (HANDLE)_beginthreadex(NULL, 0, thread_main, &g_job, 0, NULL);
+    return g_thread != NULL ? 0 : -1;
+}
+
+void platform_thread_join(void)
+{
+    if (g_thread == NULL)
+        return;
+    WaitForSingleObject(g_thread, INFINITE);
+    CloseHandle(g_thread);
+    g_thread = NULL;
+}
+#else
+static pthread_t g_thread;
+static int g_thread_up = 0;
+
+static void *thread_main(void *p)
+{
+    struct thread_job *j = (struct thread_job *)p;
+
+    j->fn(j->arg);
+    return NULL;
+}
+
+int platform_thread_start(platform_thread_fn fn, void *arg)
+{
+    if (g_thread_up)
+        return -1;
+    g_job.fn = fn;
+    g_job.arg = arg;
+    if (pthread_create(&g_thread, NULL, thread_main, &g_job) != 0)
+        return -1;
+    g_thread_up = 1;
+    return 0;
+}
+
+void platform_thread_join(void)
+{
+    if (!g_thread_up)
+        return;
+    pthread_join(g_thread, NULL);
+    g_thread_up = 0;
+}
+#endif

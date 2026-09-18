@@ -1,5 +1,6 @@
 #include "watchlist.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -500,6 +501,13 @@ int watchlist_indirect_count(void)
    the console reads addresses in the order it received them. Pointer
    chains follow as nodes, and their values as (address, value) pairs
    after the direct ones. */
+static char g_build_error[96] = "";
+
+const char *watchlist_last_error(void)
+{
+    return g_build_error;
+}
+
 int watchlist_build(rc_client_t *client)
 {
     rc_memrefs_t *pool;
@@ -511,13 +519,17 @@ int watchlist_build(rc_client_t *client)
     g_have_values = 0;
     g_have_nodes = 0;
     g_node_count = 0;
+    g_build_error[0] = '\0';
 
-    if (client == NULL || client->game == NULL)
+    if (client == NULL || client->game == NULL) {
+        snprintf(g_build_error, sizeof(g_build_error), "No achievement set is loaded");
         return 0;
+    }
 
     pool = client->game->runtime.memrefs;
     if (pool == NULL) {
         log_warn("the achievement set has no memory references");
+        snprintf(g_build_error, sizeof(g_build_error), "The set reads no memory");
         return 0;
     }
 
@@ -529,13 +541,23 @@ int watchlist_build(rc_client_t *client)
             int b = memsize_bytes(rc_memref_shared_size(m->value.size));
 
             if (n >= RA_WATCH_MAX) {
+                struct watch_survey sv;
+
                 log_warn("more than %d addresses, the watch list does not fit", RA_WATCH_MAX);
                 watchlist_log_survey(client);
+                watchlist_survey(client, &sv);
+                snprintf(g_build_error, sizeof(g_build_error),
+                         "Set too big: %d addresses, the ceiling is %d", sv.entries, RA_WATCH_MAX);
                 return 0;
             }
             if (off + b > RA_SNAP_MAX_BYTES) {
+                struct watch_survey sv;
+
                 log_warn("snapshot exceeds %d bytes, it does not fit in a packet", RA_SNAP_MAX_BYTES);
                 watchlist_log_survey(client);
+                watchlist_survey(client, &sv);
+                snprintf(g_build_error, sizeof(g_build_error),
+                         "Set too big: %d bytes a snapshot, the ceiling is %d", sv.snapshot, RA_SNAP_MAX_BYTES);
                 return 0;
             }
 
@@ -549,6 +571,7 @@ int watchlist_build(rc_client_t *client)
 
     if (n == 0) {
         log_warn("the achievement set has no direct memory reads");
+        snprintf(g_build_error, sizeof(g_build_error), "The set has no direct memory reads");
         return 0;
     }
 

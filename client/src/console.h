@@ -24,6 +24,21 @@ const char *console_hash_for(const char *serial);
 int console_serve(sock_t sock, const char *pkt, size_t len,
                   const struct sockaddr_in *from, rc_client_t *client);
 
+/* The set for an image hash, for the game the console is running.
+   Returns 1 when its watch list is ready (rc_client holds that game),
+   0 when a load is in flight or was just started, -1 when the hash
+   failed recently; *reason then says why. Never blocks. */
+int console_request_set(rc_client_t *client, const char *hash, const char **reason);
+
+/* True while the worker loads a set. The main loop then leaves rc_client
+   and the watch list alone: no frames, no idle, no page state from it. */
+int console_ident_busy(void);
+
+/* Picks up a finished load: returns 1 once per job with its hash and
+   outcome, 0 when nothing finished. Call from the main loop; the
+   worker's results are visible only after this. */
+int console_ident_collect(char *hash, size_t hash_size, int *ok, char *reason, size_t reason_size);
+
 /* Tell the console an achievement unlocked, so it can show a notice over
    the game. Goes to the address discovery recorded; returns 0 when no
    console has been discovered yet. */

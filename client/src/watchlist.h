@@ -41,6 +41,9 @@ struct watch_survey {
     int need_entries, need_bytes, need_chains, need_chains_ok, need_snapshot;
 };
 void watchlist_survey(rc_client_t *client, struct watch_survey *out);
+/* Why the last watchlist_build failed, one short sentence the console
+   can print: "" after a build that succeeded. */
+const char *watchlist_last_error(void);
 /* The survey as three log lines. */
 void watchlist_log_survey(rc_client_t *client);
 

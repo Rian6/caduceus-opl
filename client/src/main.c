@@ -600,6 +600,9 @@ int main(int argc, char **argv)
     int rcvbuf = 1 << 20;
     char cur_serial[16] = "";
     int game_up = 0, seen_pkts = 0, said_first = 0, said_stale = 0;
+    /* A discovery arrived while a set was loading: the reset it calls
+       for runs once the worker is collected. */
+    int reset_pending = 0;
     unsigned char pkt[4096];
 
     for (i = 1; i < argc; i++) {
@@ -905,21 +908,62 @@ int main(int argc, char **argv)
         const char *head = (const char *)pkt;
         char serial[16];
         const char *hash;
-        int n, served, ready;
+        int n, served, ready, busy, wait_ms;
 
-        ready = platform_wait_readable2(sock, ui, 1000);
+        /* A set finished loading on the worker: take its outcome. It is
+           the running game's set only when the hash matches; a set an
+           image check loaded for another game leaves the tracking off
+           until the next packet asks for the right one again. */
+        {
+            char done_hash[33], reason[80];
+            int ok;
+
+            if (console_ident_collect(done_hash, sizeof(done_hash), &ok, reason, sizeof(reason))) {
+                const char *want = cur_serial[0] != '\0' ? console_hash_for(cur_serial) : NULL;
+
+                if (want != NULL && strcmp(want, done_hash) == 0) {
+                    game_up = ok;
+                    webui_set_status(ok ? "active" : "telemetry-only");
+                    if (ok) {
+                        snapshot_reset();
+                        said_first = 0;
+                        said_stale = 0;
+                    } else {
+                        log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
+                    }
+                } else if (want != NULL) {
+                    game_up = 0;
+                }
+                if (reset_pending && game_up) {
+                    rc_client_reset(client);
+                    snapshot_reset();
+                    said_first = 0;
+                }
+                reset_pending = 0;
+                webui_mark_dirty();
+            }
+        }
+
+        /* While the worker holds rc_client the loop only answers the
+           console and the page, and checks back ten times a second. */
+        busy = console_ident_busy();
+        wait_ms = busy ? 100 : 1000;
+
+        ready = platform_wait_readable2(sock, ui, wait_ms);
         if (ready < 0) {
             platform_sleep_ms(1000);
             continue;
         }
         if (ready & 2) {
-            webui_serve(ui, client);
+            webui_serve(ui, busy ? NULL : client);
             ui = webui_rebind(ui);
             if (!(ready & 1))
                 continue;
         }
         if (ready == 0) {
-            link_idle(1000);
+            link_idle((unsigned long)wait_ms);
+            if (busy)
+                continue;
             rc_client_idle(client); /* retries of queued unlocks */
             login_retry(client, 60);
             /* No console packet this second: following gets its turn,
@@ -943,7 +987,7 @@ int main(int argc, char **argv)
             continue;
         pkt[n] = '\0';
 
-        if (strncmp(head, "RAQ1 ", 5) == 0)
+        if (strncmp(head, "RAQ1 ", 5) == 0 && !busy)
             login_retry(client, 10);
         served = console_serve(sock, head, (size_t)n, &from, client);
         if (served == 2) {
@@ -951,7 +995,9 @@ int main(int argc, char **argv)
             /* Discovery comes from a game that has just started. Hit
                counts and deltas from the previous run must not carry
                over, the same as an emulator reset. */
-            if (game_up) {
+            if (busy)
+                reset_pending = 1;
+            else if (game_up) {
                 rc_client_reset(client);
                 snapshot_reset();
                 said_first = 0;
@@ -963,6 +1009,10 @@ int main(int argc, char **argv)
         link_seen(inet_ntoa(from.sin_addr));
         console_learn(sock, &from);
         webui_note_packet();
+        /* Telemetry waits for the worker: the watch list it would be
+           matched against is being rebuilt. */
+        if (busy)
+            continue;
 
         /* No set loaded, but the console is talking: let the page show
            a live console anyway, at a walking pace. When a game is up
@@ -1003,12 +1053,25 @@ int main(int argc, char **argv)
                          "in the game's menu, or pass --game %s=HASH", serial, serial);
                 game_up = 0;
                 webui_set_status("no-hash");
-            } else {
-                game_up = ra_load_game(client, hash) && watchlist_build(client);
-                webui_set_status(game_up ? "active" : "telemetry-only");
-            }
-            if (!game_up)
                 log_warn("receiving telemetry only, no achievements are tracked");
+            } else {
+                const char *reason = "";
+                int r = console_request_set(client, hash, &reason);
+
+                game_up = r == 1;
+                if (r == 1) {
+                    webui_set_status("active");
+                } else if (r == 0) {
+                    /* The worker has it; the outcome lands at the top
+                       of the loop, and telemetry waits until then. */
+                    log_info("loading the set for %s", hash);
+                    webui_set_status("identifying");
+                    continue;
+                } else {
+                    webui_set_status("telemetry-only");
+                    log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
+                }
+            }
         }
 
         if (!game_up)

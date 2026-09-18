@@ -3,9 +3,11 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "config.h"
 #include "log.h"
+#include "platform.h"
 #include "protocol.h"
 #include "ra.h"
 #include "version.h"
@@ -162,33 +164,145 @@ static void pick_target(struct sockaddr_in *to, const struct sockaddr_in *from, 
 
 /* Watch list serialized for the console, cached by hash: the console
    repeats a request up to twelve times, and the RA server should be
-   asked once. */
+   asked once. Written by the worker thread below, read by the receive
+   loop only while no worker runs. */
 static unsigned char g_serve[RA_SNAP_MAX_BYTES * 8];
 static int g_serve_len = 0;
 static char g_serve_hash[33] = "";
-static char g_unknown_hash[33] = ""; /* last hash the RA server rejected */
 
-static int serve_load(rc_client_t *client, const char *hash)
+/* The last hash that could not be served, and why. A definite answer
+   (unknown game, set too big) holds until another hash fails; a server
+   or network failure is forgotten after NEG_TRANSIENT_S seconds so the
+   console's next check asks again. */
+#define NEG_TRANSIENT_S 30
+static char g_neg_hash[33] = "";
+static char g_neg_reason[80] = "";
+static time_t g_neg_until = 0; /* 0: no expiry */
+
+static const char *neg_reason_for(const char *hash)
 {
-    if (strcmp(g_serve_hash, hash) == 0 && g_serve_len > 0)
-        return 1;
+    if (strcmp(g_neg_hash, hash) != 0)
+        return NULL;
+    if (g_neg_until != 0 && time(NULL) >= g_neg_until) {
+        g_neg_hash[0] = '\0';
+        return NULL;
+    }
+    return g_neg_reason;
+}
 
+static void neg_remember(const char *hash, const char *reason, int transient)
+{
+    snprintf(g_neg_hash, sizeof(g_neg_hash), "%s", hash);
+    snprintf(g_neg_reason, sizeof(g_neg_reason), "%s", reason);
+    g_neg_until = transient ? time(NULL) + NEG_TRANSIENT_S : 0;
+}
+
+/* ---- Identification off the receive loop ----------------------------
+   Loading a set is several server round trips, seconds for a big set.
+   Done inline it held the UDP socket, the console's retries piled up
+   behind it, and the console gave up. A worker thread does the load;
+   the receive loop answers WAIT meanwhile and touches neither rc_client
+   nor the watch list until the worker is collected. One job at a time. */
+static struct
+{
+    volatile int state; /* 0 idle, 1 running, 2 finished, not collected */
+    rc_client_t *client;
+    char hash[33];
+    int ok;
+    int transient;
+    char reason[80];
+} g_ident;
+
+/* Runs on the worker thread. Everything it touches -- rc_client, the
+   watch list, the serve buffer -- is left alone by the main thread
+   while state is not 0. */
+static void ident_run(void *arg)
+{
+    const char *hash = g_ident.hash;
+
+    (void)arg;
+    g_ident.ok = 0;
+    g_ident.transient = 0;
+    g_ident.reason[0] = '\0';
     g_serve_len = 0;
     g_serve_hash[0] = '\0';
 
-    if (!ra_load_game(client, hash))
-        return 0;
-    if (!watchlist_build(client))
-        return 0;
+    if (!ra_load_game(g_ident.client, hash)) {
+        int rc = ra_last_load_result();
 
-    g_serve_len = watchlist_serialize(g_serve, sizeof(g_serve));
-    if (g_serve_len == 0) {
-        log_warn("watch list does not fit in the reply buffer");
-        return 0;
+        if (rc == RC_NO_GAME_LOADED) {
+            snprintf(g_ident.reason, sizeof(g_ident.reason), "Unknown to RetroAchievements");
+        } else {
+            snprintf(g_ident.reason, sizeof(g_ident.reason),
+                     "RetroAchievements did not answer: %s", rc_error_str(rc));
+            g_ident.transient = 1;
+        }
+    } else if (!watchlist_build(g_ident.client)) {
+        snprintf(g_ident.reason, sizeof(g_ident.reason), "%s", watchlist_last_error());
+    } else {
+        g_serve_len = watchlist_serialize(g_serve, sizeof(g_serve));
+        if (g_serve_len == 0) {
+            log_warn("watch list does not fit in the reply buffer");
+            snprintf(g_ident.reason, sizeof(g_ident.reason), "Watch list too big for the reply buffer");
+        } else {
+            snprintf(g_serve_hash, sizeof(g_serve_hash), "%s", hash);
+            log_info("watch list ready for the console: %d addresses, %d bytes", watchlist_count(), g_serve_len);
+            g_ident.ok = 1;
+        }
     }
+    g_ident.state = 2;
+}
 
-    snprintf(g_serve_hash, sizeof(g_serve_hash), "%s", hash);
-    log_info("watch list ready for the console: %d addresses, %d bytes", watchlist_count(), g_serve_len);
+int console_ident_busy(void)
+{
+    return g_ident.state != 0;
+}
+
+static int ident_start(rc_client_t *client, const char *hash)
+{
+    if (g_ident.state != 0)
+        return 0;
+    g_ident.client = client;
+    snprintf(g_ident.hash, sizeof(g_ident.hash), "%s", hash);
+    g_ident.state = 1;
+    if (platform_thread_start(ident_run, NULL) != 0) {
+        g_ident.state = 0;
+        log_error("could not start the identification thread");
+        return -1;
+    }
+    return 1;
+}
+
+int console_request_set(rc_client_t *client, const char *hash, const char **reason)
+{
+    const char *why;
+
+    if (reason != NULL)
+        *reason = "";
+    if (g_ident.state != 0)
+        return 0;
+    if (strcmp(g_serve_hash, hash) == 0 && g_serve_len > 0)
+        return 1;
+    why = neg_reason_for(hash);
+    if (why != NULL) {
+        if (reason != NULL)
+            *reason = why;
+        return -1;
+    }
+    return ident_start(client, hash) >= 0 ? 0 : -1;
+}
+
+int console_ident_collect(char *hash, size_t hash_size, int *ok, char *reason, size_t reason_size)
+{
+    if (g_ident.state != 2)
+        return 0;
+    platform_thread_join();
+    g_ident.state = 0;
+    snprintf(hash, hash_size, "%s", g_ident.hash);
+    *ok = g_ident.ok;
+    snprintf(reason, reason_size, "%s", g_ident.reason);
+    if (!g_ident.ok)
+        neg_remember(g_ident.hash, g_ident.reason, g_ident.transient);
     return 1;
 }
 
@@ -270,7 +384,11 @@ int console_serve(sock_t sock, const char *pkt, size_t len,
         if (got >= 2)
             console_remember_game(serial, hash);
 
-        if (strcmp(g_serve_hash, hash) == 0 && g_serve_len > 0) {
+        if (g_ident.state != 0) {
+            /* A load is in flight; the caches are the worker's until it
+               is collected. WAIT keeps the console asking. */
+            n = snprintf(reply, sizeof(reply), "RAA1 WAIT");
+        } else if (strcmp(g_serve_hash, hash) == 0 && g_serve_len > 0) {
             int chunks = (g_serve_len + XERABORA_CHUNK - 1) / XERABORA_CHUNK;
             char title[64] = "";
             unsigned total = 0, unlocked = 0, unsupported = 0;
@@ -285,20 +403,18 @@ int console_serve(sock_t sock, const char *pkt, size_t len,
             n = snprintf(reply, sizeof(reply), "RAA1 OK %d %d %u %u %u %s",
                          g_serve_len, chunks, total, unlocked, unsupported, title);
             log_info("console asked about %s: ready, %d bytes", hash, g_serve_len);
-        } else if (strcmp(g_unknown_hash, hash) == 0) {
-            n = snprintf(reply, sizeof(reply), "RAA1 NO");
-            log_info("console asked about %s: unknown to RetroAchievements", hash);
+        } else if (neg_reason_for(hash) != NULL) {
+            /* The reason rides behind NO: a console that reads it shows
+               the sentence, an older one shows its own "does not know". */
+            n = snprintf(reply, sizeof(reply), "RAA1 NO %s", g_neg_reason);
+            log_info("console asked about %s: %s", hash, g_neg_reason);
         } else {
             /* Identification is a live server request and takes seconds.
-               Tell the console to wait so it does not give up; the real
-               answer goes out on its next retry. */
+               It runs on the worker; the console hears WAIT now and the
+               answer on a later retry. */
             n = snprintf(reply, sizeof(reply), "RAA1 WAIT");
-            send_reply(sock, reply, (size_t)n, sizeof(reply), &to);
-            /* Only a definite "no such game" is cached. A server or
-               network failure is retried on the console's next request. */
-            if (!serve_load(client, hash) && ra_last_load_result() == RC_NO_GAME_LOADED)
-                snprintf(g_unknown_hash, sizeof(g_unknown_hash), "%s", hash);
-            return 1;
+            if (ident_start(client, hash) > 0)
+                log_info("console asked about %s: identifying", hash);
         }
 
         send_reply(sock, reply, (size_t)n, sizeof(reply), &to);
@@ -312,7 +428,10 @@ int console_serve(sock_t sock, const char *pkt, size_t len,
             return 1;
         pick_target(&to, from, ip, port);
 
-        if (!serve_load(client, hash) || idx < 0 || idx * XERABORA_CHUNK >= g_serve_len)
+        /* Chunks come from the cache alone: the console asks for them
+           only after an OK, which named this hash. */
+        if (g_ident.state != 0 || strcmp(g_serve_hash, hash) != 0 || g_serve_len == 0 ||
+            idx < 0 || idx * XERABORA_CHUNK >= g_serve_len)
             return 1;
 
         take = g_serve_len - idx * XERABORA_CHUNK;
