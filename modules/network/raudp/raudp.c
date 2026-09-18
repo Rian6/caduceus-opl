@@ -175,6 +175,8 @@ static int ra_sock = -1;
    err  last error code           np   number of parts
    sk   sends deferred, tx busy   id   game serial, padded with '~'
    lk   link mode: speed (100/010/999) and duplex (F/H)
+   rc   EE ticks the reads for this snapshot took
+   fc   EE ticks between the last two VBLANKs: rc/fc is the share of a frame
 
    "id" must stay last: the PC client finds the binary tail as the
    offset of " id=" plus 4 plus 15 plus one space. */
@@ -202,6 +204,8 @@ static struct ra_field ra_fields[] = {
     {"vb", 4, 0},
     {"pt", 1, 0},
     {"np", 1, 0},
+    {"rc", 7, 0},
+    {"fc", 7, 0},
     {"id", 15, 0},
 };
 
@@ -224,6 +228,8 @@ enum ra_field_id {
     RA_F_VB,
     RA_F_PT,
     RA_F_NP,
+    RA_F_RC, /* EE ticks spent reading this snapshot */
+    RA_F_FC, /* EE ticks per frame, to read rc as a share of the frame */
     RA_F_ID,
 };
 
@@ -642,6 +648,8 @@ static void ra_send_one(void)
                 ra_fmt(&ra_payload[RA_OFF(RA_F_SQ)], sq, 6);
                 ra_fmt(&ra_payload[RA_OFF(RA_F_DS)], ra_snap->dma_skip, 6);
                 ra_fmt(&ra_payload[RA_OFF(RA_F_N)], ra_snap->count, 4);
+                ra_fmt(&ra_payload[RA_OFF(RA_F_RC)], ra_snap->read_cycles > 9999999 ? 9999999 : ra_snap->read_cycles, 7);
+                ra_fmt(&ra_payload[RA_OFF(RA_F_FC)], ra_snap->frame_cycles > 9999999 ? 9999999 : ra_snap->frame_cycles, 7);
 
                 ra_id_put((const char *)ra_snap->game_id);
             }

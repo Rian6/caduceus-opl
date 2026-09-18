@@ -23,31 +23,40 @@
 #define RA_WATCH_MAGIC   0x4C574152 /* "RAWL" in little-endian */
 #define RA_WATCH_VERSION 1
 
-/* Entry ceiling. NFS Underground 2 needs 482, X-Men 39. This leaves
-   headroom over both, and at four bytes per entry the array stays at
-   4 KB. */
-#define RA_WATCH_MAX 1024
+/* Entry ceiling. NFS Underground 2 needs 482, X-Men 39, Grand Theft
+   Auto: San Andreas with its subsets 2224 (counted 18.09.2026,
+   lab/bigsets). The list no longer lives inside ee_core: the loader
+   places it behind the IOP modules in module storage, sized to the
+   set, so this number costs nothing until a set uses it. 16 KB at the
+   ceiling. */
+#define RA_WATCH_MAX 4096
 
 /* A snapshot is split across several UDP packets. One packet carries
    1472 bytes: 1500 MTU minus 20 IP minus 8 UDP, the limit without
    fragmentation.
 
-   HEADER. Ceiling for the text header built in raudp.c (162 bytes with
+   HEADER. Ceiling for the text header built in raudp.c (184 bytes with
    the current field table). raudp measures the real header length in
    ra_head_build() and derives the value bytes per packet from it, so
    this constant only sizes buffers; it must not be smaller than the
-   real header. */
-#define RA_SNAP_HEAD_BYTES 167
+   real header, or a snapshot that fits the buffer needs more parts
+   than RA_SNAP_PARTS allows and loses its tail. */
+#define RA_SNAP_HEAD_BYTES 191
 
 /* Bytes of values in one packet. */
 #define RA_SNAP_CHUNK_BYTES (1472 - RA_SNAP_HEAD_BYTES)
 
-/* Packets per snapshot.
+/* Packets per snapshot: the buffer on both sides.
 
    The measured send ceiling is 215 packets per second at 1472 bytes
    (see the raudp.c header). Four parts per frame at 60 fps would need
-   240 and drop packets; three need 180 and leave headroom. */
-#define RA_SNAP_PARTS 3
+   240 and drop packets; three need 180 and leave headroom. So the wire
+   carries at most RA_SNAP_PARTS_PER_FRAME parts a frame: a set that
+   needs more is sent every second or third frame (ee_core/src/ra.c),
+   and a set that fits three parts is sent every frame, as it always
+   was. Nine parts is San Andreas (six) with room to spare. */
+#define RA_SNAP_PARTS           9
+#define RA_SNAP_PARTS_PER_FRAME 3
 
 #define RA_SNAP_MAX_BYTES (RA_SNAP_CHUNK_BYTES * RA_SNAP_PARTS)
 
@@ -106,10 +115,9 @@ struct ra_watch_file
 
 #define RA_NODE_MAGIC 0x4C4E4152 /* "RANL" in little-endian */
 
-/* Node ceiling. ee_core resolves chains from its own copy, and it lives
-   in 77 KB of low memory shared with everything else the loader leaves
-   behind, so this number is what its arrays cost: 16 bytes per node
-   there. The snapshot ceiling binds next, at 8 bytes per node. */
+/* Node ceiling. Nodes travel with the list into module storage, 16
+   bytes each there (the node, then two scratch words per frame). San
+   Andreas has 57. The snapshot ceiling binds next, at 8 bytes per node. */
 #define RA_NODE_MAX 128
 
 /* Bytes one node adds to a snapshot: the resolved address and the value. */

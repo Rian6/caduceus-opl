@@ -27,7 +27,7 @@
 
 #include "ra_watch.h"
 
-/* Snapshot header, 48 bytes, a multiple of 16 as SIF DMA requires. The
+/* Snapshot header, 64 bytes, a multiple of 16 as SIF DMA requires. The
    values follow, packed back to back in watch list order. Addresses are
    not sent: the PC client generated the watch list and knows the order.
 
@@ -46,6 +46,13 @@ struct ra_snap
        uses it to pick the watch list and the image hash to report to
        RetroAchievements, so the user never names the game by hand. */
     char game_id[16];
+    /* What the reads cost on the EE: COP0 Count ticks spent reading the
+       values and resolving chains for this snapshot, and ticks between
+       the last two VBLANKs, so the PC can turn the first into a share
+       of the frame without knowing the clock. */
+    unsigned int read_cycles;
+    unsigned int frame_cycles;
+    unsigned int pad[2];
     /* followed by bytes bytes of values, then the trailer word */
 };
 
@@ -59,7 +66,8 @@ struct ra_snap
 
 /* Buffer size on both sides: the largest transfer, rounded up to a
    64-byte cache line so the EE buffer shares no line with other data */
-#define RA_SNAP_TOTAL ((RA_SNAP_DMA_SIZE(RA_SNAP_MAX_BYTES) + 63) & ~63)
+#define RA_SNAP_TOTAL_FOR(bytes) ((RA_SNAP_DMA_SIZE(bytes) + 63) & ~63)
+#define RA_SNAP_TOTAL            RA_SNAP_TOTAL_FOR(RA_SNAP_MAX_BYTES)
 
 /* PC -> game side: raudp DMAs this 16-byte record into an ee_core buffer
    whose address came as a load argument; the VBLANK handler treats a new

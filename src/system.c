@@ -887,6 +887,11 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
 
     ModuleStorageEnd = (void *)((u8 *)ModuleStorage + ModuleStorageSize);
 
+    /* RA: the watch list rides behind the modules, so the kernel keeps
+       it out of the game's memory the same way. Nothing when the game
+       has no list. */
+    ModuleStorageEnd = PlaceWatchBlock(ModuleStorageEnd);
+
     // NB: LOADER.ELF is embedded
     boot_elf = (u8 *)&eecore_elf;
     eh = (elf_header_t *)boot_elf;
@@ -952,11 +957,12 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
 
     /* RA: the watch list for this game. It may be absent; telemetry then
        carries no snapshot, which is not an error. */
-    config->raWatchList = GetWatchList();
+    config->raWatchList = GetWatchBlockList();
     config->raWatchCount = GetWatchCount();
     config->raSnapBytes = GetWatchBytes();
-    config->raNodeList = GetNodeList();
+    config->raNodeList = GetWatchBlockNodes();
     config->raNodeCount = GetNodeCount();
+    config->raSnapBuf = GetWatchBlockSnap();
 
     /* The last point where the list is still ours: from here it goes
        into ee_core with no feedback. A zero here means the game runs

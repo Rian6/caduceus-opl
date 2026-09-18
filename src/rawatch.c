@@ -24,6 +24,7 @@
 #include "include/ioman.h"
 #include "include/rawatch.h"
 #include "modules/network/common/ra_watch.h"
+#include "modules/network/common/ra_snap.h"
 
 static unsigned int gWatchList[RA_WATCH_MAX];
 static int gWatchCount = 0;
@@ -112,6 +113,75 @@ static void TakeNodes(const struct ra_node *nodes, unsigned int count)
         memcpy(gNodeList, nodes, count * sizeof(struct ra_node));
     gNodeCount = (int)count;
     LOG("RA: %d pointer chains\n", gNodeCount);
+}
+
+/* The list's home while the game runs. ee_core cannot hold it: its 77 KB
+   end at 0x96E00 and a game loads its own code right behind, so two
+   kilobytes of tables once stopped X-Men Origins from starting
+   (lab/pointers, 12.09.2026). Module storage is the one region below
+   the game that survives the launch, because the IOP modules in it are
+   reloaded at every IOP reset. The block follows them and is sized to
+   the set: a few hundred bytes for most games, 17 KB for San Andreas.
+
+   Layout, in words: entries[count], then nodes as (w, offset) pairs,
+   then two scratch words per node for ee_core, then the snapshot
+   buffer on a 64-byte boundary. */
+static u32 *gBlockList = NULL;
+static struct ra_node *gBlockNodes = NULL;
+static void *gBlockSnap = NULL;
+
+static void *align64(const void *p)
+{
+    return (void *)(((u32)p + 63) & ~63);
+}
+
+void *PlaceWatchBlock(void *at)
+{
+    u32 *words;
+    u8 *snap;
+    int nwords;
+
+    gBlockList = NULL;
+    gBlockNodes = NULL;
+    gBlockSnap = NULL;
+
+    if (gWatchCount <= 0)
+        return at;
+
+    words = (u32 *)align64(at);
+    nwords = gWatchCount + gNodeCount * 4;
+
+    memcpy(words, gWatchList, gWatchCount * sizeof(u32));
+    if (gNodeCount > 0) {
+        memcpy(&words[gWatchCount], gNodeList, gNodeCount * sizeof(struct ra_node));
+        memset(&words[gWatchCount + gNodeCount * 2], 0, gNodeCount * 2 * sizeof(u32));
+        gBlockNodes = (struct ra_node *)&words[gWatchCount];
+    }
+    gBlockList = words;
+
+    snap = (u8 *)align64(&words[nwords]);
+    gBlockSnap = snap;
+    snap += RA_SNAP_TOTAL_FOR(gWatchBytes + gNodeCount * RA_NODE_PAIR_BYTES);
+
+    LOG("RA: list block at %p, %d words, snapshot at %p, ends %p\n", words, nwords, gBlockSnap, snap);
+    raLaunchNote("list-block", (int)((u8 *)snap - (u8 *)words), (int)(u32)words);
+
+    return align64(snap);
+}
+
+u32 *GetWatchBlockList(void)
+{
+    return gBlockList;
+}
+
+struct ra_node *GetWatchBlockNodes(void)
+{
+    return gBlockNodes;
+}
+
+void *GetWatchBlockSnap(void)
+{
+    return gBlockSnap;
 }
 
 void ClearWatchList(void)

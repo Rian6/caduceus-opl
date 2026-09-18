@@ -32,38 +32,54 @@ extern unsigned int ra_snap_iop; /* snapshot buffer in IOP RAM, 0 if none */
    game must load its own ELF first. About 10 seconds at 60 frames/s. */
 #define RA_START_DELAY 600
 
-/* The snapshot is assembled here and DMA'd from here. SIF DMA requires
-   64-byte alignment; all writes go through UNCACHED_SEG so the data
-   reaches RAM instead of staying in the EE cache. */
-static u8 ra_snap_buf[RA_SNAP_TOTAL] __attribute__((aligned(64)));
+/* The snapshot is assembled in a buffer the loader placed in module
+   storage (src/rawatch.c, PlaceWatchBlock) and DMA'd from there. SIF
+   DMA requires 64-byte alignment; all writes go through UNCACHED_SEG so
+   the data reaches RAM instead of staying in the EE cache. */
+static u8 *ra_snap_buf = NULL;
 static int ra_snap_dma_id = 0;
 static unsigned int ra_snap_seq = 0;
 static unsigned int ra_snap_skip = 0;
 static unsigned int ra_snap_fail = 0;
 static unsigned int ra_frames = 0;
 
-/* Own copy of the watch list. config->raWatchList points into loader
-   memory, which the game overwrites, so the list is copied during init
-   the same way SetupCheats() copies the cheat list.
-
-   Pointer chains live in the same array, behind the entries, and so do
-   the two words each chain needs while a frame is built. Nothing here
-   may grow: ee_core sits in 77 KB of low memory that ends at 0x96E00,
-   and a game loads its own code close behind. Two kilobytes of tables
-   of our own pushed X-Men Origins over that edge -- it stopped starting
-   at all, while NFS Underground 2 in the same build was fine
-   (12.09.2026, lab/pointers). The array holds 1024 words and a real set
-   uses a few hundred, so the chains go in the space already paid for.
+/* The watch list, used where the loader put it. Nothing here may live
+   in ee_core's own memory: it sits in 77 KB of low memory that ends at
+   0x96E00, and a game loads its own code close behind. Two kilobytes
+   of tables of our own pushed X-Men Origins over that edge -- it
+   stopped starting at all, while NFS Underground 2 in the same build
+   was fine (12.09.2026, lab/pointers). Module storage, right behind
+   the IOP modules, is what the kernel already keeps from the game, and
+   the block there is sized to the set.
 
    [0 .. count)                entries, one word each
    [count .. +2N)              nodes: packed word, then offset
    [count+2N .. +3N)           what each chain read this frame
    [count+3N .. +4N)           where each chain reads its base, precomputed */
-static u32 ra_watch[RA_WATCH_MAX];
+static u32 *ra_watch = NULL;
 static int ra_watch_count = 0;
 static int ra_watch_bytes = 0;
 static int ra_node_at = 0; /* first node word in ra_watch */
 static int ra_node_count = 0;
+
+/* Send a snapshot every ra_snap_every frames: 1 while it fits three
+   packets, 2 up to six, 3 up to nine. The wire carries at most three
+   parts a frame either way (RA_SNAP_PARTS_PER_FRAME). */
+static unsigned int ra_snap_every = 1;
+
+/* COP0 Count, for the cost of the reads. The clock is not assumed: the
+   PC gets the ticks per frame alongside. */
+static u32 ra_last_vblank_ticks = 0;
+static u32 ra_frame_ticks = 0;
+
+static inline u32 ra_ticks(void)
+{
+    u32 t;
+
+    asm volatile("mfc0 %0, $9"
+                 : "=r"(t));
+    return t;
+}
 
 #define RA_NODE_W(i)    ra_watch[ra_node_at + (i)*2]
 #define RA_NODE_OFF(i)  ra_watch[ra_node_at + (i)*2 + 1]
@@ -87,39 +103,20 @@ static int ra_snap_bytes = 0;
 #define RA_RAM_LOW  0x00080000
 #define RA_RAM_HIGH 0x02000000
 
-void RA_SetupWatchList(void)
+/* Chains: the loader laid them out behind the entries as (w, offset)
+   pairs, with the two scratch words per node zeroed after them. The
+   node list pointer must therefore be exactly that spot. A list that
+   does not match keeps its direct reads and loses the chains, which
+   costs achievements, not telemetry. */
+static void ra_setup_nodes(const struct EECoreConfig_t *config)
 {
-    USE_LOCAL_EECORE_CONFIG;
     int i;
 
-    ra_watch_count = 0;
-    ra_watch_bytes = 0;
-    ra_snap_bytes = 0;
-    ra_node_count = 0;
-    ra_node_at = 0;
-
-    if (config->raWatchList == NULL || config->raWatchCount <= 0)
-        return;
-    if (config->raWatchCount > RA_WATCH_MAX)
-        return;
-    if (config->raSnapBytes <= 0 || config->raSnapBytes > RA_SNAP_MAX_BYTES)
-        return;
-
-    for (i = 0; i < config->raWatchCount; i++)
-        ra_watch[i] = config->raWatchList[i];
-
-    ra_watch_count = config->raWatchCount;
-    ra_watch_bytes = config->raSnapBytes;
-    ra_snap_bytes = ra_watch_bytes;
-
-    /* Chains, if they fit behind the entries: four words each. A list
-       that leaves no room keeps its direct reads and loses the chains,
-       which costs achievements, not telemetry. */
     if (config->raNodeList == NULL || config->raNodeCount <= 0)
         return;
     if (config->raNodeCount > RA_NODE_MAX)
         return;
-    if (ra_watch_count + config->raNodeCount * 4 > RA_WATCH_MAX)
+    if ((u32 *)config->raNodeList != &ra_watch[ra_watch_count])
         return;
     if (ra_watch_bytes + config->raNodeCount * RA_NODE_PAIR_BYTES > RA_SNAP_MAX_BYTES)
         return;
@@ -127,13 +124,6 @@ void RA_SetupWatchList(void)
     ra_node_at = ra_watch_count;
     ra_node_count = config->raNodeCount;
     ra_snap_bytes = ra_watch_bytes + ra_node_count * RA_NODE_PAIR_BYTES;
-
-    for (i = 0; i < ra_node_count; i++) {
-        const struct ra_node *n = &((const struct ra_node *)config->raNodeList)[i];
-
-        RA_NODE_W(i) = n->w;
-        RA_NODE_OFF(i) = n->offset;
-    }
 
     /* Where each chain reads its base: the offset of the parent's value
        in the staged snapshot, and its width. Walking the entries once
@@ -154,6 +144,41 @@ void RA_SetupWatchList(void)
     }
 }
 
+void RA_SetupWatchList(void)
+{
+    USE_LOCAL_EECORE_CONFIG;
+    int parts;
+
+    ra_watch_count = 0;
+    ra_watch_bytes = 0;
+    ra_snap_bytes = 0;
+    ra_node_count = 0;
+    ra_node_at = 0;
+    ra_snap_every = 1;
+
+    if (config->raWatchList == NULL || config->raWatchCount <= 0)
+        return;
+    if (config->raWatchCount > RA_WATCH_MAX)
+        return;
+    if (config->raSnapBytes <= 0 || config->raSnapBytes > RA_SNAP_MAX_BYTES)
+        return;
+    if (config->raSnapBuf == NULL || ((u32)config->raSnapBuf & 63) != 0)
+        return;
+
+    ra_watch = config->raWatchList;
+    ra_snap_buf = (u8 *)config->raSnapBuf;
+    ra_watch_count = config->raWatchCount;
+    ra_watch_bytes = config->raSnapBytes;
+    ra_snap_bytes = ra_watch_bytes;
+
+    ra_setup_nodes(config);
+
+    parts = (ra_snap_bytes + RA_SNAP_CHUNK_BYTES - 1) / RA_SNAP_CHUNK_BYTES;
+    ra_snap_every = (unsigned int)((parts + RA_SNAP_PARTS_PER_FRAME - 1) / RA_SNAP_PARTS_PER_FRAME);
+    if (ra_snap_every == 0)
+        ra_snap_every = 1;
+}
+
 /* One snapshot per frame.
 
    If the previous DMA is still in flight the frame is skipped, not
@@ -162,12 +187,13 @@ void RA_SetupWatchList(void)
 static void ra_snap_send(void)
 {
     USE_LOCAL_EECORE_CONFIG;
-    struct ra_snap *s = (struct ra_snap *)UNCACHED_SEG(&ra_snap_buf);
+    struct ra_snap *s = (struct ra_snap *)UNCACHED_SEG(ra_snap_buf);
     u8 *vals = (u8 *)UNCACHED_SEG(&ra_snap_buf[RA_SNAP_HDR]);
     SifDmaTransfer_t dmat;
     int i, off = 0;
+    u32 t0;
 
-    if (ra_snap_iop == 0 || ra_watch_count == 0)
+    if (ra_snap_iop == 0 || ra_watch_count == 0 || ra_snap_buf == NULL)
         return;
 
     if (ra_snap_dma_id != 0 && isceSifDmaStat(ra_snap_dma_id) >= 0) {
@@ -189,6 +215,8 @@ static void ra_snap_send(void)
 
     for (i = 0; i < (int)sizeof(s->game_id); i++)
         s->game_id[i] = config->GameID[i];
+
+    t0 = ra_ticks();
 
     /* Values are read in list order and packed back to back, little
        endian. Reads go through UNCACHED_SEG, which returns RAM: a value
@@ -286,6 +314,8 @@ static void ra_snap_send(void)
         vals[off++] = (u8)(v >> 24);
     }
 
+    s->read_cycles = ra_ticks() - t0;
+    s->frame_cycles = ra_frame_ticks;
     s->seq_end = ra_snap_seq;
 
     /* Trailer after the values: the DMA copies front to back, so this is
@@ -293,7 +323,7 @@ static void ra_snap_send(void)
        header's seq to detect a snapshot overwritten mid-copy. */
     *(volatile u32 *)UNCACHED_SEG(&ra_snap_buf[RA_SNAP_TRAILER_OFF(ra_snap_bytes)]) = ra_snap_seq;
 
-    dmat.src = (void *)&ra_snap_buf;
+    dmat.src = (void *)ra_snap_buf;
     dmat.dest = (void *)ra_snap_iop;
     dmat.size = RA_SNAP_DMA_SIZE(ra_snap_bytes);
     dmat.attr = 0;
@@ -310,6 +340,10 @@ static void ra_snap_send(void)
 
 void RA_OnVblank(void)
 {
+    u32 now = ra_ticks();
+
+    ra_frame_ticks = now - ra_last_vblank_ticks;
+    ra_last_vblank_ticks = now;
     ra_frames++;
 
     /* The unlock notice has its own schedule and does not wait for the
@@ -321,6 +355,6 @@ void RA_OnVblank(void)
 
     /* The probe ladder stops here: levels 1-3 have no raudp to send to
        anyway, level 4 has one and must stay quiet. */
-    if (RA_PROBE == 0 || RA_PROBE >= 5)
+    if ((RA_PROBE == 0 || RA_PROBE >= 5) && (ra_frames % ra_snap_every) == 0)
         ra_snap_send();
 }

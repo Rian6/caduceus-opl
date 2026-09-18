@@ -96,7 +96,7 @@
    silent, ask() gives up within its own three seconds, so "client not
    running" stays a fast failure. */
 #define RA_WAIT_ROUNDS 8
-#define RA_MAX_BYTES   (16 * 1024)
+#define RA_MAX_BYTES   (20 * 1024) /* 4096 entries, 128 chains and the headers */
 
 /* Per-call non-blocking receive. The socket is also set non-blocking via
    fcntl (see open_pc_socket), but on the menu's netman lwIP stack that

@@ -20,4 +20,15 @@ struct ra_node *GetNodeList(void);
 int GetNodeCount(void);
 void ClearWatchList(void);
 
+/* Copies the list, its chains and room for the snapshot into a block
+   at `at` (rounded up to 64 bytes) and returns the first byte after
+   it, or `at` unchanged when there is no list. Called with the end of
+   module storage, so the block extends it: the kernel wipes memory
+   from that end on, and the game never sees the block as free. */
+void *PlaceWatchBlock(void *at);
+/* Where the block put things, NULL without a list. */
+u32 *GetWatchBlockList(void);
+struct ra_node *GetWatchBlockNodes(void);
+void *GetWatchBlockSnap(void);
+
 #endif
