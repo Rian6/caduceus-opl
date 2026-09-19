@@ -66,6 +66,10 @@ static void usage(void)
            "  --game SERIAL=HASH remember an image hash for a game serial\n"
            "  --survey HASH      load the set for this image hash, print what its watch\n"
            "                     list would need with no ceiling, and exit\n"
+           "  --survey-console N  the same count for every game of console N (PS2 is 21)\n"
+           "                     with at least --min-ach achievements: one line each,\n"
+           "                     how many packets a snapshot would take\n"
+           "  --min-ach N        floor for --survey-console (default 60)\n"
            "  --no-sound         no notification sounds\n"
            "  --console          open a console window for this run (the log is always\n"
            "                     also in xerabora.log next to the saved login)\n"
@@ -515,6 +519,74 @@ static int cmd_recent(void)
     return 0;
 }
 
+/* Walk a console's games and print what each set would cost on the
+   wire. Spectator mode keeps the walk off the account: rcheevos then
+   skips the start-session request, so none of these games counts as
+   played. One line per game, tab separated, sorted by nothing: the
+   caller sorts. */
+static int survey_console(rc_client_t *client, unsigned console_id, unsigned min_ach)
+{
+    struct raweb_game *rows;
+    char (*md5)[33];
+    char (*names)[96];
+    int n, i, done = 0;
+
+    rows = calloc(4096, sizeof(*rows));
+    md5 = calloc(4, sizeof(*md5));
+    names = calloc(4, sizeof(*names));
+    if (rows == NULL || md5 == NULL || names == NULL) {
+        free(rows);
+        free(md5);
+        free(names);
+        return 1;
+    }
+
+    rc_client_set_spectator_mode_enabled(client, 1);
+
+    n = raweb_console_games(console_id, rows, 4096);
+    printf("# %d games with a set on console %u; surveying those with %u achievements or more\n",
+           n, console_id, min_ach);
+    printf("# id\tparts\taddresses\tbytes\tchains\tachievements\ttitle\n");
+    fflush(stdout);
+
+    for (i = 0; i < n; i++) {
+        struct watch_survey s;
+        int parts;
+
+        if (rows[i].achievements < min_ach)
+            continue;
+        /* A subset rides in with its parent set; surveying it alone
+           would count the same addresses twice. */
+        if (strstr(rows[i].title, " [Subset - ") != NULL)
+            continue;
+        if (raweb_game_hashes(rows[i].id, md5, names, 1) < 1) {
+            printf("%u\t-\t-\t-\t-\t%u\t%s\t(no hash on RA)\n",
+                   rows[i].id, rows[i].achievements, rows[i].title);
+            fflush(stdout);
+            continue;
+        }
+        if (!ra_load_game(client, md5[0])) {
+            printf("%u\t-\t-\t-\t-\t%u\t%s\t(set would not load)\n",
+                   rows[i].id, rows[i].achievements, rows[i].title);
+            fflush(stdout);
+            continue;
+        }
+        watchlist_survey(client, &s);
+        parts = (s.snapshot + RA_SNAP_CHUNK_BYTES - 1) / RA_SNAP_CHUNK_BYTES;
+        printf("%u\t%d\t%d\t%d\t%d\t%d\t%s\n",
+               rows[i].id, parts, s.entries, s.snapshot, s.chains, s.achievements, rows[i].title);
+        fflush(stdout);
+        done++;
+        platform_sleep_ms(250);
+    }
+
+    printf("# %d sets surveyed\n", done);
+    free(rows);
+    free(md5);
+    free(names);
+    return 0;
+}
+
 static int cmd_hashes(unsigned game_id)
 {
     char (*md5)[33];
@@ -581,6 +653,7 @@ static void startup_summary(int ui_ok, int ui_port, int signed_in, const char *u
 int main(int argc, char **argv)
 {
     const char *arg_user = NULL, *arg_password = NULL, *arg_survey = NULL;
+    unsigned arg_survey_console = 0, arg_min_ach = 60;
     int port = XERABORA_DEFAULT_PORT, sounds = 1;
     int ui_port = XERABORA_UI_PORT, ui_wanted = 1;
     sock_t ui = SOCK_INVALID;
@@ -623,6 +696,10 @@ int main(int argc, char **argv)
             }
         } else if (strcmp(argv[i], "--survey") == 0 && i + 1 < argc) {
             arg_survey = argv[++i];
+        } else if (strcmp(argv[i], "--survey-console") == 0 && i + 1 < argc) {
+            arg_survey_console = (unsigned)strtoul(argv[++i], NULL, 10);
+        } else if (strcmp(argv[i], "--min-ach") == 0 && i + 1 < argc) {
+            arg_min_ach = (unsigned)strtoul(argv[++i], NULL, 10);
         } else if (strcmp(argv[i], "--test-unlock") == 0) {
             g_test_unlock = 1;
         } else if (strcmp(argv[i], "--badge") == 0 && i + 1 < argc) {
@@ -688,6 +765,24 @@ int main(int argc, char **argv)
             usage();
             return strcmp(argv[i], "--help") == 0 ? 0 : 2;
         }
+    }
+
+    if (arg_survey_console != 0) {
+        if (platform_net_init() != 0 || http_init() != 0)
+            return 1;
+        if (!web_ready())
+            return 1;
+        client = ra_create();
+        if (client == NULL)
+            return 1;
+        if (!login(client, arg_user, arg_password)) {
+            log_error("not signed in; the survey needs the game server");
+            ra_destroy(client);
+            return 1;
+        }
+        i = survey_console(client, arg_survey_console, arg_min_ach);
+        ra_destroy(client);
+        return i;
     }
 
     if (arg_survey != NULL) {

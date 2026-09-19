@@ -513,6 +513,29 @@ static int game_list(unsigned console_id)
     return 1;
 }
 
+int raweb_console_games(unsigned console_id, struct raweb_game *rows, int max)
+{
+    int e, n = 0;
+
+    if (console_id == 0 || !game_list(console_id))
+        return 0;
+    if (g_list.tok[0].type != JSMN_ARRAY)
+        return 0;
+
+    for (e = 1; e < g_list.count && n < max; e++) {
+        if (g_list.tok[e].parent != 0 || g_list.tok[e].type != JSMN_OBJECT)
+            continue;
+        memset(&rows[n], 0, sizeof(rows[n]));
+        rows[n].id = obj_uint(&g_list, e, "ID");
+        obj_str(&g_list, e, "Title", rows[n].title, sizeof(rows[n].title));
+        rows[n].achievements = obj_uint(&g_list, e, "NumAchievements");
+        rows[n].console_id = console_id;
+        if (rows[n].id != 0)
+            n++;
+    }
+    return n;
+}
+
 int raweb_game_subsets(unsigned console_id, const char *base_title,
                        unsigned *base_id, struct raweb_subset *rows, int max)
 {

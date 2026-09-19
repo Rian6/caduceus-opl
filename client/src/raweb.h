@@ -104,6 +104,12 @@ struct raweb_subset
     unsigned points;
 };
 
+/* Every game with a published set on a console, from the same cached
+   list the subset lookup uses: id, title, achievement count. For
+   --survey-console, which walks a whole console looking for sets that
+   would need several packets a snapshot. */
+int raweb_console_games(unsigned console_id, struct raweb_game *rows, int max);
+
 /* The base title of a game: the part before " [Subset - ". */
 void raweb_base_title(const char *title, char *out, size_t size);
 
