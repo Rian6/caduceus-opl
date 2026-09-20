@@ -531,7 +531,7 @@ static int survey_console(rc_client_t *client, unsigned console_id, unsigned min
     char (*names)[96];
     int n, i, done = 0;
 
-    rows = calloc(4096, sizeof(*rows));
+    rows = calloc(8192, sizeof(*rows));
     md5 = calloc(4, sizeof(*md5));
     names = calloc(4, sizeof(*names));
     if (rows == NULL || md5 == NULL || names == NULL) {
@@ -543,9 +543,11 @@ static int survey_console(rc_client_t *client, unsigned console_id, unsigned min
 
     rc_client_set_spectator_mode_enabled(client, 1);
 
-    n = raweb_console_games(console_id, rows, 4096);
+    n = raweb_console_games(console_id, rows, 8192);
     printf("# %d games with a set on console %u; surveying those with %u achievements or more\n",
            n, console_id, min_ach);
+    if (n == 8192)
+        printf("# the list is capped at 8192 rows; this console may have more\n");
     printf("# id\tparts\taddresses\tbytes\tchains\tachievements\ttitle\n");
     fflush(stdout);
 
@@ -676,6 +678,13 @@ int main(int argc, char **argv)
     /* A discovery arrived while a set was loading: the reset it calls
        for runs once the worker is collected. */
     int reset_pending = 0;
+    /* The hash the running game was last decided on, loaded or refused.
+       The game-change block below used to fire whenever the loaded hash
+       differed from the known one, which after a refused set is every
+       packet: sixty warnings a second and the page, Discord and OBS
+       rewritten each time. Now it fires on a new serial, a new known
+       hash, or a set swapped under a tracked game. */
+    char decided_hash[33] = "";
     unsigned char pkt[4096];
 
     for (i = 1; i < argc; i++) {
@@ -1027,7 +1036,25 @@ int main(int argc, char **argv)
                         log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
                     }
                 } else if (want != NULL) {
+                    /* An image check loaded another game's set while
+                       this one runs. Ask for the running game's set back
+                       here, not from the packet path, which no longer
+                       re-fires on a mismatch. */
+                    const char *reason = "";
+                    int r;
+
                     game_up = 0;
+                    r = console_request_set(client, want, &reason);
+                    if (r == 1) {
+                        game_up = 1;
+                        webui_set_status("active");
+                    } else if (r == 0) {
+                        log_info("the loaded set is another game's; loading %s again", want);
+                        webui_set_status("identifying");
+                    } else {
+                        webui_set_status("telemetry-only");
+                        log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
+                    }
                 }
                 if (reset_pending && game_up) {
                     rc_client_reset(client);
@@ -1129,12 +1156,16 @@ int main(int argc, char **argv)
         if (!snapshot_serial(head, serial, sizeof(serial)))
             continue;
 
-        /* (Re)load when the game changes, and also when an image check
-           from the menu loaded another game in between. */
+        /* (Re)load when the game changes, when the menu gave this serial
+           a new hash, and when an image check swapped the set under a
+           tracked game. Not when a set was merely refused: that is
+           decided once, until the hash changes. */
         hash = console_hash_for(serial);
         if (strcmp(serial, cur_serial) != 0 ||
-            (hash != NULL && strcmp(hash, ra_loaded_hash()) != 0)) {
+            (hash != NULL && strcmp(hash, decided_hash) != 0) ||
+            (game_up && hash != NULL && strcmp(hash, ra_loaded_hash()) != 0)) {
             snprintf(cur_serial, sizeof(cur_serial), "%s", serial);
+            snprintf(decided_hash, sizeof(decided_hash), "%s", hash != NULL ? hash : "");
             log_info("console started %s", serial);
             webui_set_game(serial, console_hash_for(serial), NULL);
             discord_set(serial, "on a real PlayStation 2", NULL);
