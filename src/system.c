@@ -483,11 +483,19 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     else
         modules |= CORE_IRX_HDD;
 
-    /* RA: the network modules are needed in-game whatever the boot
-       device: RetroAchievements telemetry goes over the network even
-       when the game runs from USB. Cost: about 57 KB in the module
-       storage area (0x00097000). */
-    modules |= CORE_IRX_ETH;
+    /* RA: telemetry goes over the network whatever the boot device, so
+       the network modules follow the game even off USB. Only when there
+       is something to send: they cost about 57 KB of the module storage
+       area (0x00097000) and put SMAP on the NIC for the whole run, and
+       an untracked game needs neither. GetWatchCount() is decided by
+       now -- every launch leg calls sbLoadWatchList first, and that
+       drops the list when the network is unusable, so a game launched
+       without telemetry loads exactly what a build without RA would.
+       (Gate taken from NathanNeurotic/Open-PS2-Loader, 20.09.2026,
+       where it is what makes an untracked launch safe: with the modules
+       in, the in-game SMAP waits for a cable for ever.) */
+    if (GetWatchCount() > 0)
+        modules |= CORE_IRX_ETH;
 
     irxtable = (irxtab_t *)ModuleStorage;
     irxptr_tab = (irxptr_t *)((unsigned char *)irxtable + sizeof(irxtab_t));
