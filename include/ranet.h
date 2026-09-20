@@ -15,6 +15,12 @@
 int raAskPC(const char *hash, const char *serial, const char *savepath,
             char *info, int infosz, char *info2, int info2sz);
 
+/* Brings the menu network up for a launch that carries a watch list: the
+   in-game driver expects the adapter to be powered already. With no
+   usable network the list is dropped and the game runs untracked. A
+   launch without a list is left alone. See src/ranet.c. */
+void raLaunchNetworkUp(void);
+
 /* Broadcasts a discovery request and reports the outcome as two lines
    of text for the notice popup. Returns 1 when a PC client answered. */
 int raNetTestLink(char *line1, int sz1, char *line2, int sz2);

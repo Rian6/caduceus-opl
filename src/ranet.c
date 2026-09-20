@@ -71,6 +71,7 @@
                                     LOG output is invisible in the menu on hardware */
 #include "include/ethsupport.h"  /* ethGetNetConfig: own IP for the request */
 #include "include/rawatch.h"     /* SetWatchList: list straight into memory */
+#include "include/gui.h"         /* guiWarning: the untracked-launch notice */
 
 #include <ps2ips.h>
 #include <errno.h>
@@ -238,6 +239,52 @@ static int open_pc_socket(char *myaddr, int sz, u8 ip[4])
         snprintf(myaddr, sz, " %d.%d.%d.%d %d", ip[0], ip[1], ip[2], ip[3], RA_MY_PORT);
 
     return sock;
+}
+
+/* A telemetry launch needs the adapter powered and addressed before the
+   game takes over. The in-game DEV9 driver inside cdvdman does not power
+   it up; it expects the menu to have done that. From a share the menu
+   network is always up, but a launch straight from a stored watch list --
+   no image check, no link test this boot -- leaves the adapter off, and
+   not one packet ever reaches the PC. Found in another fork of this code
+   (NathanNeurotic/Open-PS2-Loader #704, 19.09.2026); the hole was here
+   too. Bringing the network up is what an image check did by accident.
+
+   Without a usable network the list is dropped and the game runs
+   untracked: there is nobody to stream to, and ee_core then reserves no
+   work area behind the modules. */
+void raLaunchNetworkUp(void)
+{
+    u8 ip[4], mask[4], gw[4];
+    int sock, ok;
+
+    if (GetWatchCount() <= 0)
+        return;
+
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock >= 0) {
+        /* The stack is already up: a share, or a check earlier this boot.
+           The cable may still have come out since. */
+        disconnect(sock);
+        ok = ethGetNetIFLinkStatus();
+    } else {
+        ok = ethLoadInitModules() == 0;
+    }
+
+    /* A socket and a link still do not mean an address: a menu-side
+       attempt that failed leaves the stack resident with none, and the
+       in-game side is handed whatever the menu settled on. */
+    if (ok)
+        ok = ethGetNetConfig(ip, mask, gw) >= 0 &&
+             (ip[0] | ip[1] | ip[2] | ip[3]) != 0 &&
+             (!ps2_ip_use_dhcp || ethGetDHCPStatus() > 0);
+
+    if (!ok) {
+        LOG("RA: no usable network, launching without telemetry\n");
+        raLaunchNote("wl-no-network", 0, 0);
+        ClearWatchList();
+        guiWarning("No network: launching without RetroAchievements", 6);
+    }
 }
 
 static void broadcast_target(struct sockaddr_in *to)

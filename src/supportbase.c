@@ -944,6 +944,13 @@ int sbLoadWatchList(const char *path, const char *file)
 
     raLaunchNote("wl-total", n, GetWatchBytes());
 
+    /* A list means telemetry, and telemetry needs the adapter up before
+       the game takes over; the call may drop the list. */
+    if (n > 0) {
+        raLaunchNetworkUp();
+        n = GetWatchCount();
+    }
+
     return n;
 }
 
