@@ -575,8 +575,14 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     }
 
     // RA: the telemetry gateway, loaded in every boot mode
-    irxptr_tab[modcount].info = size_raudp_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_RAUDP);
-    irxptr_tab[modcount++].ptr = (void *)&raudp_irx;
+    /* RA: the sender rides with the network modules it imports from
+       (SMAPSendPacket, lwip_*); ee_core loads it only with a list, so
+       without one the 9.5 KB were sitting in module storage for
+       nothing. */
+    if (modules & CORE_IRX_ETH) {
+        irxptr_tab[modcount].info = size_raudp_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_RAUDP);
+        irxptr_tab[modcount++].ptr = (void *)&raudp_irx;
+    }
 
     if (modules & CORE_IRX_VMC) {
         irxptr_tab[modcount].info = size_mcemu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MCEMU);
