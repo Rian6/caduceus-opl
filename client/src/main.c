@@ -678,13 +678,14 @@ int main(int argc, char **argv)
     /* A discovery arrived while a set was loading: the reset it calls
        for runs once the worker is collected. */
     int reset_pending = 0;
-    /* The hash the running game was last decided on, loaded or refused.
-       The game-change block below used to fire whenever the loaded hash
-       differed from the known one, which after a refused set is every
-       packet: sixty warnings a second and the page, Discord and OBS
-       rewritten each time. Now it fires on a new serial, a new known
-       hash, or a set swapped under a tracked game. */
-    char decided_hash[33] = "";
+    /* A hash the server or the ceilings turned down. Asked about once:
+       without this the packet path re-asked sixty times a second, since
+       a refused set leaves no loaded hash to compare against. Cleared
+       when the console names another game or the menu hands this one a
+       new hash. */
+    char refused_hash[33] = "";
+    /* The hash a worker is loading, so the wait is logged once. */
+    char loading_hash[33] = "";
     unsigned char pkt[4096];
 
     for (i = 1; i < argc; i++) {
@@ -1036,25 +1037,13 @@ int main(int argc, char **argv)
                         log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
                     }
                 } else if (want != NULL) {
-                    /* An image check loaded another game's set while
-                       this one runs. Ask for the running game's set back
-                       here, not from the packet path, which no longer
-                       re-fires on a mismatch. */
-                    const char *reason = "";
-                    int r;
-
+                    /* This load was an image check for another game, not
+                       the one the console last streamed. The running
+                       game gets its set back from the telemetry path,
+                       which only runs while snapshots actually arrive --
+                       asking for it here fought every check from the
+                       menu and neither game ever got an answer. */
                     game_up = 0;
-                    r = console_request_set(client, want, &reason);
-                    if (r == 1) {
-                        game_up = 1;
-                        webui_set_status("active");
-                    } else if (r == 0) {
-                        log_info("the loaded set is another game's; loading %s again", want);
-                        webui_set_status("identifying");
-                    } else {
-                        webui_set_status("telemetry-only");
-                        log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
-                    }
                 }
                 if (reset_pending && game_up) {
                     rc_client_reset(client);
@@ -1156,47 +1145,57 @@ int main(int argc, char **argv)
         if (!snapshot_serial(head, serial, sizeof(serial)))
             continue;
 
-        /* (Re)load when the game changes, when the menu gave this serial
-           a new hash, and when an image check swapped the set under a
-           tracked game. Not when a set was merely refused: that is
-           decided once, until the hash changes. */
+        /* The console named a game. Everything that is about the game
+           itself -- the page, Discord, the stream labels, the counters --
+           belongs to a change of serial and happens once. */
         hash = console_hash_for(serial);
-        if (strcmp(serial, cur_serial) != 0 ||
-            (hash != NULL && strcmp(hash, decided_hash) != 0) ||
-            (game_up && hash != NULL && strcmp(hash, ra_loaded_hash()) != 0)) {
+        if (strcmp(serial, cur_serial) != 0) {
             snprintf(cur_serial, sizeof(cur_serial), "%s", serial);
-            snprintf(decided_hash, sizeof(decided_hash), "%s", hash != NULL ? hash : "");
+            refused_hash[0] = '\0';
+            loading_hash[0] = '\0';
             log_info("console started %s", serial);
-            webui_set_game(serial, console_hash_for(serial), NULL);
+            webui_set_game(serial, hash, NULL);
             discord_set(serial, "on a real PlayStation 2", NULL);
             webui_write_obs(client);
             snapshot_reset();
             said_first = 0;
             said_stale = 0;
+            game_up = 0;
 
             if (hash == NULL) {
                 log_warn("no image hash known for %s: choose 'RA: check game support' "
                          "in the game's menu, or pass --game %s=HASH", serial, serial);
-                game_up = 0;
                 webui_set_status("no-hash");
                 log_warn("receiving telemetry only, no achievements are tracked");
-            } else {
-                const char *reason = "";
-                int r = console_request_set(client, hash, &reason);
+            }
+        }
 
-                game_up = r == 1;
-                if (r == 1) {
-                    webui_set_status("active");
-                } else if (r == 0) {
-                    /* The worker has it; the outcome lands at the top
-                       of the loop, and telemetry waits until then. */
+        /* Ask for the set whenever the client does not hold this game's:
+           a new serial, a new hash from the menu, or a check that loaded
+           another game over it. A hash already turned down is asked
+           about once -- the console's own re-check gives it a new one. */
+        if (hash != NULL && strcmp(hash, refused_hash) != 0 &&
+            (!game_up || strcmp(hash, ra_loaded_hash()) != 0)) {
+            const char *reason = "";
+            int r = console_request_set(client, hash, &reason);
+
+            if (r == 1) {
+                game_up = 1;
+                webui_set_status("active");
+            } else if (r == 0) {
+                /* A worker has it, or is about to. The outcome lands at
+                   the top of the loop; telemetry waits until then. */
+                if (strcmp(hash, loading_hash) != 0) {
+                    snprintf(loading_hash, sizeof(loading_hash), "%s", hash);
                     log_info("loading the set for %s", hash);
-                    webui_set_status("identifying");
-                    continue;
-                } else {
-                    webui_set_status("telemetry-only");
-                    log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
                 }
+                webui_set_status("identifying");
+                continue;
+            } else {
+                game_up = 0;
+                snprintf(refused_hash, sizeof(refused_hash), "%s", hash);
+                webui_set_status("telemetry-only");
+                log_warn("receiving telemetry only, no achievements are tracked: %s", reason);
             }
         }
 
