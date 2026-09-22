@@ -31,7 +31,8 @@ int watchlist_snapshot_bytes(void);
 /* What the loaded set would need with no ceiling at all, and what the
    still-locked achievements and the leaderboards alone would need. The
    numbers decide whether the ceilings move or the wire has to change. */
-struct watch_survey {
+struct watch_survey
+{
     int achievements, locked, leaderboards;
     /* Every memref in the pool: direct reads, their bytes, pointer
        chains, chains the console could follow, snapshot bytes. */

@@ -212,10 +212,10 @@ static int find_running_ui(int skip)
             continue;
         }
         send(s, req, sizeof(req) - 1, 0);
-        /* Headers and body arrive as separate segments; one read used
-           to see only the headers and miss the running copy, which is
-           how a tester ended up with four of them. Read until the
-           server closes, two seconds at most. */
+        /* Headers and body arrive as separate segments; one read may
+           see only the headers and miss the running copy, and a second
+           copy then starts. Read until the server closes, two seconds
+           at most. */
         {
 #ifdef _WIN32
             DWORD tmo = 2000;

@@ -24,12 +24,11 @@
 #define RA_WATCH_MAGIC   0x4C574152 /* "RAWL" in little-endian */
 #define RA_WATCH_VERSION 1
 
-/* Entry ceiling. NFS Underground 2 needs 482, X-Men 39, Grand Theft
-   Auto: San Andreas with its subsets 2224 (counted 18.09.2026,
-   lab/bigsets). The list no longer lives inside ee_core: the loader
-   places it behind the IOP modules in module storage, sized to the
-   set, so this number costs nothing until a set uses it. 16 KB at the
-   ceiling. */
+/* Entry ceiling. Most sets need a few hundred entries; a set with
+   subsets can need over two thousand. The list does not live inside
+   ee_core: the loader places it behind the IOP modules in module
+   storage, sized to the set, so this number costs nothing until a set
+   uses it. 16 KB at the ceiling. */
 #define RA_WATCH_MAX 4096
 
 /* A snapshot is split across several UDP packets. One packet carries
@@ -55,7 +54,7 @@
    carries at most RA_SNAP_PARTS_PER_FRAME parts a frame: a set that
    needs more is sent every second or third frame (ee_core/src/ra.c),
    and a set that fits three parts is sent every frame, as it always
-   was. Nine parts is San Andreas (six) with room to spare. */
+   was. The largest set counted so far needs six parts. */
 #define RA_SNAP_PARTS           9
 #define RA_SNAP_PARTS_PER_FRAME 3
 
@@ -117,8 +116,9 @@ struct ra_watch_file
 #define RA_NODE_MAGIC 0x4C4E4152 /* "RANL" in little-endian */
 
 /* Node ceiling. Nodes travel with the list into module storage, 16
-   bytes each there (the node, then two scratch words per frame). San
-   Andreas has 57. The snapshot ceiling binds next, at 8 bytes per node. */
+   bytes each there (the node, then two scratch words per frame). The
+   largest set counted so far has 57. The snapshot ceiling binds next,
+   at 8 bytes per node. */
 #define RA_NODE_MAX 128
 
 /* Bytes one node adds to a snapshot: the resolved address and the value. */

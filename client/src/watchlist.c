@@ -307,7 +307,8 @@ static int chain_compilable(const rc_memref_t *m)
    set. A chain's link appears in the conditions itself, but marking
    the parents too keeps the count honest if rcheevos ever changes
    how it builds them. */
-struct needed {
+struct needed
+{
     const rc_memref_t **items;
     int count, cap;
 };
