@@ -85,12 +85,12 @@
 #include <string.h>
 #include <time.h> /* clock(): round trip of the link test */
 
-#define RA_PORT        18194
-#define RA_MY_PORT     18196 /* own port: the PC replies here directly, past NAT */
-#define RA_CHUNK       896   /* agreed with the PC; rule 3 in the header */
-#define RA_RECV_MAX    992   /* cap for one recvfrom; rule 3 */
-#define RA_TRY         12    /* attempts per request */
-#define RA_POLL_MS     25    /* pause between polls for a reply */
+#define RA_PORT          18194
+#define RA_MY_PORT       18196 /* own port: the PC replies here directly, past NAT */
+#define RA_CHUNK         896   /* agreed with the PC; rule 3 in the header */
+#define RA_RECV_MAX      992   /* cap for one recvfrom; rule 3 */
+#define RA_TRY           12    /* attempts per request */
+#define RA_POLL_MS       25    /* pause between polls for a reply */
 /* How many times to ask again while the PC answers WAIT, and the pause
    between rounds. Identifying the image is a live request to the
    RetroAchievements server, seconds for a set with subsets. The PC
@@ -100,7 +100,7 @@
    not running" stays a fast failure. */
 #define RA_WAIT_ROUNDS   20
 #define RA_WAIT_PAUSE_MS 500
-#define RA_MAX_BYTES   (20 * 1024) /* 4096 entries, 128 chains and the headers */
+#define RA_MAX_BYTES     (20 * 1024) /* 4096 entries, 128 chains and the headers */
 
 /* Per-call non-blocking receive. The socket is also set non-blocking via
    fcntl (see open_pc_socket), but on the menu's netman lwIP stack that
