@@ -200,7 +200,7 @@
 </div>
 
 <script>
-const DEMO_VERSION = '0.1.0-alpha.9';
+const DEMO_VERSION = '0.1.0-alpha.11';
 /* The recorded session behind docs/demo.html: one NFS Underground 2
    run, replayed by faking the client's own endpoints. Nothing here
    talks to a PC or a console. tools/make-demo.py joins this with
@@ -428,6 +428,8 @@ const LANG = {
     "OFF": "DESACTIVADO",
     "still loading; the client is busy with RetroAchievements": "todavía cargando; el cliente está ocupado con RetroAchievements",
     "try again": "intentar de nuevo",
+    "from an image check, not from a running game": "de una comprobación de imagen, no de un juego en marcha",
+    "loading the achievement set for this image &mdash; a few seconds": "cargando el conjunto de logros de esta imagen &mdash; unos segundos",
   },
   "pt-BR": {
     "LIVE": "AO VIVO",
@@ -572,6 +574,8 @@ const LANG = {
     "OFF": "DESLIGADO",
     "still loading; the client is busy with RetroAchievements": "ainda carregando; o cliente está ocupado com o RetroAchievements",
     "try again": "tente novamente",
+    "from an image check, not from a running game": "de uma verificação de imagem, não de um jogo em execução",
+    "loading the achievement set for this image &mdash; a few seconds": "carregando o conjunto de conquistas desta imagem &mdash; alguns segundos",
   },
 };
 /* lang:end */
@@ -689,6 +693,7 @@ const STATUS = {
   'active':         ['achievement set active, unlocks are tracked', 1],
   'no-hash':        ["image not identified &mdash; run 'RA: check game support' in the game's OPL menu", 0],
   'telemetry-only': ['telemetry only &mdash; no achievement set could be loaded for this image', 0],
+  'identifying':    ['loading the achievement set for this image &mdash; a few seconds', 0],
   'stale':          ["console watch list is out of date &mdash; run 'RA: check game support' again", 0]
 };
 
@@ -898,7 +903,9 @@ function renderLive(s) {
     '<div style="flex:1">' +
     '<h1>' + esc(s.game.title || s.game.serial) + '</h1>' +
     '<div class="bar"><i style="width:' + pct(done, list.length) + '%"></i></div>' +
-    '<div style="display:flex;margin-top:8px;gap:10px;flex-wrap:wrap"><span class="muted">' + esc(s.game.serial || s.game.console || '') + '</span>' +
+    '<div style="display:flex;margin-top:8px;gap:10px;flex-wrap:wrap"><span class="muted">' +
+    (s.game.checked_only ? t('from an image check, not from a running game')
+                         : esc(s.game.serial || s.game.console || '')) + '</span>' +
     '<span class="right">' + done + ' / ' + list.length +
     ' <span class="dimmer">&middot;</span> <span style="color:var(--amber)">' + ptsDone + '</span>' +
     '<span class="dimmer"> / ' + t('{points} pts', { points: ptsAll }) + '</span></span></div></div></div>' +
@@ -1547,7 +1554,9 @@ function apply(s) {
                   ].join('|');
       if (sig !== liveSig) { liveSig = sig; renderLive(s); }
     }
-    if (tab === 'boards' && tracking.length) {
+    /* Also when the list empties: the console went away and the
+       tracked rows must go with it. */
+    if (tab === 'boards') {
       const bsig = tracking.map(t => t.id).join(',');
       if (bsig !== boardsSig) { boardsSig = bsig; renderBoards(); }
     }
