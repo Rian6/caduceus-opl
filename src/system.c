@@ -487,13 +487,11 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
        the network modules follow the game even off USB. Only when there
        is something to send: they cost about 57 KB of the module storage
        area (0x00097000) and put SMAP on the NIC for the whole run, and
-       an untracked game needs neither. GetWatchCount() is decided by
-       now -- every launch leg calls sbLoadWatchList first, and that
-       drops the list when the network is unusable, so a game launched
-       without telemetry loads exactly what a build without RA would.
-       (Gate taken from NathanNeurotic/Open-PS2-Loader, 20.09.2026,
-       where it is what makes an untracked launch safe: with the modules
-       in, the in-game SMAP waits for a cable for ever.) */
+       an untracked game needs neither; with the modules in, the in-game
+       SMAP waits for a cable for ever. GetWatchCount() is decided by
+       now: every launch leg calls sbLoadWatchList first, and that drops
+       the list when the network is unusable, so a game launched without
+       telemetry loads exactly what a build without RA would. */
     if (GetWatchCount() > 0)
         modules |= CORE_IRX_ETH;
 
@@ -574,10 +572,9 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         irxptr_tab[modcount++].ptr = (void *)&smbinit_irx;
     }
 
-    // RA: the telemetry gateway, loaded in every boot mode
-    /* RA: the sender rides with the network modules it imports from
-       (SMAPSendPacket, lwip_*); ee_core loads it only with a list, so
-       without one the 9.5 KB were sitting in module storage for
+    /* RA: the telemetry gateway rides with the network modules it
+       imports from (SMAPSendPacket, lwip_*); ee_core loads it only with
+       a list, so without one its 9.5 KB would sit in module storage for
        nothing. */
     if (modules & CORE_IRX_ETH) {
         irxptr_tab[modcount].info = size_raudp_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_RAUDP);

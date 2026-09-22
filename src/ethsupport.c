@@ -36,7 +36,6 @@ static struct ip4_addr lastGW;
 static item_list_t ethGameList;
 static int ethWaitValidNetIFLinkState(void);
 static int ethWaitValidDHCPState(void);
-int ethGetNetIFLinkStatus(void); // RA: not static, see below
 static int ethApplyNetIFConfig(void);
 static int ethApplyIPConfig(void);
 static int ethReadNetConfig(void);
@@ -869,8 +868,8 @@ static int ethApplyNetIFConfig(void)
     return result;
 }
 
-/* RA: raLaunchNetworkUp asks whether the cable is in before it lets a
-   telemetry launch through, so this one is not static. */
+/* RA: not static, raLaunchNetworkUp asks whether the cable is in before
+   it lets a telemetry launch through. */
 int ethGetNetIFLinkStatus(void)
 {
     return (NetManIoctl(NETMAN_NETIF_IOCTL_GET_LINK_STATUS, NULL, 0, NULL, 0) == NETMAN_NETIF_ETH_LINK_STATE_UP);

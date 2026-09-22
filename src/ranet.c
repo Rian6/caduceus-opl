@@ -94,7 +94,7 @@
 /* How many times to ask again while the PC answers WAIT, and the pause
    between rounds. Identifying the image is a live request to the
    RetroAchievements server, seconds for a set with subsets. The PC
-   answers WAIT at once now, so without the pause eight rounds were over
+   answers WAIT at once, so without the pause the rounds would be over
    in half a second. We wait only while the PC keeps answering: if it
    goes silent, ask() gives up within its own three seconds, so "client
    not running" stays a fast failure. */
@@ -246,13 +246,12 @@ static int open_pc_socket(char *myaddr, int sz, u8 ip[4])
    it up; it expects the menu to have done that. From a share the menu
    network is always up, but a launch straight from a stored watch list --
    no image check, no link test this boot -- leaves the adapter off, and
-   not one packet ever reaches the PC. Found in another fork of this code
-   (NathanNeurotic/Open-PS2-Loader #704, 19.09.2026); the hole was here
-   too. Bringing the network up is what an image check did by accident.
+   not one packet ever reaches the PC. An image check brought the network
+   up as a side effect; this does it on purpose.
 
    Without a usable network the list is dropped and the game runs
-   untracked: there is nobody to stream to, and ee_core then reserves no
-   work area behind the modules. */
+   untracked: there is nobody to stream to, and the loader then reserves
+   no block behind the modules. */
 void raLaunchNetworkUp(void)
 {
     u8 ip[4], mask[4], gw[4];

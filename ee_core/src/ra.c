@@ -45,12 +45,10 @@ static unsigned int ra_frames = 0;
 
 /* The watch list, used where the loader put it. Nothing here may live
    in ee_core's own memory: it sits in 77 KB of low memory that ends at
-   0x96E00, and a game loads its own code close behind. Two kilobytes
-   of tables of our own pushed X-Men Origins over that edge -- it
-   stopped starting at all, while NFS Underground 2 in the same build
-   was fine (12.09.2026, lab/pointers). Module storage, right behind
-   the IOP modules, is what the kernel already keeps from the game, and
-   the block there is sized to the set.
+   0x96E00, and a game loads its own code close behind, so two kilobytes
+   of tables of our own are enough to stop a game from starting. Module
+   storage, right behind the IOP modules, is what the kernel already
+   keeps from the game, and the block there is sized to the set.
 
    [0 .. count)                entries, one word each
    [count .. +2N)              nodes: packed word, then offset

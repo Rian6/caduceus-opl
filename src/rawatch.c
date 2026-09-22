@@ -117,11 +117,11 @@ static void TakeNodes(const struct ra_node *nodes, unsigned int count)
 
 /* The list's home while the game runs. ee_core cannot hold it: its 77 KB
    end at 0x96E00 and a game loads its own code right behind, so two
-   kilobytes of tables once stopped X-Men Origins from starting
-   (lab/pointers, 12.09.2026). Module storage is the one region below
-   the game that survives the launch, because the IOP modules in it are
-   reloaded at every IOP reset. The block follows them and is sized to
-   the set: a few hundred bytes for most games, 17 KB for San Andreas.
+   kilobytes of tables there are enough to stop a game from starting.
+   Module storage is the one region below the game that survives the
+   launch, because the IOP modules in it are reloaded at every IOP
+   reset. The block follows them and is sized to the set: a few hundred
+   bytes for most games, 17 KB for the largest counted so far.
 
    Layout, in words: entries[count], then nodes as (w, offset) pairs,
    then two scratch words per node for ee_core, then the snapshot
