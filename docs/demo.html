@@ -269,6 +269,14 @@ footer .clock { margin-left: auto; font: 13px var(--font-mono); color: var(--ink
 .bar { height: 10px; border-radius: 999px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 999px; background: var(--bar); transition: width 0.3s var(--ease); }
 .bar.thin { height: 7px; }
+/* Two bars, softcore blue and hardcore gold, in every mode. */
+.bars { display: flex; flex-direction: column; gap: 5px; }
+.prog { display: flex; align-items: center; gap: 10px; }
+.prog .bar { flex: 1; }
+.prog .k { width: 74px; flex: none; font: 600 9.5px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); }
+.prog .n { width: 64px; flex: none; text-align: right; font: 12px var(--font-mono); color: var(--ink-soft); }
+.bar.sc i { background: linear-gradient(90deg, #2F6FD8, #34D0FF); }
+.bar.hc i { background: linear-gradient(90deg, #B37F14, #F3C86B); }
 .mini { height: 5px; border-radius: 999px; background: var(--bg-sunken); overflow: hidden; margin-top: 7px; }
 .mini i { display: block; height: 100%; background: var(--accent); transition: width 0.25s; }
 
@@ -335,11 +343,13 @@ footer .clock { margin-left: auto; font: 13px var(--font-mono); color: var(--ink
 .card .art { position: relative; height: 118px; display: flex; align-items: center; justify-content: center; background: var(--bg-sunken); overflow: hidden; }
 .card .art .blur { position: absolute; inset: -24px; background-size: cover; background-position: center; filter: blur(20px) saturate(1.3); opacity: 0.55; }
 .card .art img { position: relative; height: 92px; width: 92px; border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); object-fit: cover; }
+.card .art .corner { position: absolute; left: 8px; top: 8px; z-index: 1; }
 .card .meta { padding: 10px 12px 12px; }
 .card .name { font-weight: 700; color: var(--white); height: 2.9em; line-height: 1.45; overflow: hidden; margin-bottom: 8px; }
-.card .foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; font: 12.5px var(--font-mono); color: var(--ink-soft); }
+.card .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin-top: 8px; font: 12.5px var(--font-mono); color: var(--ink-soft); }
 .card .foot > span:first-child { white-space: nowrap; }
-.card .foot .right { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .foot .right { margin-left: auto; text-align: right; }
+.card .art .corner .award { background: rgba(6, 11, 23, 0.85); }
 
 .award { font: 600 10px/1 var(--font-display); letter-spacing: 0.1em; padding: 4px 7px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
 .award.gold { color: var(--gold); border-color: var(--gold); background: rgba(224, 165, 38, 0.12); }
@@ -406,6 +416,7 @@ input.f:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3p
 .head .cover { width: 96px; height: 96px; border-radius: 14px; background: var(--bg-sunken); border: 1px solid var(--line); flex: none; object-fit: cover; box-shadow: var(--shadow); }
 .head .body { flex: 1; min-width: 0; }
 .head h1 { font: 700 22px/1.25 var(--font-display); margin: 0 0 8px; color: var(--white); overflow-wrap: anywhere; }
+.head .h1-award { display: inline-block; vertical-align: middle; margin-left: 6px; }
 .head .sub { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; font: 13px var(--font-mono); color: var(--ink-soft); }
 .head .sub .right { margin-left: auto; }
 @container page (max-width: 560px) {
@@ -641,6 +652,7 @@ const LANG = {
     "SETTINGS": "AJUSTES",
     "SOFTCORE": "SOFTCORE",
     "FLASH": "FLASH",
+    "HARDCORE": "HARDCORE",
     "ACHIEVEMENT UNLOCKED": "LOGRO DESBLOQUEADO",
     "{packets} packets": "{packets} paquetes",
     "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
@@ -787,6 +799,7 @@ const LANG = {
     "SETTINGS": "AJUSTES",
     "SOFTCORE": "SOFTCORE",
     "FLASH": "FLASH",
+    "HARDCORE": "HARDCORE",
     "ACHIEVEMENT UNLOCKED": "CONQUISTA DESBLOQUEADA",
     "{packets} packets": "{packets} pacotes",
     "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} pulados · {dupes} rep · {torn} corrompidos",
@@ -1360,6 +1373,17 @@ function Bar({ value, thin }) {
   return html`<div class=${'bar' + (thin ? ' thin' : '')}><i style=${{ width: pctClamp(value) + '%' }} /></div>`;
 }
 
+/* Softcore and hardcore progress, one bar each. `labels` adds the
+   name and the count beside each bar. */
+function Bars({ awarded, hardcore, total, thin, labels }) {
+  const row = (cls, label, n) => html`<div class="prog">
+    ${labels && html`<span class="k">${label}</span>`}
+    <div class=${'bar ' + cls + (thin ? ' thin' : '')}><i style=${{ width: pct(n, total) + '%' }} /></div>
+    ${labels && html`<span class="n">${n} / ${total}</span>`}
+  </div>`;
+  return html`<div class="bars">${row('sc', t('SOFTCORE'), awarded || 0)}${row('hc', t('HARDCORE'), hardcore || 0)}</div>`;
+}
+
 /* Measured progress of one achievement, read from its live signal. */
 function Mini({ id }) {
   const v = liveVal(id).value;
@@ -1768,20 +1792,24 @@ function awardBadge(g) {
   return null;
 }
 
+/* A card: the award sits in the corner of the art, the console always
+   shows in the foot, two bars for softcore and hardcore. */
 function GameCard({ g }) {
   const art = g.icon ? MEDIA + g.icon : '';
+  const award = awardBadge(g);
   return html`<div class="card" onClick=${() => openGame(g.id)}>
     <div class="art">
       ${art && html`<div class="blur" style=${{ backgroundImage: 'url(' + art + ')' }} />`}
       ${art && html`<img src=${art} loading="lazy" alt="" onError=${e => e.target.remove()} />`}
+      ${award && html`<span class="corner">${award}</span>`}
     </div>
     <div class="meta">
       <div class="name">${g.title}</div>
-      <${Bar} value=${pct(g.awarded, g.total)} thin />
+      <${Bars} awarded=${g.awarded} hardcore=${g.hardcore} total=${g.total} thin />
       <div class="foot">
-        <span>${g.awarded} / ${g.total}${g.hardcore > 0 && g.hardcore < g.awarded
-          ? html` <span class="mute">${t('({n} hc)', { n: g.hardcore })}</span>` : ''}</span>
-        <span class="right">${awardBadge(g) || html`<span class="mute">${g.console}</span>`}</span>
+        <span>${g.awarded} / ${g.total}${g.hardcore > 0
+          ? html` <span class="gold">${t('({n} hc)', { n: g.hardcore })}</span>` : ''}</span>
+        <span class="right mute">${g.console}</span>
       </div>
     </div>
   </div>`;
@@ -1877,7 +1905,10 @@ function Loading({ id }) {
 function GameTab() {
   const id = S.gameId.value;
   S.gameTick.value; /* re-render when a fetch lands */
-  useEffect(() => { loadGame(id); }, [id]);
+  useEffect(() => { loadGame(id); loadLibrary(); }, [id]);
+  /* The award and the hardcore count come from the library entry:
+     /game has neither. */
+  const lib = (Array.isArray(S.library.value) ? S.library.value : []).find(x => x.id === id);
 
   if (!id) return html`<div class="tab"><${Empty}>${t('pick a game in the library')}<//></div>`;
   const g = S.gameCache[id];
@@ -1897,15 +1928,14 @@ function GameTab() {
     <div class="head">
       ${g.icon ? html`<img class="cover" src=${MEDIA + g.icon} alt="" />` : html`<div class="cover" />`}
       <div class="body">
-        <h1>${g.title}</h1>
+        <h1>${g.title}${lib && awardBadge(lib) && html` <span class="h1-award">${awardBadge(lib)}</span>`}</h1>
         <div class="note" style=${{ marginBottom: '10px' }}>
           ${g.console} · ${t('{n} achievements', { n: all.length })}
           ${est.full > 0 && html` · <span class="acc">${est.beaten > 0 && t('beaten ~{time}', { time: medianText(est.beaten) }) + ' · '}${t('full set ~{time}', { time: medianText(est.full) })}</span> <span class="mute">${t('by median unlocks')}</span>`}
         </div>
-        <${Bar} value=${pct(g.awarded, g.total)} />
+        <${Bars} labels awarded=${g.awarded} hardcore=${lib ? lib.hardcore : 0} total=${g.total} />
         <div class="sub">
           <a href=${'https://retroachievements.org/game/' + g.id} target="_blank" rel="noopener">${t('on retroachievements.org')}</a>
-          <span class="right"><b>${g.awarded}</b> / ${g.total}</span>
         </div>
       </div>
     </div>

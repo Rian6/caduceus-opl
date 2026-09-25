@@ -14,6 +14,17 @@ function Bar({ value, thin }) {
   return html`<div class=${'bar' + (thin ? ' thin' : '')}><i style=${{ width: pctClamp(value) + '%' }} /></div>`;
 }
 
+/* Softcore and hardcore progress, one bar each. `labels` adds the
+   name and the count beside each bar. */
+function Bars({ awarded, hardcore, total, thin, labels }) {
+  const row = (cls, label, n) => html`<div class="prog">
+    ${labels && html`<span class="k">${label}</span>`}
+    <div class=${'bar ' + cls + (thin ? ' thin' : '')}><i style=${{ width: pct(n, total) + '%' }} /></div>
+    ${labels && html`<span class="n">${n} / ${total}</span>`}
+  </div>`;
+  return html`<div class="bars">${row('sc', t('SOFTCORE'), awarded || 0)}${row('hc', t('HARDCORE'), hardcore || 0)}</div>`;
+}
+
 /* Measured progress of one achievement, read from its live signal. */
 function Mini({ id }) {
   const v = liveVal(id).value;

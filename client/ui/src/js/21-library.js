@@ -11,20 +11,24 @@ function awardBadge(g) {
   return null;
 }
 
+/* A card: the award sits in the corner of the art, the console always
+   shows in the foot, two bars for softcore and hardcore. */
 function GameCard({ g }) {
   const art = g.icon ? MEDIA + g.icon : '';
+  const award = awardBadge(g);
   return html`<div class="card" onClick=${() => openGame(g.id)}>
     <div class="art">
       ${art && html`<div class="blur" style=${{ backgroundImage: 'url(' + art + ')' }} />`}
       ${art && html`<img src=${art} loading="lazy" alt="" onError=${e => e.target.remove()} />`}
+      ${award && html`<span class="corner">${award}</span>`}
     </div>
     <div class="meta">
       <div class="name">${g.title}</div>
-      <${Bar} value=${pct(g.awarded, g.total)} thin />
+      <${Bars} awarded=${g.awarded} hardcore=${g.hardcore} total=${g.total} thin />
       <div class="foot">
-        <span>${g.awarded} / ${g.total}${g.hardcore > 0 && g.hardcore < g.awarded
-          ? html` <span class="mute">${t('({n} hc)', { n: g.hardcore })}</span>` : ''}</span>
-        <span class="right">${awardBadge(g) || html`<span class="mute">${g.console}</span>`}</span>
+        <span>${g.awarded} / ${g.total}${g.hardcore > 0
+          ? html` <span class="gold">${t('({n} hc)', { n: g.hardcore })}</span>` : ''}</span>
+        <span class="right mute">${g.console}</span>
       </div>
     </div>
   </div>`;

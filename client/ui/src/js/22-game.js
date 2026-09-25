@@ -34,7 +34,10 @@ function Loading({ id }) {
 function GameTab() {
   const id = S.gameId.value;
   S.gameTick.value; /* re-render when a fetch lands */
-  useEffect(() => { loadGame(id); }, [id]);
+  useEffect(() => { loadGame(id); loadLibrary(); }, [id]);
+  /* The award and the hardcore count come from the library entry:
+     /game has neither. */
+  const lib = (Array.isArray(S.library.value) ? S.library.value : []).find(x => x.id === id);
 
   if (!id) return html`<div class="tab"><${Empty}>${t('pick a game in the library')}<//></div>`;
   const g = S.gameCache[id];
@@ -54,15 +57,14 @@ function GameTab() {
     <div class="head">
       ${g.icon ? html`<img class="cover" src=${MEDIA + g.icon} alt="" />` : html`<div class="cover" />`}
       <div class="body">
-        <h1>${g.title}</h1>
+        <h1>${g.title}${lib && awardBadge(lib) && html` <span class="h1-award">${awardBadge(lib)}</span>`}</h1>
         <div class="note" style=${{ marginBottom: '10px' }}>
           ${g.console} · ${t('{n} achievements', { n: all.length })}
           ${est.full > 0 && html` · <span class="acc">${est.beaten > 0 && t('beaten ~{time}', { time: medianText(est.beaten) }) + ' · '}${t('full set ~{time}', { time: medianText(est.full) })}</span> <span class="mute">${t('by median unlocks')}</span>`}
         </div>
-        <${Bar} value=${pct(g.awarded, g.total)} />
+        <${Bars} labels awarded=${g.awarded} hardcore=${lib ? lib.hardcore : 0} total=${g.total} />
         <div class="sub">
           <a href=${'https://retroachievements.org/game/' + g.id} target="_blank" rel="noopener">${t('on retroachievements.org')}</a>
-          <span class="right"><b>${g.awarded}</b> / ${g.total}</span>
         </div>
       </div>
     </div>

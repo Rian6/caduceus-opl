@@ -6,6 +6,7 @@
   "SETTINGS": "AJUSTES",
   "SOFTCORE": "SOFTCORE",
   "FLASH": "FLASH",
+  "HARDCORE": "HARDCORE",
   "ACHIEVEMENT UNLOCKED": "LOGRO DESBLOQUEADO",
   "{packets} packets": "{packets} paquetes",
   "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
