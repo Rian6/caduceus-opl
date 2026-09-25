@@ -307,6 +307,12 @@ footer .clock { margin-left: auto; font: 13px var(--font-mono); color: var(--ink
 .row.big .t { font-size: 18px; font-family: var(--font-display); letter-spacing: 0.01em; }
 .row.big .d { font-size: 14px; }
 .row.big .m { width: 190px; }
+.row .m .hide {
+  display: inline-block; margin-top: 8px; padding: 5px 9px; border-radius: 999px; cursor: pointer;
+  font: 600 10px/1 var(--font-display); letter-spacing: 0.1em; color: var(--ink-mute); border: 1px solid var(--line);
+  transition: color 0.15s, border-color 0.15s;
+}
+.row .m .hide:hover { color: var(--danger); border-color: var(--danger); }
 @container page (max-width: 560px) {
   .row { flex-wrap: wrap; }
   .row .m, .row.big .m {
@@ -331,6 +337,8 @@ footer .clock { margin-left: auto; font: 13px var(--font-mono); color: var(--ink
 .chip .n { color: var(--ink-mute); letter-spacing: 0; font-family: var(--font-mono); }
 .chip.on .n { color: var(--accent); }
 .chip.static { cursor: default; }
+.chip.sm { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
+.eyebrow .chip { text-transform: none; }
 
 /* ---- Library cards ---- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
@@ -579,6 +587,11 @@ const LANG = {
     "SOFTCORE": "SOFTCORE",
     "FLASH": "FLASH",
     "HARDCORE": "HARDCORE",
+    "HIDE": "OCULTAR",
+    "{n} hidden": "{n} ocultos",
+    "SHOW ALL": "MOSTRAR TODOS",
+    "hidden": "oculto",
+    "hide from UP NEXT": "quitar de LO SIGUIENTE",
     "ACHIEVEMENT UNLOCKED": "LOGRO DESBLOQUEADO",
     "{packets} packets": "{packets} paquetes",
     "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
@@ -726,6 +739,11 @@ const LANG = {
     "SOFTCORE": "SOFTCORE",
     "FLASH": "FLASH",
     "HARDCORE": "HARDCORE",
+    "HIDE": "OCULTAR",
+    "{n} hidden": "{n} ocultas",
+    "SHOW ALL": "MOSTRAR TODAS",
+    "hidden": "oculta",
+    "hide from UP NEXT": "tirar de A SEGUIR",
     "ACHIEVEMENT UNLOCKED": "CONQUISTA DESBLOQUEADA",
     "{packets} packets": "{packets} pacotes",
     "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} pulados · {dupes} rep · {torn} corrompidos",
@@ -1062,8 +1080,28 @@ const S = {
   toast: signal(null),
   powerOn: signal(0),           /* bumped when the console starts streaming */
   closed: signal(false),
-  error: signal('')
+  error: signal(''),
+  hidden: signal(loadHidden())  /* game id -> achievement ids kept out of UP NEXT */
 };
+
+/* Hidden achievements live in this browser's localStorage under 'hidden'. */
+function loadHidden() {
+  try { return JSON.parse(localStorage.getItem('hidden') || '{}') || {}; } catch (e) { return {}; }
+}
+
+function setHidden(gameId, ids) {
+  const h = Object.assign({}, S.hidden.value);
+  if (ids.length) h[gameId] = ids; else delete h[gameId];
+  S.hidden.value = h;
+  try { localStorage.setItem('hidden', JSON.stringify(h)); } catch (e) { /* private window */ }
+}
+
+function hideAch(gameId, id) {
+  const cur = S.hidden.value[gameId] || [];
+  if (!cur.includes(id)) setHidden(gameId, cur.concat(id));
+}
+
+function showHidden(gameId) { setHidden(gameId, []); }
 
 /* Fast state: the numbers a delta carries every snapshot, one signal
    each. */
@@ -1604,7 +1642,7 @@ function AchievementGroups({ list, subsets, row }) {
 
 /* One row of ALL ACHIEVEMENTS; reads the achievement's live signal for
    the measured value and the progress. */
-function LiveRow({ a, missed }) {
+function LiveRow({ a, missed, hidden }) {
   const isDone = a.state === 2;
   /* state 3 is rc_client's disabled state: 'not on hardware'. */
   const na = a.state === 3;
@@ -1618,7 +1656,8 @@ function LiveRow({ a, missed }) {
         : na ? html`<span class="lead warn">${t('not on hardware')}</span>`
         : lv.m ? html`<span class="lead acc">${lv.m}</span>`
         : html`<span class="lead">${t('locked')}</span>`}
-      <${Pts} a=${a} extra=${missed ? html`<span class="warn">${t('possibly skipped')}</span>` : null} />
+      <${Pts} a=${a} extra=${hidden ? html`<span class="mute">${t('hidden')}</span>`
+                               : missed ? html`<span class="warn">${t('possibly skipped')}</span>` : null} />
     <//>`} />`;
 }
 
@@ -1651,12 +1690,18 @@ function LiveTab() {
   const position = meta ? Math.max(0, ...list.filter(a => a.state === 2).map(medOf)) : 0;
   const est = meta ? setEstimates(list, medOf) : null;
 
-  /* UP NEXT: the nearest locked achievements by median, drawn big. */
+  /* UP NEXT: the nearest locked achievements by median, drawn big.
+     Hidden ones are left out and the next median takes the slot; the
+     chip in the label brings them all back. */
+  const hidden = new Set(S.hidden.value[s.game.id] || []);
   let ahead = null;
   if (meta) {
-    const picked = upNextPick(list, medOf);
-    if (picked.next.length) {
-      ahead = html`<${Eyebrow}>${t('UP NEXT &middot; BY MEDIAN UNLOCK TIME')}<//>
+    const picked = upNextPick(list.filter(a => !hidden.has(a.id)), medOf);
+    const restore = hidden.size > 0
+      ? html`<span class="chip sm" onClick=${() => showHidden(s.game.id)}>${t('{n} hidden', { n: hidden.size })} · ${t('SHOW ALL')}</span>`
+      : null;
+    if (picked.next.length || restore) {
+      ahead = html`<${Eyebrow} count=${restore}>${t('UP NEXT &middot; BY MEDIAN UNLOCK TIME')}<//>
         ${picked.next.map(a => html`<${AchRow} key=${a.id} a=${a} state="near" big
           below=${html`<${Mini} id=${a.id} />`}
           right=${html`<${Fragment}>
@@ -1665,6 +1710,7 @@ function LiveTab() {
             ${missed.has(a.id) ? html`<span class="tag warn">${t('possibly skipped')}</span>`
               : medOf(a) <= position ? html`<span class="tag warn">${t('usually done by now')}</span>` : null}
             <${Pts} a=${a} extra=${'~' + medianText(medOf(a))} />
+            <span class="hide" onClick=${() => hideAch(s.game.id, a.id)} title=${t('hide from UP NEXT')}>✕ ${t('HIDE')}</span>
           <//>`} />`)}`;
     }
   }
@@ -1686,7 +1732,7 @@ function LiveTab() {
     <${Cell} k=${t('MISSABLES LEFT')} v=${list.filter(a => a.state !== 2 && achType(a) === 'missable').length} />
   </div>`;
 
-  const row = a => html`<${LiveRow} key=${a.id} a=${a} missed=${missed.has(a.id)} />`;
+  const row = a => html`<${LiveRow} key=${a.id} a=${a} missed=${missed.has(a.id)} hidden=${hidden.has(a.id)} />`;
 
   const showAll = ahead || trackers || (s.game.subsets || []).length > 1;
 

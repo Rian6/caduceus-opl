@@ -29,8 +29,28 @@ const S = {
   toast: signal(null),
   powerOn: signal(0),           /* bumped when the console starts streaming */
   closed: signal(false),
-  error: signal('')
+  error: signal(''),
+  hidden: signal(loadHidden())  /* game id -> achievement ids kept out of UP NEXT */
 };
+
+/* Hidden achievements live in this browser's localStorage under 'hidden'. */
+function loadHidden() {
+  try { return JSON.parse(localStorage.getItem('hidden') || '{}') || {}; } catch (e) { return {}; }
+}
+
+function setHidden(gameId, ids) {
+  const h = Object.assign({}, S.hidden.value);
+  if (ids.length) h[gameId] = ids; else delete h[gameId];
+  S.hidden.value = h;
+  try { localStorage.setItem('hidden', JSON.stringify(h)); } catch (e) { /* private window */ }
+}
+
+function hideAch(gameId, id) {
+  const cur = S.hidden.value[gameId] || [];
+  if (!cur.includes(id)) setHidden(gameId, cur.concat(id));
+}
+
+function showHidden(gameId) { setHidden(gameId, []); }
 
 /* Fast state: the numbers a delta carries every snapshot, one signal
    each. */

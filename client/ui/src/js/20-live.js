@@ -143,7 +143,7 @@ function AchievementGroups({ list, subsets, row }) {
 
 /* One row of ALL ACHIEVEMENTS; reads the achievement's live signal for
    the measured value and the progress. */
-function LiveRow({ a, missed }) {
+function LiveRow({ a, missed, hidden }) {
   const isDone = a.state === 2;
   /* state 3 is rc_client's disabled state: 'not on hardware'. */
   const na = a.state === 3;
@@ -157,7 +157,8 @@ function LiveRow({ a, missed }) {
         : na ? html`<span class="lead warn">${t('not on hardware')}</span>`
         : lv.m ? html`<span class="lead acc">${lv.m}</span>`
         : html`<span class="lead">${t('locked')}</span>`}
-      <${Pts} a=${a} extra=${missed ? html`<span class="warn">${t('possibly skipped')}</span>` : null} />
+      <${Pts} a=${a} extra=${hidden ? html`<span class="mute">${t('hidden')}</span>`
+                               : missed ? html`<span class="warn">${t('possibly skipped')}</span>` : null} />
     <//>`} />`;
 }
 
@@ -190,12 +191,18 @@ function LiveTab() {
   const position = meta ? Math.max(0, ...list.filter(a => a.state === 2).map(medOf)) : 0;
   const est = meta ? setEstimates(list, medOf) : null;
 
-  /* UP NEXT: the nearest locked achievements by median, drawn big. */
+  /* UP NEXT: the nearest locked achievements by median, drawn big.
+     Hidden ones are left out and the next median takes the slot; the
+     chip in the label brings them all back. */
+  const hidden = new Set(S.hidden.value[s.game.id] || []);
   let ahead = null;
   if (meta) {
-    const picked = upNextPick(list, medOf);
-    if (picked.next.length) {
-      ahead = html`<${Eyebrow}>${t('UP NEXT &middot; BY MEDIAN UNLOCK TIME')}<//>
+    const picked = upNextPick(list.filter(a => !hidden.has(a.id)), medOf);
+    const restore = hidden.size > 0
+      ? html`<span class="chip sm" onClick=${() => showHidden(s.game.id)}>${t('{n} hidden', { n: hidden.size })} · ${t('SHOW ALL')}</span>`
+      : null;
+    if (picked.next.length || restore) {
+      ahead = html`<${Eyebrow} count=${restore}>${t('UP NEXT &middot; BY MEDIAN UNLOCK TIME')}<//>
         ${picked.next.map(a => html`<${AchRow} key=${a.id} a=${a} state="near" big
           below=${html`<${Mini} id=${a.id} />`}
           right=${html`<${Fragment}>
@@ -204,6 +211,7 @@ function LiveTab() {
             ${missed.has(a.id) ? html`<span class="tag warn">${t('possibly skipped')}</span>`
               : medOf(a) <= position ? html`<span class="tag warn">${t('usually done by now')}</span>` : null}
             <${Pts} a=${a} extra=${'~' + medianText(medOf(a))} />
+            <span class="hide" onClick=${() => hideAch(s.game.id, a.id)} title=${t('hide from UP NEXT')}>✕ ${t('HIDE')}</span>
           <//>`} />`)}`;
     }
   }
@@ -225,7 +233,7 @@ function LiveTab() {
     <${Cell} k=${t('MISSABLES LEFT')} v=${list.filter(a => a.state !== 2 && achType(a) === 'missable').length} />
   </div>`;
 
-  const row = a => html`<${LiveRow} key=${a.id} a=${a} missed=${missed.has(a.id)} />`;
+  const row = a => html`<${LiveRow} key=${a.id} a=${a} missed=${missed.has(a.id)} hidden=${hidden.has(a.id)} />`;
 
   const showAll = ahead || trackers || (s.game.subsets || []).length > 1;
 

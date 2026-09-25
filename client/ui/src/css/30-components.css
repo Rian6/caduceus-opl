@@ -53,6 +53,12 @@
 .row.big .t { font-size: 18px; font-family: var(--font-display); letter-spacing: 0.01em; }
 .row.big .d { font-size: 14px; }
 .row.big .m { width: 190px; }
+.row .m .hide {
+  display: inline-block; margin-top: 8px; padding: 5px 9px; border-radius: 999px; cursor: pointer;
+  font: 600 10px/1 var(--font-display); letter-spacing: 0.1em; color: var(--ink-mute); border: 1px solid var(--line);
+  transition: color 0.15s, border-color 0.15s;
+}
+.row .m .hide:hover { color: var(--danger); border-color: var(--danger); }
 @container page (max-width: 560px) {
   .row { flex-wrap: wrap; }
   .row .m, .row.big .m {
@@ -77,6 +83,8 @@
 .chip .n { color: var(--ink-mute); letter-spacing: 0; font-family: var(--font-mono); }
 .chip.on .n { color: var(--accent); }
 .chip.static { cursor: default; }
+.chip.sm { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
+.eyebrow .chip { text-transform: none; }
 
 /* ---- Library cards ---- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
