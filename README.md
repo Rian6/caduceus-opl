@@ -288,9 +288,15 @@ gcc and libcurl development headers. `make windows` cross-compiles a
 static `xerabora.exe` with MinGW-w64 (`gcc-mingw-w64-x86-64` on
 Debian/Ubuntu); HTTPS goes through WinHTTP, so the Windows build has no
 external dependencies. `make macos` builds one file holding both Mac
-architectures, against the libcurl the system ships. The page lives in `client/ui/index.html`; after
-editing it, `python3 tools/embed-page.py` puts it back into the binary,
-and `--ui-file client/ui/index.html` serves it from disk meanwhile.
+architectures, against the libcurl the system ships.
+
+The page is written in `client/ui/src`: a skeleton, one stylesheet per
+concern, one script per tab, with Preact, htm and signals vendored in
+`client/ui/vendor`. `python3 tools/build-page.py` (from `client/`)
+assembles `ui/index.html`, embeds it into `src/ui_page.c` and rebuilds
+`docs/demo.html`; `--watch` does that on every save. While working on
+it, `--ui-file client/ui/index.html` serves the assembled page from disk
+without a rebuild of the client.
 
 Both the OPL fork and rcheevos are git submodules. Clone with
 `--recurse-submodules`, or run `git submodule update --init --recursive`

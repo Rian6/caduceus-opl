@@ -2,9 +2,8 @@
 """Builds docs/demo.html from ui/index.html and ui/demo.js.
 
 The demo on the project page is the client's own page with a recorded
-session in place of the client, so it has to be generated rather than
-copied: the hand-made copy sat two releases behind before anyone
-noticed. Run after changing the page.
+session in place of the client. tools/build-page.py runs this after
+assembling the page; on its own:
 
     python3 tools/make-demo.py
 """

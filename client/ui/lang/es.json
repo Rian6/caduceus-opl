@@ -8,7 +8,7 @@
   "FLASH": "FLASH",
   "ACHIEVEMENT UNLOCKED": "LOGRO DESBLOQUEADO",
   "{packets} packets": "{packets} paquetes",
-  "{gaps} skipped · {dupes} rep · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
+  "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
   "CONSOLE": "CONSOLA",
   "LINK": "ENLACE",
   "lost": "perdido",

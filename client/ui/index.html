@@ -1,215 +1,563 @@
 <!doctype html>
+<html lang="en" data-theme="plain" data-mode="idle">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
 <title>xerabora</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-  :root {
-    --bg: #04101c; --bg2: #123a63; --panel: rgba(20,62,100,.42);
-    --panel-lit: rgba(20,62,100,.68); --line: #1d4670;
-    --text: #cfe6f7; --dim: #5e93bd; --dimmer: #3d6f96;
-    --accent: #7fd4ff; --green: #66ffb2; --amber: #ffb84d;
+/* ==== 00-tokens.css ==== */
+/* ---- Tokens -------------------------------------------------------------
+   Colours, radii, fonts, easing. [data-theme] on <html> swaps the whole
+   set; [data-mode] shifts the accent and the washes. The palette is the
+   project site's. */
+:root {
+  color-scheme: dark;
+
+  --bg: #0A1020;
+  --bg-raised: #0F1729;
+  --bg-sunken: #060B17;
+  --bg-hover: #16213A;
+  --line: #1E2A45;
+  --line-strong: #2C3C62;
+  --ink: #E8ECF5;
+  --ink-soft: #AEB8D0;
+  --ink-mute: #7C88A6;
+  --white: #FFFFFF;
+
+  --blue: #3D8BFF;
+  --blue-bright: #34D0FF;
+  --gold: #E0A526;
+  --ok: #5FD38A;
+  --warn: #F2B96B;
+  --danger: #FF6B6B;
+
+  /* Accent: overridden per mode below. */
+  --accent: var(--blue);
+  --accent-ink: #06101F;
+  --accent-soft: rgba(61, 139, 255, 0.14);
+  --accent-line: rgba(61, 139, 255, 0.5);
+  --accent-glow: rgba(61, 139, 255, 0.35);
+  --bar: linear-gradient(90deg, #2F6FD8, var(--blue-bright));
+
+  /* Opacity of the two washes behind the page (10-base.css). */
+  --wash-blue: 0.55;
+  --wash-gold: 0;
+
+  --radius: 12px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+  --shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+
+  --font-display: "Chakra Petch", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --mode-t: 0.7s;
+}
+
+:root[data-mode="console"] {
+  --accent: var(--gold);
+  --accent-soft: rgba(224, 165, 38, 0.15);
+  --accent-line: rgba(224, 165, 38, 0.55);
+  --accent-glow: rgba(224, 165, 38, 0.4);
+  --bar: linear-gradient(90deg, #B37F14, #F3C86B);
+  --wash-blue: 0.25;
+  --wash-gold: 1;
+}
+
+:root[data-mode="follow"] {
+  --accent: var(--blue-bright);
+  --accent-soft: rgba(52, 208, 255, 0.13);
+  --accent-line: rgba(52, 208, 255, 0.5);
+  --accent-glow: rgba(52, 208, 255, 0.35);
+  --bar: linear-gradient(90deg, #2A8DC8, #7FE6FF);
+  --wash-blue: 0.9;
+  --wash-gold: 0;
+}
+
+/* ==== 10-base.css ==== */
+/* ---- Base ---------------------------------------------------------------
+   Reset, type, links, the page background, the section label. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* The washes: two fixed layers behind the page. Their opacity follows
+   --wash-blue and --wash-gold, with a transition. */
+body::before, body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity var(--mode-t) var(--ease);
+}
+body::before {
+  background:
+    radial-gradient(90% 60% at 12% -10%, rgba(61, 139, 255, 0.22), transparent 60%),
+    radial-gradient(60% 45% at 100% 100%, rgba(52, 208, 255, 0.10), transparent 60%);
+  opacity: var(--wash-blue);
+}
+body::after {
+  background:
+    radial-gradient(80% 55% at 18% -8%, rgba(224, 165, 38, 0.26), transparent 62%),
+    radial-gradient(50% 40% at 95% 100%, rgba(224, 165, 38, 0.10), transparent 60%);
+  opacity: var(--wash-gold);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.mono { font-family: var(--font-mono); }
+.mute { color: var(--ink-mute); }
+.soft { color: var(--ink-soft); }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.gold { color: var(--gold); }
+.acc { color: var(--accent); }
+.danger { color: var(--danger); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.wrap-any { overflow-wrap: anywhere; }
+
+/* Section label: a small display-face caption with a rule after it. */
+.eyebrow {
+  display: flex; align-items: center; gap: 12px;
+  margin: 24px 0 10px;
+  font: 600 11px/1 var(--font-display);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.eyebrow .count { color: var(--ink-soft); letter-spacing: 0.06em; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ==== 20-layout.css ==== */
+/* ---- Layout -------------------------------------------------------------
+   Header, status strip, main column, footer. Under 720px the tabs are a
+   fixed bar along the bottom. */
+.app { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
+
+/* The blur is on a pseudo-element. The header itself has no filter, so
+   the fixed tab bar inside it is placed against the viewport. */
+header.top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line); }
+header.top::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: rgba(10, 16, 32, 0.8);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+header.top .wrap { display: flex; align-items: center; gap: 14px; height: 56px; }
+
+.brand {
+  display: flex; align-items: baseline; gap: 8px; white-space: nowrap;
+  font: 700 19px/1 var(--font-display); letter-spacing: 0.02em; color: var(--white);
+}
+.brand .r { color: var(--blue); }
+.brand .a { color: var(--gold); }
+.brand .ver { font: 400 11.5px/1 var(--font-mono); color: var(--ink-mute); }
+
+nav.tabs { display: flex; gap: 2px; margin-left: 10px; }
+nav.tabs button {
+  font: 600 12.5px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase;
+  background: none; border: 0; color: var(--ink-mute);
+  padding: 10px 13px; border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+nav.tabs button:hover { color: var(--ink); background: var(--bg-hover); }
+nav.tabs button.on { color: var(--accent-ink); background: var(--accent); }
+
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.who { font: 13px var(--font-mono); color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who b { color: var(--white); font-weight: 500; }
+.who .pts { color: var(--gold); }
+select.lang {
+  background: var(--bg-raised); border: 1px solid var(--line); color: var(--ink-soft);
+  font: 500 12px var(--font-mono); padding: 5px 6px; border-radius: var(--radius-xs); cursor: pointer;
+}
+select.lang:hover, select.lang:focus { border-color: var(--accent); color: var(--ink); outline: none; }
+
+/* Status strip: the link light, the mode badge, the link text, the
+   live counters. */
+.status { border-bottom: 1px solid var(--line); background: rgba(15, 23, 41, 0.6); transition: background var(--mode-t); }
+.status .wrap { display: flex; align-items: center; gap: 12px; min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.dot {
+  width: 10px; height: 10px; border-radius: 50%; flex: none;
+  background: var(--ink-mute); transition: background 0.3s, box-shadow 0.3s;
+}
+.dot.on { background: var(--ok); box-shadow: 0 0 0 4px rgba(95, 211, 138, 0.18), 0 0 14px var(--ok); }
+:root[data-mode="console"] .dot.on {
+  background: var(--gold); box-shadow: 0 0 0 4px rgba(224, 165, 38, 0.2), 0 0 14px var(--gold);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+.status .text { font: 13.5px var(--font-mono); color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.status .counters { margin-left: auto; font: 12.5px var(--font-mono); color: var(--ink-mute); white-space: nowrap; }
+.mode {
+  font: 600 10.5px/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent-line); background: var(--accent-soft);
+  padding: 5px 9px; border-radius: 999px; white-space: nowrap;
+  transition: color var(--mode-t), border-color var(--mode-t), background var(--mode-t);
+}
+
+/* The column is the container the @container rules measure. */
+main.wrap { flex: 1; padding-top: 18px; padding-bottom: 32px; container: page / inline-size; }
+.tab { animation: fadein 0.22s var(--ease); }
+
+footer { border-top: 1px solid var(--line); }
+footer .wrap { display: flex; align-items: center; gap: 10px; height: 52px; }
+footer .clock { margin-left: auto; font: 13px var(--font-mono); color: var(--ink-mute); }
+
+@media (max-width: 960px) {
+  nav.tabs { margin-left: 2px; }
+  nav.tabs button { padding: 9px 8px; font-size: 11.5px; letter-spacing: 0.06em; }
+  .who { max-width: 190px; }
+  .who .pts { display: none; }
+}
+
+@media (max-width: 720px) {
+  .wrap { padding-left: 14px; padding-right: 14px; }
+  header.top .wrap { height: 52px; gap: 10px; }
+  .brand { font-size: 17px; }
+  .brand .ver { display: none; }
+  .who { font-size: 12px; }
+  nav.tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; margin: 0;
+    background: rgba(10, 16, 32, 0.96);
+    border-top: 1px solid var(--line);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
   }
-  * { box-sizing: border-box; }
-  html, body { max-width: 100%; overflow-x: hidden; }
-  body {
-    margin: 0; background: radial-gradient(90% 60% at 30% 0%, var(--bg2) 0%, #071627 62%, var(--bg) 100%);
-    background-attachment: fixed; color: var(--text);
-    font: 21px/1.3 'VT323', 'Courier New', monospace; min-height: 100vh;
+  nav.tabs button { flex: 1; padding: 12px 0; font-size: 10.5px; letter-spacing: 0.06em; }
+  main.wrap { padding-bottom: 96px; }
+  footer { display: none; }
+  .status .counters { display: none; }
+}
+
+/* ==== 30-components.css ==== */
+/* ---- Components ---------------------------------------------------------
+   Tiles, progress, rows, chips, cards, the switch, buttons, forms, the
+   game head, notes, the toast. */
+
+.panel { background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); }
+
+/* ---- Stat tiles ---- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.cell { background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; min-width: 0; }
+.cell .k { font: 600 10px/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); }
+.cell .v { margin-top: 6px; font: 500 17px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
+.cell .v small { font-size: 12.5px; color: var(--ink-mute); }
+
+/* ---- Progress bars ---- */
+.bar { height: 10px; border-radius: 999px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--bar); transition: width 0.3s var(--ease); }
+.bar.thin { height: 7px; }
+.mini { height: 5px; border-radius: 999px; background: var(--bg-sunken); overflow: hidden; margin-top: 7px; }
+.mini i { display: block; height: 100%; background: var(--accent); transition: width 0.25s; }
+
+/* ---- Achievement rows ---- */
+.row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 12px; margin-bottom: 6px;
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  transition: border-color 0.2s, background 0.2s;
+}
+.row.done { border-color: rgba(95, 211, 138, 0.35); background: linear-gradient(90deg, rgba(95, 211, 138, 0.09), transparent 45%) var(--bg-raised); }
+.row.near { border-color: var(--accent-line); }
+.row.na { border-style: dashed; }
+.row.na .t, .row.na .d { opacity: 0.7; }
+.row.clickable { cursor: pointer; }
+.row.clickable:hover { background: var(--bg-hover); border-color: var(--line-strong); }
+.row .badge { width: 44px; height: 44px; border-radius: 8px; background: var(--bg-sunken); flex: none; object-fit: cover; }
+.row.done .badge { box-shadow: 0 0 0 2px rgba(95, 211, 138, 0.45); }
+.row.na .badge, .row.locked .badge { filter: saturate(0.4) brightness(0.75); }
+.row .body { flex: 1; min-width: 0; }
+.row .t { font-weight: 700; color: var(--white); overflow-wrap: anywhere; }
+.row .d { color: var(--ink-soft); font-size: 13.5px; overflow-wrap: anywhere; }
+.row .m { flex: none; width: 172px; text-align: right; font: 12.5px/1.5 var(--font-mono); color: var(--ink-mute); }
+.row .m .lead { font-size: 13.5px; font-weight: 500; }
+.row .m .tag { display: block; }
+.row.big { padding: 14px 14px; }
+.row.big .badge { width: 60px; height: 60px; border-radius: 10px; }
+.row.big .t { font-size: 18px; font-family: var(--font-display); letter-spacing: 0.01em; }
+.row.big .d { font-size: 14px; }
+.row.big .m { width: 190px; }
+@container page (max-width: 560px) {
+  .row { flex-wrap: wrap; }
+  .row .m, .row.big .m {
+    width: 100%; padding-left: 58px; text-align: left;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px;
   }
-  .px { font-family: 'Press Start 2P', monospace; }
-  a { color: var(--accent); }
+  .row.big .m { padding-left: 74px; }
+}
 
-  header { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: rgba(4,16,28,.75); position: sticky; top: 0; z-index: 5; }
-  header .name { font-size: 10px; color: #fff; }
-  nav { display: flex; gap: 2px; margin-left: 14px; }
-  nav button {
-    font-family: 'Press Start 2P', monospace; font-size: 9px; background: none;
-    border: 0; color: var(--dim); padding: 9px 11px; cursor: pointer;
-  }
-  nav button.on { background: var(--accent); color: #04101c; }
-  .right { margin-left: auto; }
-  .hdr { display: flex; align-items: center; gap: 12px; min-width: 0; white-space: nowrap; }
-  select.lang {
-    background: none; border: 1px solid var(--line); color: var(--dim); font: inherit;
-    font-size: 15px; padding: 1px 4px; cursor: pointer;
-  }
-  select.lang:hover, select.lang:focus { border-color: var(--accent); color: var(--text); outline: none; }
-  button.quit {
-    font-family: 'Press Start 2P', monospace; font-size: 8px; background: none; color: #ff6b6b;
-    border: 1px solid #ff6b6b; padding: 7px 10px; cursor: pointer; margin-left: 14px;
-  }
-  button.quit:hover { background: #ff6b6b; color: #04101c; }
-  .switch {
-    display: flex; align-items: center; gap: 12px; padding: 9px 10px; background: var(--panel);
-    margin-bottom: 4px; cursor: pointer; user-select: none;
-  }
-  .switch .k { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--dim); }
-  .switch .state { font-family: 'Press Start 2P', monospace; font-size: 9px; padding: 5px 8px; border: 1px solid var(--line); color: var(--dimmer); }
-  .switch.on .state { background: var(--green); color: #04101c; border-color: var(--green); }
-  .switch .d { color: var(--dim); font-size: 17px; flex: 1; min-width: 0; }
-  .switch.busy { opacity: .5; pointer-events: none; }
-  .subsets { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
-  .muted { color: var(--dim); }
-  .dimmer { color: var(--dimmer); }
+/* ---- Chips and filter rows ---- */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); color: var(--ink-soft); background: var(--bg-raised);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  font: 500 12px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.chip.on { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.chip .n { color: var(--ink-mute); letter-spacing: 0; font-family: var(--font-mono); }
+.chip.on .n { color: var(--accent); }
+.chip.static { cursor: default; }
 
-  .link { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: rgba(10,33,54,.55); }
-  .link span { min-width: 0; }
-  .bar { max-width: 100%; }
-  .dot { width: 8px; height: 8px; background: var(--dimmer); flex: none; }
-  .dot.on { background: var(--green); box-shadow: 0 0 10px var(--green); }
+/* ---- Library cards ---- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.card {
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; cursor: pointer;
+  transition: transform 0.18s var(--ease), border-color 0.18s, box-shadow 0.18s;
+}
+.card:hover { transform: translateY(-2px); border-color: var(--accent-line); box-shadow: var(--shadow); }
+.card .art { position: relative; height: 118px; display: flex; align-items: center; justify-content: center; background: var(--bg-sunken); overflow: hidden; }
+.card .art .blur { position: absolute; inset: -24px; background-size: cover; background-position: center; filter: blur(20px) saturate(1.3); opacity: 0.55; }
+.card .art img { position: relative; height: 92px; width: 92px; border-radius: 10px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); object-fit: cover; }
+.card .meta { padding: 10px 12px 12px; }
+.card .name { font-weight: 700; color: var(--white); height: 2.9em; line-height: 1.45; overflow: hidden; margin-bottom: 8px; }
+.card .foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; font: 12.5px var(--font-mono); color: var(--ink-soft); }
+.card .foot > span:first-child { white-space: nowrap; }
+.card .foot .right { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  main { padding: 14px; }
-  .head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; min-width: 0; }
-  .head > div { min-width: 0; }
-  .head h1, .row .t, .row .d, .link span, .cell .v { overflow-wrap: anywhere; }
-  .head img { width: 84px; image-rendering: pixelated; background: #0a2136; border: 1px solid var(--line); flex: none; }
-  .head h1 { font-size: 13px; margin: 0 0 10px; color: #fff; line-height: 1.6; }
-  .bar { height: 12px; border: 1px solid var(--line); background: #0a2136; position: relative; overflow: hidden; }
-  .bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #2f8fd6, var(--accent)); display: block; transition: width .25s; }
+.award { font: 600 10px/1 var(--font-display); letter-spacing: 0.1em; padding: 4px 7px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+.award.gold { color: var(--gold); border-color: var(--gold); background: rgba(224, 165, 38, 0.12); }
+.award.green { color: var(--ok); border-color: var(--ok); background: rgba(95, 211, 138, 0.12); }
+.award.blue { color: var(--blue-bright); border-color: var(--blue-bright); background: rgba(52, 208, 255, 0.1); }
+@container page (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .card .art { height: 96px; }
+  .card .art img { width: 72px; height: 72px; }
+  .card .name { font-size: 14px; }
+}
 
-  .row { display: flex; align-items: center; gap: 12px; padding: 9px 10px; background: var(--panel); margin-bottom: 4px; }
-  .row.done { background: var(--panel-lit); border-left: 2px solid var(--green); }
-  .row.near { border-left: 2px solid var(--accent); }
-  .row.na { border-left: 2px solid #7a5e26; background: rgba(122,94,38,.12); }
-  .row img { width: 34px; height: 34px; image-rendering: pixelated; background: #0a2136; flex: none; }
-  .row .body { flex: 1; min-width: 0; }
-  .row .t { color: #fff; }
-  .row .d { color: var(--dim); font-size: 19px; }
-  .row .m { width: 130px; flex: none; text-align: right; }
-  .mini { height: 6px; background: #0a2136; position: relative; margin-top: 5px; overflow: hidden; }
-  .mini > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); display: block; transition: width .25s; }
+/* ---- Switch: a label, a line of text, a toggle ---- */
+.switch {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 14px; margin-bottom: 14px; cursor: pointer; user-select: none;
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+.switch:hover { border-color: var(--line-strong); }
+.switch .k { font: 600 12px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+.switch .d { color: var(--ink-soft); font-size: 13.5px; flex: 1; min-width: 0; }
+.switch .tog { width: 40px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; flex: none; transition: background 0.2s; }
+.switch .tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--white); transition: transform 0.2s var(--ease); }
+.switch.on .tog { background: var(--ok); }
+.switch.on .tog::after { transform: translateX(18px); }
+.switch.busy { opacity: 0.5; pointer-events: none; }
+@container page (max-width: 560px) {
+  .switch { flex-wrap: wrap; }
+  .switch .d { flex-basis: 100%; order: 3; }
+  .switch .tog { margin-left: auto; }
+}
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px; margin-bottom: 14px; }
-  .stats .cell { background: var(--panel); padding: 7px 10px; min-width: 0; }
-  .stats .cell .k { font-size: 15px; color: var(--dimmer); }
-  .stats .cell .v { color: #fff; }
+/* ---- Buttons and forms ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: 600 12px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 11px 16px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong); background: var(--bg-raised); color: var(--ink);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:hover { background: var(--bg-hover); border-color: var(--accent-line); }
+.btn.primary { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); border-color: rgba(255, 107, 107, 0.5); background: transparent; }
+.btn.danger:hover { background: var(--danger); color: var(--accent-ink); border-color: var(--danger); }
+.btn:disabled { opacity: 0.5; cursor: default; filter: none; }
+.btn.sm { padding: 7px 10px; font-size: 10.5px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-  .card { border: 1px solid var(--line); background: rgba(10,33,54,.5); cursor: pointer; }
-  .card:hover { border-color: var(--accent); }
-  .card .art { height: 104px; background: #0a2136; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
-  .card .art img { max-height: 104px; image-rendering: pixelated; }
-  .card .meta { padding: 9px; }
-  .card .name { color: #fff; margin-bottom: 7px; height: 2.4em; overflow: hidden; }
-  .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .chip { border: 1px solid var(--line); color: var(--dim); padding: 3px 10px; font-size: 16px; cursor: pointer; }
-  .chip.on { border-color: var(--accent); color: var(--accent); }
+.set { max-width: 520px; }
+.set .block { margin-bottom: 26px; }
+.set label { display: block; color: var(--ink-mute); font: 600 10.5px/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; margin: 14px 0 6px; }
+.set .note { color: var(--ink-soft); font-size: 13.5px; margin-top: 6px; }
+.set .msg { font: 13px var(--font-mono); margin-top: 10px; min-height: 1.3em; }
+.set .btn { margin-top: 12px; }
+input.f, select.f {
+  width: 100%; background: var(--bg-sunken); border: 1px solid var(--line); color: var(--ink);
+  padding: 10px 12px; border-radius: var(--radius-sm); font: 14px var(--font-mono);
+}
+input.f:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
 
-  .row.big { padding: 13px 12px; }
-  .row.big img { width: 52px; height: 52px; }
-  .row.big .t { font-size: 27px; }
-  .row.big .d { font-size: 21px; }
-  .row.big .m { width: 170px; }
-  .row.clickable { cursor: pointer; }
-  .award { font-size: 14px; padding: 1px 6px; border: 1px solid; }
-  .award.gold { color: var(--amber); border-color: var(--amber); }
-  .award.green { color: var(--green); border-color: var(--green); }
-  .award.blue { color: var(--accent); border-color: var(--accent); }
+/* ---- Game head: cover, title, progress ---- */
+.head { display: flex; gap: 18px; align-items: center; margin: 4px 0 16px; min-width: 0; }
+.head .cover { width: 96px; height: 96px; border-radius: 14px; background: var(--bg-sunken); border: 1px solid var(--line); flex: none; object-fit: cover; box-shadow: var(--shadow); }
+.head .body { flex: 1; min-width: 0; }
+.head h1 { font: 700 22px/1.25 var(--font-display); margin: 0 0 8px; color: var(--white); overflow-wrap: anywhere; }
+.head .sub { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; font: 13px var(--font-mono); color: var(--ink-soft); }
+.head .sub .right { margin-left: auto; }
+@container page (max-width: 560px) {
+  .head { gap: 12px; }
+  .head .cover, .disc { width: 72px; height: 72px; }
+  .head h1 { font-size: 18px; }
+}
 
-  h2 { font-size: 9px; color: var(--dim); margin: 18px 0 10px; font-weight: normal; }
+/* ---- Placeholders, notes, the error box ---- */
+.empty { color: var(--ink-mute); padding: 26px 0; }
+.note { color: var(--ink-soft); font-size: 13.5px; }
+.banner { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--bg-raised); margin-bottom: 10px; }
+.banner.ok { border-color: rgba(95, 211, 138, 0.4); color: var(--ok); }
+.banner.warn { border-color: rgba(242, 185, 107, 0.4); color: var(--warn); }
+.err { color: var(--danger); font: 13px var(--font-mono); white-space: pre-wrap; padding: 10px 0 14px; }
+.hash { font: 12px var(--font-mono); color: var(--ink-mute); margin: -6px 0 14px; overflow-wrap: anywhere; }
+.subsets { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
 
-  .set { max-width: 480px; }
-  .set label { display: block; color: var(--dim); font-size: 16px; margin: 10px 0 4px; }
-  .set .note { color: var(--dim); font-size: 17px; margin: 6px 0 0; }
-  .set .msg { font-size: 17px; margin-top: 8px; min-height: 1.3em; }
-  input.f, select.f { background: #0a2136; border: 1px solid var(--line); color: var(--text); font: inherit; padding: 6px 9px; width: 100%; box-sizing: border-box; }
-  input.f:focus, select.f:focus { border-color: var(--accent); outline: none; }
-  button.act { font-family: 'Press Start 2P', monospace; font-size: 9px; background: var(--accent); color: #04101c; border: 0; padding: 10px 14px; cursor: pointer; margin-top: 12px; }
-  button.act:disabled { background: var(--dimmer); cursor: default; }
-  footer { padding: 12px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+/* ---- Unlock toast ---- */
+.toast {
+  position: fixed; right: 18px; bottom: 18px; z-index: 40;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px 14px 14px; border-radius: var(--radius);
+  background: var(--bg-raised); border: 1px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(224, 165, 38, 0.15), var(--shadow);
+  animation: toastin 0.3s var(--ease);
+  max-width: min(420px, calc(100vw - 36px));
+}
+.toast img { width: 56px; height: 56px; border-radius: 10px; flex: none; }
+.toast .k { font: 600 10.5px/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.toast .t { font-weight: 700; color: var(--white); }
+.toast .p { font: 13px var(--font-mono); color: var(--ok); }
+@media (max-width: 720px) { .toast { left: 14px; right: 14px; bottom: 84px; max-width: none; } }
 
-  #toast {
-    position: fixed; right: 16px; bottom: 16px; display: none; align-items: center; gap: 14px;
-    background: linear-gradient(160deg, rgba(47,143,214,.95), rgba(12,45,76,.96));
-    border: 2px solid var(--accent); padding: 14px 16px; box-shadow: 0 0 40px rgba(127,212,255,.35);
-    animation: in .25s ease-out; z-index: 10;
-  }
-  #toast img { width: 48px; height: 48px; image-rendering: pixelated; }
-  @keyframes in { from { transform: translateY(16px); opacity: 0 } to { transform: none; opacity: 1 } }
+.closed { text-align: center; padding: 80px 20px; color: var(--ink-mute); }
 
-  /* Phones: the tabs move to a bar along the bottom, the library gets two
-     covers a row, and the fixed-width columns give way. */
-  @media (max-width: 600px) {
-    header { gap: 10px; padding: 10px 12px; }
-    #who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
-    select.lang { font-size: 13px; padding: 0 2px; }
-    nav {
-      position: fixed; left: 0; right: 0; bottom: 0; margin: 0; z-index: 6;
-      background: rgba(4,16,28,.97); border-top: 1px solid var(--line);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    nav button { flex: 1; padding: 14px 0 12px; font-size: 8px; }
-    main { padding: 12px 12px 90px; }
-    footer { display: none; }
-    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .card .art, .card .art img { height: 92px; max-height: 92px; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .row { gap: 10px; padding: 8px; }
-    .row .m { width: 92px; }
-    .row.big .m { width: 104px; }
-    .row.big .t { font-size: 22px; }
-    .row.big .d { font-size: 18px; }
-    .head img { width: 64px; }
-    .head h1 { font-size: 11px; }
-    #linkstats { display: none; }
-    #toast { left: 12px; right: 12px; bottom: 76px; }
-  }
+/* ==== 40-effects.css ==== */
+/* ---- Effects ------------------------------------------------------------
+   Keyframes, the power-on sweep, the disc, the follow ring. Everything
+   that moves is off under prefers-reduced-motion. */
+
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes toastin { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(224, 165, 38, 0.2), 0 0 14px var(--gold); } 50% { box-shadow: 0 0 0 7px rgba(224, 165, 38, 0.08), 0 0 22px var(--gold); } }
+@keyframes ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes sweep {
+  0% { background-position: 180% 0; opacity: 0; }
+  10% { opacity: 1; }
+  100% { background-position: -80% 0; opacity: 0; }
+}
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Power-on: a band of light sweeps the page once; JS mounts .poweron
+   for 1.3 s when the console connects. */
+.poweron { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.poweron::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 236, 190, 0.22) 48%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 236, 190, 0.22) 52%, transparent 65%);
+  background-size: 260% 100%; mix-blend-mode: screen;
+  animation: sweep 1.1s var(--ease) forwards;
+}
+.poweron::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(70% 50% at 50% 40%, rgba(224, 165, 38, 0.18), transparent 70%);
+  animation: flash 1.2s ease-out forwards;
+}
+
+/* The disc: the cover in .face, which JS rotates; .iris and .grooves
+   turn with it. .sheen, .rim and .hole are outside .face and stay put.
+   .stall darkens the face and lights the hole red. */
+.disc { position: relative; width: 96px; height: 96px; flex: none; border-radius: 50%; box-shadow: var(--shadow), 0 0 24px var(--accent-glow); transition: box-shadow var(--mode-t); }
+.disc .face { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: var(--bg-sunken); will-change: transform; }
+.disc .face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.disc .iris {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, #ff6b6b, #ffd166, #5fd38a, #34d0ff, #7c6bff, #ff6bd6, #ff6b6b);
+  opacity: 0.22; mix-blend-mode: screen;
+  -webkit-mask: radial-gradient(circle, transparent 26%, #000 29%, #000 68%, transparent 71%);
+  mask: radial-gradient(circle, transparent 26%, #000 29%, #000 68%, transparent 71%);
+}
+.disc .grooves {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-radial-gradient(circle, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px);
+  opacity: 0.6;
+}
+.disc .sheen {
+  position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, 0.38) 24deg, rgba(255, 255, 255, 0) 58deg, rgba(255, 255, 255, 0) 180deg, rgba(255, 255, 255, 0.22) 206deg, rgba(255, 255, 255, 0) 240deg);
+  mix-blend-mode: screen;
+}
+.disc .rim { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), inset 0 0 0 3px rgba(0, 0, 0, 0.35); }
+.disc .hole {
+  position: absolute; left: 50%; top: 50%; width: 24%; height: 24%; margin: -12% 0 0 -12%;
+  border-radius: 50%; background: var(--bg);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22), 0 0 0 5px rgba(0, 0, 0, 0.4), inset 0 0 6px rgba(0, 0, 0, 0.8);
+}
+.disc.stall .face { filter: brightness(0.7) contrast(1.1); }
+.disc.stall .hole { box-shadow: 0 0 0 2px var(--danger), 0 0 0 5px rgba(0, 0, 0, 0.4), inset 0 0 6px rgba(0, 0, 0, 0.8); }
+
+/* Following: the cover with a ring that grows and fades on a loop. */
+.cover-wrap { position: relative; flex: none; }
+.cover-wrap .ring { position: absolute; inset: -2px; border-radius: 16px; border: 2px solid var(--accent); animation: ring 2.4s ease-out infinite; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .poweron, .cover-wrap .ring { display: none; }
+  .tab { animation: none; }
+  :root[data-mode="console"] .dot.on { animation: none; }
+  .bar i, .mini i { transition: none; }
+}
+
 </style>
-
-<header>
-  <span class="px name">xe<span style="color:var(--accent)">R</span><span style="color:#ffcc33">A</span>bora</span>
-  <span class="dimmer" id="ver" style="font-size:15px"></span>
-  <nav>
-    <button class="on" data-tab="live" data-t="LIVE">LIVE</button>
-    <button data-tab="library" data-t="LIBRARY">LIBRARY</button>
-    <button data-tab="game" data-t="GAME">GAME</button>
-    <button data-tab="boards" data-t="BOARDS">BOARDS</button>
-    <button data-tab="settings" data-t="SETTINGS">SETTINGS</button>
-  </nav>
-  <span class="right hdr"><span class="dimmer" id="who"></span><select id="lang-pick" class="lang" aria-label="Language"></select></span>
-</header>
-
-<div class="link">
-  <span class="dot" id="dot"></span>
-  <span id="linktext" data-t="waiting for the console">waiting for the console</span>
-  <span class="right dimmer" id="linkstats"></span>
-</div>
-
-<main>
-  <div id="tab-live"></div>
-  <div id="tab-library" hidden></div>
-  <div id="tab-game" hidden></div>
-  <div id="tab-boards" hidden></div>
-  <div id="tab-settings" hidden></div>
-</main>
-
-<footer>
-  <span class="chip on" data-t="SOFTCORE" title="every unlock is softcore">SOFTCORE</span>
-  <span class="chip" id="chip-flash" data-t="FLASH" title="the gold flash on the TV: lit while a console streams">FLASH</span>
-  <span class="right dimmer" id="clock"></span>
-  <button class="quit" id="btn-quit" data-t="QUIT" hidden>QUIT</button>
-</footer>
-
-<div id="toast">
-  <img id="toastimg" alt="">
-  <div>
-    <div class="px" style="font-size:10px;color:#fff;margin-bottom:8px" data-t="ACHIEVEMENT UNLOCKED">ACHIEVEMENT UNLOCKED</div>
-    <div id="toasttext" style="color:#fff"></div>
-  </div>
-</div>
-
+</head>
+<body>
+<div id="app"></div>
 <script>
-const BADGE = 'https://media.retroachievements.org/Badge/';
-const MEDIA = 'https://media.retroachievements.org';
+/* A CommonJS corner for the vendored libraries: each is wrapped as a
+   module and fetched through require(), the way their builds expect. */
+var require = (function () {
+  var mods = {};
+  function require(name) {
+    if (!(name in mods)) throw new Error('vendor module missing: ' + name);
+    return mods[name];
+  }
+  require.define = function (name, body) {
+    var module = { exports: {} };
+    body(module.exports, require, module);
+    mods[name] = module.exports;
+  };
+  return require;
+})();
 
-/* ---- Language ---------------------------------------------------------- */
+require.define("preact", function (exports, require, module) {
+!function(n,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t((n||self).preact={})}(this,function(n){var t,i,e,r,f,o,u,c,s,a,h,l,p,y,v,d,w="http://www.w3.org/2000/svg",_="http://www.w3.org/1999/xhtml",g=null,m=void 0,b={},k=[],x=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i,M=Array.isArray;function S(n,t){for(var i in t)n[i]=t[i];return n}function T(n){n&&n.parentNode&&n.parentNode.removeChild(n)}function $(n,i,e){var r,f,o,u={};for(o in i)"key"==o?r=i[o]:"ref"==o?f=i[o]:u[o]=i[o];if(arguments.length>2&&(u.children=arguments.length>3?t.call(arguments,2):e),"function"==typeof n&&n.defaultProps!=g)for(o in n.defaultProps)u[o]===m&&(u[o]=n.defaultProps[o]);return C(n,u,r,f,g)}function C(n,t,r,f,o){var u={type:n,props:t,key:r,ref:f,__k:g,__:g,__b:0,__e:g,__c:g,constructor:m,__v:o==g?++e:o,__i:-1,__u:0};return o==g&&i.vnode!=g&&i.vnode(u),u}function I(n){return n.children}function P(n,t){this.props=n,this.context=t}function j(n,t){if(t==g)return n.__?j(n.__,n.__i+1):g;for(var i;t<n.__k.length;t++)if((i=n.__k[t])!=g&&i.__e!=g)return i.__e;return"function"==typeof n.type?j(n):g}function A(n){if(n.__P&&n.__d){var t=n.__v,e=t.__e,r=[],f=[],o=S({},t);o.__v=t.__v+1,i.vnode&&i.vnode(o),E(n.__P,o,t,n.__n,n.__P.namespaceURI,32&t.__u?[e]:g,r,e==g?j(t):e,!!(32&t.__u),f),o.__v=t.__v,o.__.__k[o.__i]=o,J(r,o,f),t.__e=t.__=null,o.__e!=e&&H(o)}}function H(n){if((n=n.__)!=g&&n.__c!=g)return n.__e=n.__c.base=g,n.__k.some(function(t){if(t!=g&&t.__e!=g)return n.__e=n.__c.base=t.__e}),H(n)}function L(n){(!n.__d&&(n.__d=!0)&&f.push(n)&&!F.__r++||o!=i.debounceRendering)&&((o=i.debounceRendering)||u)(F)}function F(){try{for(var n,t=1;f.length;)f.length>t&&f.sort(c),n=f.shift(),t=f.length,A(n)}finally{f.length=F.__r=0}}function O(n,t,i,e,r,f,o,u,c,s,a){var h,l,p,y,v,d,w=e&&e.__k||k,_=t.length;for(c=z(i,t,w,c,_),h=0;h<_;h++)(p=i.__k[h])!=g&&(l=-1!=p.__i&&w[p.__i]||b,p.__i=h,d=E(n,p,l,r,f,o,u,c,s,a),y=p.__e,p.ref&&l.ref!=p.ref&&(l.ref&&R(l.ref,g,p),a.push(p.ref,p.__c||y,p)),v==g&&y!=g&&(v=y),4&p.__u?(c=N(p,c,n),l.__e&&(l.__e=g)):"function"==typeof p.type&&d!==m?c=d:y&&(c=y.nextSibling),p.__u&=-7);return i.__e=v,c}function z(n,t,i,e,r){var f,o,u,c,s,a=i.length,h=a,l=0;for(n.__k=new Array(r),f=0;f<r;f++)(o=t[f])!=g&&"boolean"!=typeof o&&"function"!=typeof o?("string"==typeof o||"number"==typeof o||"bigint"==typeof o||o.constructor==String?o=n.__k[f]=C(g,o,g,g,g):M(o)?o=n.__k[f]=C(I,{children:o},g,g,g):o.constructor===m&&o.__b>0?o=n.__k[f]=C(o.type,o.props,o.key,o.ref?o.ref:g,o.__v):n.__k[f]=o,c=f+l,o.__=n,o.__b=n.__b+1,s=o.__i=V(o,i,c,h),u=g,-1!=s&&(h--,(u=i[s])&&(u.__u|=2)),u==g||u.__v==g?(-1==s&&(r>a?l--:r<a&&l++),"function"!=typeof o.type&&(o.__u|=4)):s!=c&&(s==c-1?l--:s==c+1?l++:(s>c?l--:l++,o.__u|=4))):n.__k[f]=g;if(h)for(f=0;f<a;f++)(u=i[f])!=g&&0==(2&u.__u)&&(u.__e==e&&(e=j(u)),U(u,u));return e}function N(n,t,i){var e,r;if("function"==typeof n.type){for(e=n.__k,r=0;e&&r<e.length;r++)e[r]&&(e[r].__=n,t=N(e[r],t,i));return t}n.__e!=t&&(t&&n.type&&!t.parentNode&&(t=j(n)),t=i.insertBefore(n.__e,t||g));do{t=t&&t.nextSibling}while(t!=g&&8==t.nodeType);return t}function V(n,t,i,e){var r,f,o,u=n.key,c=n.type,s=t[i],a=s!=g&&0==(2&s.__u);if(s===g&&null==u||a&&u==s.key&&c==s.type)return i;if(e>(a?1:0))for(r=i-1,f=i+1;r>=0||f<t.length;)if((s=t[o=r>=0?r--:f++])!=g&&0==(2&s.__u)&&u==s.key&&c==s.type)return o;return-1}function q(n,t,i){"-"==t[0]?n.setProperty(t,i==g?"":i):n[t]=i==g?"":"number"!=typeof i||x.test(t)?i:i+"px"}function B(n,t,i,e,r){var f,o;n:if("style"==t)if("string"==typeof i)n.style.cssText=i;else{if("string"==typeof e&&(n.style.cssText=e=""),e)for(t in e)i&&t in i||q(n.style,t,"");if(i)for(t in i)e&&i[t]==e[t]||q(n.style,t,i[t])}else if("o"==t[0]&&"n"==t[1])f=t!=(t=t.replace(l,"$1")),o=t.toLowerCase(),t=o in n||"onFocusOut"==t||"onFocusIn"==t?o.slice(2):t.slice(2),n.l||(n.l={}),n.l[t+f]=i,i?e?i[h]=e[h]:(i[h]=p,n.addEventListener(t,f?v:y,f)):n.removeEventListener(t,f?v:y,f);else{if(r==w)t=t.replace(/xlink(H|:h)/,"h").replace(/sName$/,"s");else if("width"!=t&&"height"!=t&&"href"!=t&&"list"!=t&&"form"!=t&&"tabIndex"!=t&&"download"!=t&&"rowSpan"!=t&&"colSpan"!=t&&"role"!=t&&"popover"!=t&&t in n)try{n[t]=i==g?"":i;break n}catch(n){}"function"==typeof i||(i==g||!1===i&&"-"!=t[4]?n.removeAttribute(t):n.setAttribute(t,"popover"==t&&1==i?"":i))}}function D(n){return function(t){if(this.l){var e=this.l[t.type+n];if(t[a]==g)t[a]=p++;else if(t[a]<e[h])return;return e(i.event?i.event(t):t)}}}function E(n,t,e,r,f,o,u,c,s,a){var h,l,p,y,v,d,w,_,b,x,$,C,A,H,L,F,z=t.type;if(t.constructor!==m)return g;128&e.__u&&(s=!!(32&e.__u),o=[c=t.__e=e.__e]),(h=i.__b)&&h(t);n:if("function"==typeof z){l=u.length;try{if(b=t.props,x=z.prototype&&z.prototype.render,$=(h=z.contextType)&&r[h.__c],C=h?$?$.props.value:h.__:r,e.__c?_=(p=t.__c=e.__c).__=p.__E:(x?t.__c=p=new z(b,C):(t.__c=p=new P(b,C),p.constructor=z,p.render=W),$&&$.sub(p),p.state||(p.state={}),p.__n=r,y=p.__d=!0,p.__h=[],p._sb=[]),x&&p.__s==g&&(p.__s=p.state),x&&z.getDerivedStateFromProps!=g&&(p.__s==p.state&&(p.__s=S({},p.__s)),S(p.__s,z.getDerivedStateFromProps(b,p.__s))),v=p.props,d=p.state,p.__v=t,y)x&&z.getDerivedStateFromProps==g&&p.componentWillMount!=g&&p.componentWillMount(),x&&p.componentDidMount!=g&&p.__h.push(p.componentDidMount);else{if(x&&z.getDerivedStateFromProps==g&&b!==v&&p.componentWillReceiveProps!=g&&p.componentWillReceiveProps(b,C),t.__v==e.__v||!p.__e&&p.shouldComponentUpdate!=g&&!1===p.shouldComponentUpdate(b,p.__s,C)){t.__v!=e.__v&&(p.props=b,p.state=p.__s,p.__d=!1),t.__e=e.__e,t.__k=e.__k,t.__k.some(function(n){n&&(n.__=t)}),k.push.apply(p.__h,p._sb),p._sb=[],p.__h.length&&u.push(p),c=j(e);break n}p.componentWillUpdate!=g&&p.componentWillUpdate(b,p.__s,C),x&&p.componentDidUpdate!=g&&p.__h.push(function(){p.componentDidUpdate(v,d,w)})}if(p.context=C,p.props=b,p.__P=n,p.__e=!1,A=i.__r,H=0,x)p.state=p.__s,p.__d=!1,A&&A(t),h=p.render(p.props,p.state,p.context),k.push.apply(p.__h,p._sb),p._sb=[];else do{p.__d=!1,A&&A(t),h=p.render(p.props,p.state,p.context),p.state=p.__s}while(p.__d&&++H<25);p.state=p.__s,p.getChildContext!=g&&(r=S(S({},r),p.getChildContext())),x&&!y&&p.getSnapshotBeforeUpdate!=g&&(w=p.getSnapshotBeforeUpdate(v,d)),L=h!=g&&h.type===I&&h.key==g?K(h.props.children):h,c=O(n,M(L)?L:[L],t,e,r,f,o,u,c,s,a),p.base=t.__e,t.__u&=-161,p.__h.length&&u.push(p),_&&(p.__E=p.__=g)}catch(n){if(u.length=l,t.__v=g,s||o!=g){if(n.then){for(t.__u|=s?160:128;c&&8==c.nodeType&&c.nextSibling;)c=c.nextSibling;o!=g&&(o[o.indexOf(c)]=g),t.__e=c}else if(o!=g)for(F=o.length;F--;)T(o[F])}else t.__e=e.__e;t.__k==g&&(t.__k=e.__k||[]),n.then||G(t),i.__e(n,t,e)}}else o==g&&t.__v==e.__v?(t.__k=e.__k,t.__e=e.__e):c=t.__e=Q(e.__e,t,e,r,f,o,u,s,a);return(h=i.diffed)&&h(t),128&t.__u?void 0:c}function G(n){n&&(n.__c&&(n.__c.__e=!0),n.__k&&n.__k.some(G))}function J(n,t,e){for(var r=0;r<e.length;r++)R(e[r],e[++r],e[++r]);i.__c&&i.__c(t,n),n.some(function(t){try{n=t.__h,t.__h=[],n.some(function(n){n.call(t)})}catch(n){i.__e(n,t.__v)}})}function K(n){return"object"!=typeof n||n==g||n.__b>0?n:M(n)?n.map(K):n.constructor!==m?null:S({},n)}function Q(n,e,r,f,o,u,c,s,a){var h,l,p,y,v,d,k,x=r.props||b,S=e.props,$=e.type;if("svg"==$?o=w:"math"==$?o="http://www.w3.org/1998/Math/MathML":o||(o=_),u!=g)for(h=0;h<u.length;h++)if((v=u[h])&&"setAttribute"in v==!!$&&($?v.localName==$:3==v.nodeType)){n=v,u[h]=g;break}if(n==g){if($==g)return document.createTextNode(S);n=document.createElementNS(o,$,S.is&&S),s&&(i.__m&&i.__m(e,u),s=!1),u=g}if($==g)x===S||s&&n.data==S||(n.data=S);else{if(u="textarea"==$&&S.defaultValue!=g?g:u&&t.call(n.childNodes),!s&&u!=g)for(x={},h=0;h<n.attributes.length;h++)x[(v=n.attributes[h]).name]=v.value;for(h in x)v=x[h],"dangerouslySetInnerHTML"==h?p=v:"children"==h||h in S||"value"==h&&"defaultValue"in S||"checked"==h&&"defaultChecked"in S||B(n,h,g,v,o);for(h in S)v=S[h],"children"==h?y=v:"dangerouslySetInnerHTML"==h?l=v:"value"==h?d=v:"checked"==h?k=v:s&&"function"!=typeof v||x[h]===v||B(n,h,v,x[h],o);if(l)s||p&&(l.__html==p.__html||l.__html==n.innerHTML)||(n.innerHTML=l.__html),e.__k=[];else if(p&&(n.innerHTML=""),O("template"==e.type?n.content:n,M(y)?y:[y],e,r,f,"foreignObject"==$?_:o,u,c,u?u[0]:r.__k&&j(r,0),s,a),u!=g)for(h=u.length;h--;)T(u[h]);s&&"textarea"!=$||(h="value","progress"==$&&d==g?n.removeAttribute("value"):d!=m&&(d!==n[h]||"progress"==$&&!d||"option"==$&&d!=x[h])&&B(n,h,d,x[h],o),h="checked",k!=m&&k!=n[h]&&B(n,h,k,x[h],o))}return n}function R(n,t,e){try{if("function"==typeof n){var r="function"==typeof n.__u;r&&n.__u(),r&&t==g||(n.__u=n(t))}else n.current=t}catch(n){i.__e(n,e)}}function U(n,t,e){var r,f;if(i.unmount&&i.unmount(n),(r=n.ref)&&(r.current&&r.current!=n.__e||R(r,g,t)),(r=n.__c)!=g){if(r.componentWillUnmount)try{r.componentWillUnmount()}catch(n){i.__e(n,t)}r.base=r.__P=r.__n=g}if(r=n.__k)for(f=0;f<r.length;f++)r[f]&&U(r[f],t,e||"function"!=typeof n.type);e||T(n.__e),n.__c=n.__=n.__e=m}function W(n,t,i){return this.constructor(n,i)}function X(n,e,r){var f,o,u,c;e==document&&(e=document.documentElement),i.__&&i.__(n,e),o=(f="function"==typeof r)?g:r&&r.__k||e.__k,u=[],c=[],E(e,n=(!f&&r||e).__k=$(I,g,[n]),o||b,b,e.namespaceURI,!f&&r?[r]:o?g:e.firstChild?t.call(e.childNodes):g,u,!f&&r?r:o?o.__e:e.firstChild,f,c),J(u,n,c),n.props.children=g}t=k.slice,i={__e:function(n,t,i,e){for(var r,f,o;t=t.__;)if((r=t.__c)&&!r.__)try{if((f=r.constructor)&&f.getDerivedStateFromError!=g&&(r.setState(f.getDerivedStateFromError(n)),o=r.__d),r.componentDidCatch!=g&&(r.componentDidCatch(n,e||{}),o=r.__d),o)return r.__E=r}catch(t){n=t}throw n}},e=0,r=function(n){return n!=g&&n.constructor===m},P.prototype.setState=function(n,t){var i;i=this.__s!=g&&this.__s!=this.state?this.__s:this.__s=S({},this.state),"function"==typeof n&&(n=n(S({},i),this.props)),n&&S(i,n),n!=g&&this.__v&&(t&&this._sb.push(t),L(this))},P.prototype.forceUpdate=function(n){this.__v&&(this.__e=!0,n&&this.__h.push(n),L(this))},P.prototype.render=I,f=[],u="function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout,c=function(n,t){return n.__v.__b-t.__v.__b},F.__r=0,s=Math.random().toString(8),a="__d"+s,h="__a"+s,l=/(PointerCapture)$|Capture$/i,p=0,y=D(!1),v=D(!0),d=0,n.Component=P,n.Fragment=I,n.cloneElement=function(n,i,e){var r,f,o,u,c=S({},n.props);for(o in n.type&&n.type.defaultProps&&(u=n.type.defaultProps),i)"key"==o?r=i[o]:"ref"==o?f=i[o]:c[o]=i[o]===m&&u!=m?u[o]:i[o];return arguments.length>2&&(c.children=arguments.length>3?t.call(arguments,2):e),C(n.type,c,r||n.key,f||n.ref,g)},n.createContext=function(n){function t(n){var i,e;return this.getChildContext||(i=new Set,(e={})[t.__c]=this,this.getChildContext=function(){return e},this.componentWillUnmount=function(){i=g},this.shouldComponentUpdate=function(n){this.props.value!=n.value&&i.forEach(function(n){n.__e=!0,L(n)})},this.sub=function(n){i.add(n);var t=n.componentWillUnmount;n.componentWillUnmount=function(){i&&i.delete(n),t&&t.call(n)}}),n.children}return t.__c="__cC"+d++,t.__=n,t.Provider=t.__l=(t.Consumer=function(n,t){return n.children(t)}).contextType=t,t},n.createElement=$,n.createRef=function(){return{current:g}},n.h=$,n.hydrate=function n(t,i){X(t,i,n)},n.isValidElement=r,n.options=i,n.render=X,n.toChildArray=function n(t,i){return i=i||[],t==g||"boolean"==typeof t||(M(t)?t.some(function(t){n(t,i)}):i.push(t)),i}});
+//# sourceMappingURL=preact.umd.js.map
+});
+require.define("preact/hooks", function (exports, require, module) {
+!function(n,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports,require("preact")):"function"==typeof define&&define.amd?define(["exports","preact"],t):t((n||self).preactHooks={},n.preact)}(this,function(n,t){var u,i,r,o,f=0,c=[],e=t.options,a=e.__b,v=e.__r,l=e.diffed,d=e.__c,p=e.unmount,s=e.__;function y(n,t){e.__h&&e.__h(i,n,f||t),f=0;var u=i.__H||(i.__H={__:[],__h:[]});return n>=u.__.length&&u.__.push({}),u.__[n]}function h(n){return f=1,m(j,n)}function m(n,t,r){var o=y(u++,2);if(o.t=n,!o.__c&&(o.__=[r?r(t):j(void 0,t),function(n){var t=o.__N?o.__N[0]:o.__[0],u=o.t(t,n);t!==u&&(o.__N=[u,o.__[1]],o.__c.setState({}))}],o.__c=i,!i.__f)){var f=function(n,t,u){if(!o.__c.__H)return!0;var i=!1,r=o.__c.props!==n;if(o.__c.__H.__.some(function(n){if(n.__N){i=!0;var t=n.__[0];n.__=n.__N,n.__N=void 0,t!==n.__[0]&&(r=!0)}}),c){var f=c.call(this,n,t,u);return i?f||r:f}return!i||r};i.__f=!0;var c=i.shouldComponentUpdate,e=i.componentWillUpdate;i.componentWillUpdate=function(n,t,u){if(this.__e){var i=c;c=void 0,f(n,t,u),c=i}e&&e.call(this,n,t,u)},i.shouldComponentUpdate=f}return o.__N||o.__}function T(n,t){var r=y(u++,4);!e.__s&&g(r.__H,t)&&(r.__=n,r.u=t,i.__h.push(r))}function _(n,t){var i=y(u++,7);return g(i.__H,t)&&(i.__=n(),i.__H=t,i.__h=n),i.__}function b(){for(var n;n=c.shift();){var t=n.__H;if(n.__P&&t)try{t.__h.some(A),t.__h.some(F),t.__h=[]}catch(u){t.__h=[],e.__e(u,n.__v)}}}e.__b=function(n){i=null,a&&a(n)},e.__=function(n,t){n&&t.__k&&t.__k.__m&&(n.__m=t.__k.__m),s&&s(n,t)},e.__r=function(n){v&&v(n),u=0;var t=(i=n.__c).__H;t&&(r===i?(t.__h=[],i.__h=[],t.__.some(function(n){n.__N&&(n.__=n.__N),n.u=n.__N=void 0})):(t.__h.some(A),t.__h.some(F),t.__h=[],u=0)),r=i},e.diffed=function(n){l&&l(n);var t=n.__c;t&&t.__H&&(t.__H.__h.length&&(1!==c.push(t)&&o===e.requestAnimationFrame||((o=e.requestAnimationFrame)||x)(b)),t.__H.__.some(function(n){n.u&&(n.__H=n.u,n.u=void 0)})),r=i=null},e.__c=function(n,t){t.some(function(n){try{n.__h.some(A),n.__h=n.__h.filter(function(n){return!n.__||F(n)})}catch(u){t.some(function(n){n.__h&&(n.__h=[])}),t=[],e.__e(u,n.__v)}}),d&&d(n,t)},e.unmount=function(n){p&&p(n);var t,u=n.__c;u&&u.__H&&(u.__H.__.some(function(n){try{A(n)}catch(n){t=n}}),u.__H=void 0,t&&e.__e(t,u.__v))};var q="function"==typeof requestAnimationFrame;function x(n){var t,u=function(){clearTimeout(i),q&&cancelAnimationFrame(t),setTimeout(n)},i=setTimeout(u,35);q&&(t=requestAnimationFrame(u))}function A(n){var t=i,u=n.__c;"function"==typeof u&&(n.__c=void 0,u()),i=t}function F(n){var t=i;n.__c=n.__(),i=t}function g(n,t){return!n||n.length!==t.length||t.some(function(t,u){return t!==n[u]})}function j(n,t){return"function"==typeof t?t(n):t}n.useCallback=function(n,t){return f=8,_(function(){return n},t)},n.useContext=function(n){var t=i.context[n.__c],r=y(u++,9);return r.c=n,t?(null==r.__&&(r.__=!0,t.sub(i)),t.props.value):n.__},n.useDebugValue=function(n,t){e.useDebugValue&&e.useDebugValue(t?t(n):n)},n.useEffect=function(n,t){var r=y(u++,3);!e.__s&&g(r.__H,t)&&(r.__=n,r.u=t,i.__H.__h.push(r))},n.useErrorBoundary=function(n){var t=y(u++,10),r=h();return t.__=n,i.componentDidCatch||(i.componentDidCatch=function(n,u){t.__&&t.__(n,u),r[1](n)}),[r[0],function(){r[1](void 0)}]},n.useId=function(){var n=y(u++,11);if(!n.__){for(var t=i.__v;null!==t&&!t.__m&&null!==t.__;)t=t.__;var r=t.__m||(t.__m=[0,0]);n.__="P"+r[0]+"-"+r[1]++}return n.__},n.useImperativeHandle=function(n,t,u){f=6,T(function(){if("function"==typeof n){var u=n(t());return function(){n(null),u&&"function"==typeof u&&u()}}if(n)return n.current=t(),function(){return n.current=null}},null==u?u:u.concat(n))},n.useLayoutEffect=T,n.useMemo=_,n.useReducer=m,n.useRef=function(n){return f=5,_(function(){return{current:n}},[])},n.useState=h});
+//# sourceMappingURL=hooks.umd.js.map
+});
+require.define("htm", function (exports, require, module) {
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.htm=e()}(this,function(){var n=function(e,t,u,s){var r;t[0]=0;for(var p=1;p<t.length;p++){var h=t[p++],o=t[p]?(t[0]|=h?1:2,u[t[p++]]):t[++p];3===h?s[0]=o:4===h?s[1]=Object.assign(s[1]||{},o):5===h?(s[1]=s[1]||{})[t[++p]]=o:6===h?s[1][t[++p]]+=o+"":h?(r=e.apply(o,n(e,o,u,["",null])),s.push(r),o[0]?t[0]|=2:(t[p-2]=0,t[p]=r)):s.push(o)}return s},e=new Map;return function(t){var u=e.get(this);return u||(u=new Map,e.set(this,u)),(u=n(this,u.get(t)||(u.set(t,u=function(n){for(var e,t,u=1,s="",r="",p=[0],h=function(n){1===u&&(n||(s=s.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?p.push(0,n,s):3===u&&(n||s)?(p.push(3,n,s),u=2):2===u&&"..."===s&&n?p.push(4,n,0):2===u&&s&&!n?p.push(5,0,!0,s):u>=5&&((s||!n&&5===u)&&(p.push(u,0,s,t),u=6),n&&(p.push(u,n,0,t),u=6)),s=""},o=0;o<n.length;o++){o&&(1===u&&h(),h(o));for(var f=0;f<n[o].length;f++)e=n[o][f],1===u?"<"===e?(h(),p=[p],u=3):s+=e:4===u?"--"===s&&">"===e?(u=1,s=""):s=e+s[0]:r?e===r?r="":s+=e:'"'===e||"'"===e?r=e:">"===e?(h(),u=1):u&&("="===e?(u=5,t=s,s=""):"/"===e&&(u<5||">"===n[o][f+1])?(h(),3===u&&(p=p[0]),u=p,(p=p[0]).push(2,0,u),u=0):" "===e||"\t"===e||"\n"===e||"\r"===e?(h(),u=2):s+=e),3===u&&"!--"===s&&(u=4,p=p[0])}return h(),p}(t)),u),arguments,[])).length>1?u:u[0]}});
+});
+require.define("@preact/signals-core", function (exports, require, module) {
+var i=Symbol.for("preact-signals");function t(){if(!(h>1)){var i,t=!1;!function(){var i=c;c=void 0;while(void 0!==i){var t=i.S;if(t.v===i.v)for(var r=t.t;void 0!==r;r=r.x)if(r.i===i.i)r.i=t.i;i=i.o}}();while(void 0!==s){var r=s;s=void 0;v++;while(void 0!==r){var n=r.u;r.u=void 0;r.f&=-3;if(!(8&r.f)&&y(r))try{r.c()}catch(r){if(!t){i=r;t=!0}}r=n}}v=0;h--;if(t)throw i}else h--}function r(i){if(h>0)return i();u=++e;h++;try{return i()}finally{t()}}var n,o=void 0;function f(i){var t=o,r=n;o=void 0;n=void 0;try{return i()}finally{o=t;n=r}}var s=void 0,h=0,v=0,e=0,u=0,c=void 0,d=0;function a(i){if(void 0!==o){var t=i.n;if(void 0===t||t.t!==o){t={i:0,S:i,p:o.s,n:void 0,t:o,e:void 0,x:void 0,r:t};if(void 0!==o.s)o.s.n=t;o.s=t;i.n=t;if(32&o.f)i.S(t);return t}else if(-1===t.i){t.i=0;if(void 0!==t.n){t.n.p=t.p;if(void 0!==t.p)t.p.n=t.n;t.p=o.s;t.n=void 0;o.s.n=t;o.s=t}return t}}}function l(i,t){this.v=i;this.i=0;this.n=void 0;this.t=void 0;this.l=0;this.W=null==t?void 0:t.watched;this.Z=null==t?void 0:t.unwatched;this.name=null==t?void 0:t.name}l.prototype.brand=i;l.prototype.h=function(){return!0};l.prototype.S=function(i){var t=this,r=this.t;if(r!==i&&void 0===i.e){i.x=r;this.t=i;if(void 0!==r)r.e=i;else f(function(){var i;null==(i=t.W)||i.call(t)})}};l.prototype.U=function(i){var t=this;if(void 0!==this.t){var r=i.e,n=i.x;if(void 0!==r){r.x=n;i.e=void 0}if(void 0!==n){n.e=r;i.x=void 0}if(i===this.t){this.t=n;if(void 0===n)f(function(){var i;null==(i=t.Z)||i.call(t)})}}};l.prototype.subscribe=function(i){var t=this;return m(function(){var r=t.value;f(function(){return i(r)})},{name:"sub"})};l.prototype.valueOf=function(){return this.value};l.prototype.toString=function(){return this.value+""};l.prototype.toJSON=function(){return this.value};l.prototype.peek=function(){var i=this;return f(function(){return i.value})};Object.defineProperty(l.prototype,"value",{get:function(){var i=a(this);if(void 0!==i)i.i=this.i;return this.v},set:function(i){if(i!==this.v){if(v>100)throw new Error("Cycle detected");!function(i){if(0!==h&&0===v)if(i.l!==u){i.l=u;c={S:i,v:i.v,i:i.i,o:c}}}(this);this.v=i;this.i++;d++;h++;try{for(var r=this.t;void 0!==r;r=r.x)r.t.N()}finally{t()}}}});function y(i){for(var t=i.s;void 0!==t;t=t.n)if(t.S.i!==t.i||!t.S.h()||t.S.i!==t.i)return!0;return!1}function w(i){for(var t=i.s;void 0!==t;t=t.n){var r=t.S.n;if(void 0!==r)t.r=r;t.S.n=t;t.i=-1;if(void 0===t.n){i.s=t;break}}}function p(i){var t=i.s,r=void 0;while(void 0!==t){var n=t.p;if(-1===t.i){t.S.U(t);if(void 0!==n)n.n=t.n;if(void 0!==t.n)t.n.p=n}else r=t;t.S.n=t.r;if(void 0!==t.r)t.r=void 0;t=n}i.s=r}function x(i,t){l.call(this,void 0,t);this.x=i;this.s=void 0;this.g=d-1;this.f=4}x.prototype=new l;x.prototype.h=function(){this.f&=-3;if(1&this.f)return!1;if(32==(36&this.f))return!0;this.f&=-5;if(this.g===d)return!0;this.g=d;this.f|=1;if(this.i>0&&!y(this)){this.f&=-2;return!0}var i=o;try{w(this);o=this;var t=this.x();if(16&this.f||this.v!==t||0===this.i){this.v=t;this.f&=-17;this.i++}}catch(i){this.v=i;this.f|=16;this.i++}o=i;p(this);this.f&=-2;return!0};x.prototype.S=function(i){if(void 0===this.t){this.f|=36;for(var t=this.s;void 0!==t;t=t.n)t.S.S(t)}l.prototype.S.call(this,i)};x.prototype.U=function(i){if(void 0!==this.t){l.prototype.U.call(this,i);if(void 0===this.t){this.f&=-33;for(var t=this.s;void 0!==t;t=t.n)t.S.U(t)}}};x.prototype.N=function(){if(!(2&this.f)){this.f|=6;for(var i=this.t;void 0!==i;i=i.x)i.t.N()}};Object.defineProperty(x.prototype,"value",{get:function(){if(1&this.f)throw new Error("Cycle detected");var i=a(this);this.h();if(void 0!==i)i.i=this.i;if(16&this.f)throw this.v;return this.v}});function _(i){var r=i.m;i.m=void 0;if("function"==typeof r){h++;var n=o;o=void 0;try{r()}catch(t){i.f&=-2;i.f|=8;b(i);throw t}finally{o=n;t()}}}function b(i){for(var t=i.s;void 0!==t;t=t.n)t.S.U(t);i.x=void 0;i.s=void 0;_(i)}function g(i){if(o!==this)throw new Error("Out-of-order effect");p(this);o=i;this.f&=-2;if(8&this.f)b(this);t()}function S(i,t){this.x=i;this.m=void 0;this.s=void 0;this.u=void 0;this.f=32;this.name=null==t?void 0:t.name;if(n)n.push(this)}S.prototype.c=function(){var i=this.S();try{if(8&this.f)return;if(void 0===this.x)return;var t=this.x();if("function"==typeof t)this.m=t}finally{i()}};S.prototype.S=function(){if(1&this.f)throw new Error("Cycle detected");this.f|=1;this.f&=-9;_(this);w(this);h++;var i=o;o=this;return g.bind(this,i)};S.prototype.N=function(){if(!(2&this.f)){this.f|=2;this.u=s;s=this}};S.prototype.d=function(){this.f|=8;if(!(1&this.f))b(this)};S.prototype.dispose=function(){this.d()};function m(i,t){var r=new S(i,t);try{r.c()}catch(i){r.d();throw i}var n=r.d.bind(r);n[Symbol.dispose]=n;return n}function E(i){return function(){var t=arguments,n=this;return r(function(){return f(function(){return i.apply(n,[].slice.call(t))})})}}function j(){var i=n;n=[];return function(){var t=n;if(n&&i)i=i.concat(n);n=i;return t}}var C=function(i){for(var t in i){var r=i[t];if("function"==typeof r)i[t]=E(r);else if("object"==typeof r&&null!==r&&!("brand"in r))C(r)}};exports.Computed=x;exports.Effect=S;exports.Signal=l;exports.action=E;exports.batch=r;exports.computed=function(i,t){return new x(i,t)};exports.createModel=function(i){return function(){var t,r,o=j();try{r=i.apply(void 0,[].slice.call(arguments))}catch(i){n=void 0;throw i}finally{t=o()}C(r);r[Symbol.dispose]=E(function(){if(t)for(var i=0;i<t.length;i++)t[i].dispose();t=void 0});return r}};exports.effect=m;exports.signal=function(i,t){return new l(i,t)};exports.untracked=f;//# sourceMappingURL=signals-core.js.map
+});
+require.define("@preact/signals", function (exports, require, module) {
+var i,n,r,t=require("preact"),e=require("preact/hooks"),o=require("@preact/signals-core"),f="undefined"!=typeof window&&!!window.__PREACT_SIGNALS_DEVTOOLS__,u=[],a=[];o.effect(function(){i=this.N})();function c(i,n){t.options[i]=n.bind(null,t.options[i]||function(){})}function v(i){if(r){var n=r;r=void 0;n()}r=i&&i.S()}function s(i){var n=this,r=i.data,f=useSignal(r);f.name="ReactiveDom";f.value=r;var u=e.useMemo(function(){var i=n,r=n.__v;while(r=r.__)if(r.__c){r.__c.__$f|=4;break}var e=o.computed(function(){var i=f.value.value;return 0===i?0:!0===i?"":i||""}),u=o.computed(function(){return!Array.isArray(e.value)&&!t.isValidElement(e.value)}),a=o.effect(function(){this.N=x;if(u.value){var n=e.value;if(i.__v&&i.__v.__e&&3===i.__v.__e.nodeType)i.__v.__e.data=n}}),c=n.__$u.d;n.__$u.d=function(){a();c.call(this)};return[u,e]},[]),a=u[0],c=u[1];return a.value?c.peek():c.value}s.displayName="ReactiveTextNode";Object.defineProperties(o.Signal.prototype,{constructor:{configurable:!0,value:void 0},type:{configurable:!0,value:s},props:{configurable:!0,get:function(){var i=this;return{data:{get value(){return i.value}}}}},__b:{configurable:!0,value:1}});c("__b",function(i,r){v();n=void 0;if("string"==typeof r.type){var t,e=r.props;for(var f in e)if("children"!==f){var u=e[f];if(u instanceof o.Signal){if(!t)r.__np=t={};t[f]=u;e[f]=u.peek()}}}i(r)});c("__r",function(i,r){i(r);if(r.type!==t.Fragment){v();var e,u=r.__c;if(u){u.__$f&=-2;if(void 0===(e=u.__$u))u.__$u=e=function(i,n){var r;o.effect(function(){r=this},{name:n});r.c=i;return r}(function(i){return function(){var n;if(f)null==(n=this.y)||n.call(this);i.__$f|=1;i.setState({})}}(u),"function"==typeof r.type?r.type.displayName||r.type.name:"")}n=u;v(e)}});c("__e",function(i,r,t,e){v();n=void 0;i(r,t,e)});c("diffed",function(i,r){v();n=void 0;var t;if("string"==typeof r.type&&(t=r.__e)){var e=r.__np,o=r.props,f=t.U;if(f)for(var u in f){var a=f[u];if(!(void 0===a||e&&u in e)){a.d();f[u]=void 0}}if(e){if(!f){f={};t.U=f}for(var c in e){var s=f[c],l=e[c];if(void 0===s){s=h(t,c,l,o);f[c]=s}else s.o(l,o)}}}i(r)});function h(i,n,r,t){var e=n in i&&void 0===i.ownerSVGElement,f=o.signal(r);return{o:function(i,n){f.value=i;t=n},d:o.effect(function(){this.N=x;var r=f.value.value;if(t[n]!==r){t[n]=r;if(e)i[n]=r;else if(null!=r&&(!1!==r||"-"===n[4]))i.setAttribute(n,r);else i.removeAttribute(n)}})}}c("unmount",function(i,n){if("string"==typeof n.type){var r=n.__e;if(r){var t=r.U;if(t){r.U=void 0;for(var e in t){var o=t[e];if(o)o.d()}}}var f=n.__np;if(f){var u=n.props;for(var a in f)u[a]=f[a]}n.__np=void 0}else{var c=n.__c;if(c){var v=c.__$u;if(v){c.__$u=void 0;v.d()}}}i(n)});c("__h",function(i,n,r,t){if(t<3)n.__$f|=2;i(n,r,t)});t.Component.prototype.shouldComponentUpdate=function(i,n){if(this.__R)return!0;var r=this.__$u,t=r&&void 0!==r.s;for(var e in n)return!0;if(this.__f||"boolean"==typeof this.u&&!0===this.u){var o=2&this.__$f;if(!(t||o||4&this.__$f))return!0;if(1&this.__$f)return!0}else{if(!(t||4&this.__$f))return!0;if(3&this.__$f)return!0}for(var f in i)if("__source"!==f&&i[f]!==this.props[f])return!0;for(var u in this.props)if(!(u in i))return!0;return!1};function useSignal(i,n){return e.useMemo(function(){return o.signal(i,n)},[])}var l="undefined"==typeof requestAnimationFrame?setTimeout:function(i){var n=function(){clearTimeout(r);cancelAnimationFrame(t);i()},r=setTimeout(n,35),t=requestAnimationFrame(n)},d=function(i){queueMicrotask(function(){queueMicrotask(i)})};function p(){o.batch(function(){var n;while(n=u.shift())i.call(n)})}function _(){if(1===u.push(this))(t.options.requestAnimationFrame||l)(p)}function m(){o.batch(function(){var n;while(n=a.shift())i.call(n)})}function x(){if(1===a.push(this))(t.options.requestAnimationFrame||d)(m)}exports.Signal=o.Signal;exports.action=o.action;exports.batch=o.batch;exports.computed=o.computed;exports.createModel=o.createModel;exports.effect=o.effect;exports.signal=o.signal;exports.untracked=o.untracked;exports.useComputed=function(i,r){var t=e.useRef(i);t.current=i;n.__$f|=4;return e.useMemo(function(){return o.computed(function(){return t.current()},r)},[])};exports.useModel=function(i){var n=e.useMemo(function(){return i()},[]);e.useEffect(function(){return n[Symbol.dispose]},[n]);return n};exports.useSignal=useSignal;exports.useSignalEffect=function(i,n){var r=e.useRef(i);r.current=i;e.useEffect(function(){return o.effect(function(){this.N=_;return r.current()},n)},[])};//# sourceMappingURL=signals.js.map
+});
 
-/* The English source is the key: without a dictionary the page is the
-   page it always was. Dictionaries are generated from
-   lab/client-i18n/*.json; {name} placeholders keep their meaning. */
-const LANGS = [['', 'English'], ['pt-BR', 'Portugu\u00eas (Brasil)'], ['es', 'Espa\u00f1ol']];
-/* lang:begin -- written by tools/embed-lang.py from ui/lang/*.json */
+</script>
+<script>
+/* Generated from ui/lang/*.json by tools/build-page.py. */
 const LANG = {
   "es": {
     "LIVE": "EN VIVO",
@@ -221,7 +569,7 @@ const LANG = {
     "FLASH": "FLASH",
     "ACHIEVEMENT UNLOCKED": "LOGRO DESBLOQUEADO",
     "{packets} packets": "{packets} paquetes",
-    "{gaps} skipped · {dupes} rep · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
+    "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} saltados · {dupes} rep · {torn} corruptos",
     "CONSOLE": "CONSOLA",
     "LINK": "ENLACE",
     "lost": "perdido",
@@ -367,7 +715,7 @@ const LANG = {
     "FLASH": "FLASH",
     "ACHIEVEMENT UNLOCKED": "CONQUISTA DESBLOQUEADA",
     "{packets} packets": "{packets} pacotes",
-    "{gaps} skipped · {dupes} rep · {torn} torn": "{gaps} pulados · {dupes} rep · {torn} corrompidos",
+    "{gaps} skipped · {dupes} repeated · {torn} torn": "{gaps} pulados · {dupes} rep · {torn} corrompidos",
     "CONSOLE": "CONSOLE",
     "LINK": "CONEXÃO",
     "lost": "perdida",
@@ -504,12 +852,19 @@ const LANG = {
     "loading the achievement set for this image &mdash; a few seconds": "carregando o conjunto de conquistas desta imagem &mdash; alguns segundos",
   },
 };
-/* lang:end */
+
+/* ==== 00-i18n.js ==== */
+/* ---- Language --------------------------------------------------------- */
+
+/* t() looks a string up in LANG[lang] and falls back to the English
+   key. LANG is generated from ui/lang/*.json at build time. {name}
+   placeholders are filled after the lookup. */
+const LANGS = [['', 'English'], ['pt-BR', 'Português (Brasil)'], ['es', 'Español']];
+
 let lang = '';
 try { lang = localStorage.getItem('lang') || ''; } catch (e) { lang = ''; }
-/* #lang=es opens the page in one language without touching the picker:
-   a second window for a stream, or a check while translating. The query
-   string works too. */
+/* lang= in the query string or the hash overrides the stored choice
+   for this window. */
 {
   const q = new URLSearchParams(location.search).get('lang') ||
             new URLSearchParams(location.hash.slice(1)).get('lang');
@@ -517,54 +872,57 @@ try { lang = localStorage.getItem('lang') || ''; } catch (e) { lang = ''; }
   if (q !== null && LANGS.some(([code]) => code === q)) lang = q;
 }
 
+/* Keys and translations may carry &middot;, &mdash; and &amp;. The
+   page renders text nodes, so they become the characters. */
+function entities(s) {
+  return s.replace(/&middot;/g, '·').replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
+}
+
 function t(s, v) {
   const d = LANG[lang];
-  let out = (d && d[s]) || s;
+  let out = entities((d && d[s]) || s);
 
-  if (v) for (const k in v) out = out.split('{' + k + '}').join(v[k]);
+  if (v) for (const k in v) out = out.split('{' + k + '}').join(String(v[k]));
   return out;
 }
 
-/* A failure in a render lands on the page, not in a console nobody has
-   open: an alpha that says "loading..." forever is worse than one that
-   names its error. */
-function showError(err) {
-  const main = document.querySelector('main');
-  const box = document.getElementById('err') || main.insertBefore(document.createElement('div'), main.firstChild);
+/* t() with elements among the values: the string is split on each
+   placeholder and returned as an array of strings and nodes. */
+function tv(s, v) {
+  let parts = [t(s)];
 
-  box.id = 'err';
-  box.style.cssText = 'color:#ff6b6b;font-size:17px;padding:8px 0 12px;white-space:pre-wrap';
-  box.textContent = 'page error: ' + (err && err.stack ? err.stack : err);
+  for (const k in v) {
+    const next = [];
+
+    for (const p of parts) {
+      if (typeof p !== 'string') { next.push(p); continue; }
+      p.split('{' + k + '}').forEach((bit, i) => {
+        if (i) next.push(v[k]);
+        if (bit) next.push(bit);
+      });
+    }
+    parts = next;
+  }
+  return parts;
 }
-window.addEventListener('error', e => showError(e.error || e.message));
-window.addEventListener('unhandledrejection', e => showError(e.reason));
 
-/* The static half of the page: header, footer, the toast. */
-function translateMarkup() {
-  for (const el of document.querySelectorAll('[data-t]'))
-    el.textContent = t(el.getAttribute('data-t'));
+/* Stores the choice in this browser and reloads. */
+function setLang(code) {
+  try { localStorage.setItem('lang', code); } catch (e) { /* private window */ }
+  location.reload();
 }
 
-/* The choice belongs to the browser looking at the page, not to the
-   client: a phone can read in Spanish while the PC stays English. The
-   select in the header shows the short code; the menu has the names. */
-function bindLangPicker() {
-  const el = document.getElementById('lang-pick');
+/* ==== 01-util.js ==== */
+/* ---- Small helpers, shared by every tab -------------------------------- */
 
-  el.innerHTML = LANGS.map(([code, name]) =>
-    '<option value="' + code + '"' + (code === lang ? ' selected' : '') + ' title="' + name + '">' +
-    (code || 'en').split('-')[0].toUpperCase() + '</option>').join('');
-  el.onchange = () => {
-    try { localStorage.setItem('lang', el.value); } catch (e) { /* private window */ }
-    location.reload();
-  };
-}
-let tab = 'live', lastUnlock = 0, library = null, libraryAt = 0, libFilter = 'all', gameId = 0, gameCache = {};
+const BADGE = 'https://media.retroachievements.org/Badge/';
+const MEDIA = 'https://media.retroachievements.org';
 
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
+/* True when the page was opened from another device. Settings, the
+   follow switch and QUIT are then hidden. */
+const REMOTE = !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(location.hostname);
+
+const TABS = ['live', 'library', 'game', 'boards', 'settings'];
 
 function hms(s) {
   const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -573,118 +931,8 @@ function hms(s) {
 
 function pct(a, b) { return b ? Math.round(a * 100 / b) : 0; }
 
-/* ---- CONSOLE: what the terminal log always said, on the page ------------ */
-
-/* Snapshots per second, from the frame counter's own movement. */
-let rate = { frames: 0, at: 0, v: 0 };
-function snapRate(frames) {
-  const now = performance.now();
-  if (!rate.at || frames < rate.frames) { rate.frames = frames; rate.at = now; rate.v = 0; }
-  else if (now - rate.at >= 1000) {
-    rate.v = Math.round((frames - rate.frames) * 1000 / (now - rate.at));
-    rate.frames = frames; rate.at = now;
-  }
-  return rate.v;
-}
-
-function framesText(c) {
-  const r = snapRate(c.frames || 0);
-  return c.frames ? c.frames.toLocaleString() + (r ? ' · ' + r + '/s' : '')
-                  : t('{packets} packets', { packets: (c.packets || 0).toLocaleString() });
-}
-
-/* Three counters in a 170px tile in a pixel font: one per line, or the
-   tail is clipped ("670 rep" was all that showed of the middle one). */
-function lostText(c) {
-  return t('{gaps} skipped · {dupes} repeated · {torn} torn',
-           { gaps: c.gaps || 0, dupes: c.dupes || 0, torn: c.torn || 0 }).split(' · ').join('<br>');
-}
-
-/* One stat tile; the CONSOLE, FOLLOWING and LIVE strips all use it. */
-const cell = (k, v, id) => '<div class="cell"><div class="k">' + k + '</div><div class="v"' +
-                           (id ? ' id="' + id + '"' : '') + '>' + v + '</div></div>';
-const muted = text => '<div class="muted">' + text + '</div>';
-
-/* Time cost of a set from its medians: beaten is the latest median on
-   the intended path, full the latest of all. */
-function setEstimates(list, medOf, isProgression) {
-  const meds = list.map(medOf).filter(m => m > 0);
-  const path = list.filter(a => isProgression(a)).map(medOf).filter(m => m > 0);
-
-  return { full: meds.length ? Math.max(...meds) : 0,
-           beaten: path.length ? Math.max(...path) : 0 };
-}
-
-const STATUS = {
-  'active':         ['achievement set active, unlocks are tracked', 1],
-  'no-hash':        ["image not identified &mdash; run 'RA: check game support' in the game's OPL menu", 0],
-  'telemetry-only': ['telemetry only &mdash; no achievement set could be loaded for this image', 0],
-  'identifying':    ['loading the achievement set for this image &mdash; a few seconds', 0],
-  'stale':          ["console watch list is out of date &mdash; run 'RA: check game support' again", 0]
-};
-
-/* The em dash is markup in these, so the dictionary key carries it too. */
-
-function consolePanel(s) {
-  const c = s.console;
-  if (!c.connected && !c.packets) return '';
-  /* The console is gone and the account's play elsewhere has LIVE:
-     the panel steps aside, the session clock stopped at the loss. */
-  if (!c.connected && (s.follow || {}).active) return '';
-
-  const st = STATUS[c.status];
-  const w = c.watch || {};
-
-  return '<h2>' + t('CONSOLE') + '</h2>' +
-    (st ? '<div class="row ' + (st[1] ? 'done' : 'na') + '"><div class="body"><div class="t">' +
-          t(st[0]) + '</div></div></div>' : '') +
-    '<div class="stats">' +
-    cell(t('LINK'), c.connected ? esc(c.ip) : '<span class="dimmer">' + t('lost') + '</span>') +
-    cell(t('GAME'), esc(s.game.serial) || '&mdash;') +
-    cell(t('SNAPSHOTS'), '<span id="cv-frames">' + framesText(c) + '</span>') +
-    cell(t('LOST'), '<span id="cv-lost">' + lostText(c) + '</span>') +
-    cell(t('WATCH LIST'), w.addresses
-        ? t('{addresses} addr &middot; {bytes} B &middot; {parts} parts',
-            { addresses: w.addresses, bytes: w.bytes, parts: w.parts }).split(' &middot; ').join('<br>')
-        : '&mdash;') +
-    cell(t('SESSION'), '<span id="cv-session">' + (c.seconds ? hms(c.seconds) : '&mdash;') + '</span>') +
-    '</div>' +
-    (s.game.hash ? '<div class="dimmer" style="font-size:16px;margin:-8px 0 14px">' +
-                   t('hash {hash}', { hash: esc(s.game.hash) }) + '</div>' : '');
-}
-
-/* FOLLOWING: the account's play on another device, as the Web API
-   sees it. No measured progress and no trackers here; the unlocks,
-   UP NEXT and the missable warnings work the same. */
-function followPanel(s) {
-  const f = s.follow;
-  if (!f || !f.active) return '';
-  const seen = f.online ? '<span style="color:var(--green)">' + t('playing now') + '</span>'
-             : f.rp_date ? esc(f.rp_date) : f.rp_ago >= 0 ? agoText(f.rp_ago) : '&mdash;';
-  const session = (f.session || []).length
-    ? '<h2>' + t('THIS SESSION') + '</h2>' + f.session.map(u =>
-        '<div class="row done"><img src="' + BADGE + u.badge + '.png" alt="">' +
-        '<div class="body"><div class="t">' + esc(u.title) + '</div>' +
-        '<div class="d">' + agoText(u.ago) +
-        (u.hardcore ? ' &middot; ' + t('hardcore') : '') + '</div></div>' +
-        '<div class="m"><span style="color:var(--green)">+' + u.points + '</span></div></div>').join('')
-    : '';
-  return '<h2>' + t('FOLLOWING') + '</h2>' +
-    '<div class="row done"><div class="body"><div class="t">' +
-    (f.rp ? esc(f.rp) : t('no rich presence line yet')) + '</div></div></div>' +
-    '<div class="stats">' +
-    cell(t('PLATFORM'), esc(s.game.console || '&mdash;')) +
-    cell(t('LAST SEEN'), '<span id="fv-seen">' + seen + '</span>') +
-    cell(t('SOURCE'), t('RetroAchievements &middot; every 20 s')) +
-    cell(t('POLLED'), '<span id="fv-polled">' +
-        (f.polled_ago >= 0 ? agoText(f.polled_ago) : '&mdash;') + '</span>') +
-    cell(t('SESSION'), '<span id="fv-session">' + (f.since ? hms(f.since) : '&mdash;') + '</span>') +
-    cell(t('UNLOCKS'), (f.session || []).length) +
-    '</div>' +
-    (f.failures ? '<div class="note" style="color:var(--amber)">' +
-                  t('the Web API is not answering; retrying') + '</div>' : '') +
-    session;
-}
+/* rc_client's measured_percent is already 0..100. */
+function pctClamp(v) { return Math.max(0, Math.min(100, +v || 0)); }
 
 function ago(sec) {
   if (sec < 60) return t('{n} s', { n: sec });
@@ -692,276 +940,20 @@ function ago(sec) {
   return t('{h} h {m} min', { h: Math.floor(sec / 3600), m: Math.floor((sec % 3600) / 60) });
 }
 
-/* Word order moves between languages, so the whole line is one string. */
+/* The whole line is one dictionary string. */
 function agoText(sec) { return t('{time} ago', { time: ago(sec) }); }
 
-/* ---- LIVE: the console's own session, straight from rc_client ---------- */
-
-/* Medians for the running game, one fetch per game. The Web API has no
-   played-time; the latest median among earned achievements stands in
-   for the player's position. */
-let liveMeta = { id: 0, byId: null, loading: false };
-
-function loadLiveMeta(id) {
-  if (liveMeta.loading || !id) return;
-  liveMeta.loading = true;
-  fetch('/game?id=' + id).then(r => r.json()).then(g => {
-    const byId = {};
-    for (const a of g.achievements || [])
-      byId[a.id] = { median: a.median || 0, type: a.type || '' };
-    liveMeta = { id, byId, icon: g.icon || '', loading: false };
-    gameCache[id] = g; /* the GAME tab profits from the same fetch */
-    liveSig = '';      /* one re-render, now with the medians in */
-    if (tab === 'live' && lastState) renderLive(lastState);
-  }).catch(() => { liveMeta.loading = false; });
+function medianText(s) {
+  return Math.floor(s / 3600) + 'h' + String(Math.floor(s % 3600 / 60)).padStart(2, '0');
 }
 
-/* The FOLLOW MY PLAY switch lives on LIVE, where its effect shows. It is
-   the PC's to flip: from a phone the client answers 403. */
-function followSwitch(s) {
-  const f = s.follow || {};
-  const li = s.login || {};
+function badgeUrl(a, locked) { return BADGE + a.badge + (locked ? '_lock' : '') + '.png'; }
 
-  if (REMOTE || !li.webapi) return '';
-  return '<div class="switch' + (f.on ? ' on' : '') + '" data-follow="' + (f.on ? '0' : '1') + '">' +
-    '<span class="k">' + t('FOLLOW MY PLAY') + '</span>' +
-    '<span class="d">' + (s.console.connected
-      ? t('the console has LIVE while it streams; following takes over when it stops')
-      : f.on ? t('LIVE shows the game you are in on any emulator with RetroAchievements, and the unlocks as they land')
-             : t('off. Turn it on and LIVE follows your account on any emulator with RetroAchievements')) +
-    '</span>' +
-    '<span class="state">' + t(f.on ? 'ON' : 'OFF') + '</span></div>';
-}
-
-/* ALL ACHIEVEMENTS, in one list or one list per subset when the server
-   sent more than the core set. */
-function achievementRows(list, subsets, row) {
-  if (!subsets || subsets.length < 2)
-    return list.map(row).join('');
-  return subsets.map(sub => {
-    const mine = list.filter(a => a.subset === sub.id);
-    if (!mine.length) return '';
-    const done = mine.filter(a => a.state === 2).length;
-    return '<h2>' + esc(sub.title).toUpperCase() + ' &middot; ' + done + ' / ' + mine.length + '</h2>' +
-      mine.map(row).join('');
-  }).join('');
-}
-
-function renderLive(s) {
-  const list = s.game.achievements || [];
-  const done = list.filter(a => a.state === 2).length;
-  const ptsDone = list.filter(a => a.state === 2).reduce((n, a) => n + (a.points || 0), 0);
-  const ptsAll = list.reduce((n, a) => n + (a.points || 0), 0);
-
-  if (!list.length) {
-    const f = s.follow || {};
-    document.getElementById('tab-live').innerHTML =
-      followSwitch(s) + consolePanel(s) +
-      muted(s.console.connected
-        ? t('console connected, waiting for a game with achievements')
-        : f.on && (s.login || {}).webapi
-          ? t('following your RetroAchievements activity: start a game on the console, or in any ' +
-              'emulator with RetroAchievements on, and it shows up here within half a minute')
-          : t('start a game on the console, or browse your library above'));
-    return;
-  }
-
-  if (s.game.id && liveMeta.id !== s.game.id)
-    loadLiveMeta(s.game.id);
-  const meta = liveMeta.id === s.game.id ? liveMeta.byId : null;
-
-  /* UP NEXT: locked achievements with medians just past the position,
-     drawn big; below them the ones an average player had by now. */
-  const medOf = a => meta ? ((meta[a.id] || {}).median || 0) : 0;
-  const missed = meta ? possiblyMissed(list, medOf) : new Set();
-
-  let ahead = '';
-  if (meta) {
-    const med = medOf;
-    const position = Math.max(0, ...list.filter(a => a.state === 2).map(med));
-    const picked = upNextPick(list, med);
-    const next = picked.next;
-
-    const bigRow = a => '<div class="row big near">' +
-      '<img src="' + BADGE + a.badge + '_lock.png" alt="">' +
-      '<div class="body"><div class="t">' + esc(a.title) + '</div>' +
-      '<div class="d">' + esc(a.description) + '</div>' +
-      (a.percent > 0 ? '<div class="mini"><i data-live-p="' + a.id + '" style="width:' + pctClamp(a.percent) + '%"></i></div>' : '') +
-      '</div><div class="m">' +
-      (a.measured ? '<span style="color:var(--accent)" data-live-m="' + a.id + '">' + esc(a.measured) + '</span>' : '') +
-      (a === picked.prog ? '<div style="color:var(--accent)">' + t('next in progression') + '</div>' : '') +
-      (missed.has(a.id) ? '<div style="color:var(--amber)">' + t('possibly skipped') + '</div>'
-       : med(a) <= position ? '<div style="color:var(--amber)">' + t('usually done by now') + '</div>' : '') +
-      '<div class="dimmer" style="font-size:16px"><span style="color:var(--amber)">' +
-      t('{points} pts', { points: a.points }) + '</span> &middot; ~' +
-      medianText(med(a)) + typeTag(a) + '</div></div></div>';
-
-    ahead = next.length
-      ? '<h2>' + t('UP NEXT &middot; BY MEDIAN UNLOCK TIME') + '</h2>' + next.map(bigRow).join('') : '';
-  }
-
-  const trackers = (s.game.tracking || []).length
-    ? '<h2>' + t('TRACKING NOW') + '</h2>' + s.game.tracking.map(tr =>
-        '<div class="row near"><div class="body"><div class="t">' + esc(tr.title) + '</div></div>' +
-        '<div class="m px" style="font-size:14px;color:var(--accent)" data-tr="' + tr.id + '">' +
-        esc(tr.value) + '</div></div>'
-      ).join('')
-    : '';
-
-  /* The numbers strip: points, the time the set costs by its medians,
-     and where the player stands in it. */
-  const est = meta ? setEstimates(list, medOf, a => achType(a) === 'progression' || achType(a) === 'win_condition') : null;
-  const position = meta ? Math.max(0, ...list.filter(a => a.state === 2).map(medOf)) : 0;
-  const strip = '<div class="stats">' +
-    cell(t('ACHIEVEMENTS'), done + ' / ' + list.length) +
-    cell(t('POINTS'), '<span style="color:var(--amber)">' + ptsDone + '</span> / ' + ptsAll) +
-    cell(t('BEATEN AT'), est && est.beaten ? '~' + medianText(est.beaten) : '&mdash;') +
-    cell(t('FULL SET AT'), est && est.full ? '~' + medianText(est.full) : '&mdash;') +
-    cell(t('YOUR POSITION'), position ? '~' + medianText(position) : '&mdash;') +
-    cell(t('MISSABLES LEFT'), list.filter(a => a.state !== 2 && achType(a) === 'missable').length) +
-    '</div>';
-
-  document.getElementById('tab-live').innerHTML =
-    followSwitch(s) + followPanel(s) + consolePanel(s) +
-    '<div class="head">' +
-    (meta && liveMeta.icon ? '<img src="' + MEDIA + liveMeta.icon + '" alt="">'
-     : s.game.icon ? '<img src="' + MEDIA + s.game.icon + '" alt="">' : '') +
-    '<div style="flex:1">' +
-    '<h1>' + esc(s.game.title || s.game.serial) + '</h1>' +
-    '<div class="bar"><i style="width:' + pct(done, list.length) + '%"></i></div>' +
-    '<div style="display:flex;margin-top:8px;gap:10px;flex-wrap:wrap"><span class="muted">' +
-    (s.game.checked_only ? t('from an image check, not from a running game')
-                         : esc(s.game.serial || s.game.console || '')) + '</span>' +
-    '<span class="right">' + done + ' / ' + list.length +
-    ' <span class="dimmer">&middot;</span> <span style="color:var(--amber)">' + ptsDone + '</span>' +
-    '<span class="dimmer"> / ' + t('{points} pts', { points: ptsAll }) + '</span></span></div></div></div>' +
-    strip +
-    ahead + trackers +
-    ((ahead || trackers || (s.game.subsets || []).length > 1) ? '<h2>' + t('ALL ACHIEVEMENTS') + '</h2>' : '') +
-    achievementRows(list, s.game.subsets, a => {
-      const isDone = a.state === 2;
-      const near = !isDone && a.percent > 0;
-      /* state 3 means rc_client disabled it: on hardware that is a
-         pointer read the console cannot follow. */
-      const na = a.state === 3;
-      return '<div class="row' + (isDone ? ' done' : na ? ' na' : near ? ' near' : '') + '">' +
-        '<img src="' + BADGE + a.badge + (isDone ? '' : '_lock') + '.png" alt="">' +
-        '<div class="body"><div class="t">' + esc(a.title) + '</div>' +
-        '<div class="d">' + esc(a.description) + '</div>' +
-        (near ? '<div class="mini"><i data-live-p="' + a.id + '" style="width:' + pctClamp(a.percent) + '%"></i></div>' : '') +
-        '</div><div class="m">' +
-        (isDone ? '<span style="color:var(--green)">' + t('unlocked') + '</span>'
-         : na ? '<span style="color:var(--amber)">' + t('not on hardware') + '</span>'
-         : a.measured ? '<span style="color:var(--accent)" data-live-m="' + a.id + '">' + esc(a.measured) + '</span>'
-         : '<span class="dimmer">' + t('locked') + '</span>') +
-        '<div class="dimmer" style="font-size:16px">' +
-        t('{points} pts', { points: a.points }) + typeTag(a) +
-        (missed.has(a.id) ? ' &middot; <span style="color:var(--amber)">' +
-                            t('possibly skipped') + '</span>' : '') +
-        '</div></div></div>';
-    });
-}
-
-/* ---- LIBRARY: every system, from the Web API --------------------------- */
-
-let libConsoles = new Set(); /* empty = every console */
-let libConsolesOpen = false;
-
-/* HighestAwardKind: mastered/completed are the hardcore and softcore
-   full clears, beaten comes in the same two flavours. */
-function awardBadge(g) {
-  const a = g.award || '';
-  if (a === 'mastered') return '<span class="award gold">' + t('MASTERED') + '</span>';
-  if (a === 'completed') return '<span class="award green">' + t('COMPLETED · SC') + '</span>';
-  if (a === 'beaten-hardcore') return '<span class="award blue">' + t('BEATEN') + '</span>';
-  if (a === 'beaten-softcore') return '<span class="award blue">' + t('BEATEN · SC') + '</span>';
-  return '';
-}
-
-async function renderLibrary() {
-  const el = document.getElementById('tab-library');
-
-  /* Two minutes, the same as the client's own cache of the Web API. */
-  if (!library || Date.now() - libraryAt > 120000) {
-    if (!library) el.innerHTML = '<div class="muted">' + t('loading your library...') + '</div>';
-    try {
-      library = (await (await fetch('/library')).json()).games || [];
-      libraryAt = Date.now();
-    } catch (e) {
-      el.innerHTML = '<div class="muted">' + t('could not reach the client') + '</div>';
-      return;
-    }
-  }
-
-  const isMastered = g => g.mastered || (g.total > 0 && g.awarded >= g.total);
-  const shown = library.filter(g => {
-    const okStatus =
-      libFilter === 'all' ? true :
-      libFilter === 'new' ? g.awarded === 0 :
-      libFilter === 'progress' ? g.awarded > 0 && g.awarded < g.total && !(g.award || '').startsWith('beaten') :
-      libFilter === 'beaten' ? (g.award || '').startsWith('beaten') :
-      isMastered(g);
-    return okStatus && (libConsoles.size === 0 || libConsoles.has(g.console));
-  });
-
-  /* Consoles fold behind one chip; several can be on at once, none
-     on means all. */
-  const perConsole = {};
-  for (const g of library) perConsole[g.console] = (perConsole[g.console] || 0) + 1;
-  const consoles = Object.keys(perConsole).sort();
-  /* Two strings, not a glued 'S': other languages build the plural
-     their own way. */
-  const conLabel = libConsoles.size === 0 ? t('ALL CONSOLES')
-    : t(libConsoles.size > 1 ? '{n} CONSOLES' : '{n} CONSOLE', { n: libConsoles.size });
-
-  el.innerHTML =
-    '<div class="filters">' +
-    [['all', t('ALL {n}', { n: library.length })], ['new', t('NOT STARTED')],
-     ['progress', t('IN PROGRESS')], ['beaten', t('BEATEN')], ['mastered', t('MASTERED')]]
-      .map(([k, label]) => '<span class="chip' + (libFilter === k ? ' on' : '') +
-                           '" data-filter="' + k + '">' + label + '</span>').join('') +
-    '<span class="chip' + (libConsoles.size ? ' on' : '') + '" data-consoles-toggle="1">' +
-    conLabel + ' ' + (libConsolesOpen ? '&#9652;' : '&#9662;') + '</span>' +
-    '</div>' +
-    (libConsolesOpen
-      ? '<div class="filters">' +
-        consoles.map(c => '<span class="chip' + (libConsoles.has(c) ? ' on' : '') +
-                          '" data-console="' + esc(c) + '">' + esc(c).toUpperCase() +
-                          ' <span class="dimmer">' + perConsole[c] + '</span></span>').join('') +
-        '</div>'
-      : '') +
-    '<div class="grid">' +
-    shown.map(g =>
-      '<div class="card" data-game="' + g.id + '">' +
-      '<div class="art">' +
-      (g.icon ? '<img src="' + MEDIA + esc(g.icon) + '" loading="lazy" onerror="this.remove()" alt="">' : '') +
-      '</div>' +
-      '<div class="meta"><div class="name">' + esc(g.title) + '</div>' +
-      '<div class="bar" style="height:8px"><i style="width:' + pct(g.awarded, g.total) + '%"></i></div>' +
-      '<div style="display:flex;margin-top:6px;font-size:16px;align-items:center;gap:6px">' +
-      '<span class="muted">' + g.awarded + ' / ' + g.total +
-      (g.hardcore > 0 && g.hardcore < g.awarded
-        ? ' <span class="dimmer">' + t('({n} hc)', { n: g.hardcore }) + '</span>' : '') +
-      '</span>' +
-      '<span class="right">' + (awardBadge(g) ||
-        '<span class="dimmer">' + esc(g.console) + '</span>') + '</span></div></div></div>').join('') +
-    '</div>' +
-    (shown.length ? '' : '<div class="muted">' + t('nothing matches these filters') + '</div>');
-}
-
-/* ---- GAME: one set in full, from the Web API --------------------------- */
-
-/* The three orders CLIENT.md records: the author's order, the intended
-   path (progression, then win condition, missables last), and the
-   median unlock time -- the order players take the set in. */
-let gameSort = 'author', gameFilter = 'all';
-
-/* Missables sort last: the path reads "do these in order, and mind
-   the ones you can lose", per CLIENT.md. Untyped rows sit between. */
+/* Rank in the progression-path order; untyped rows take 2. */
 const TYPE_RANK = { progression: 0, win_condition: 1, missable: 3 };
 
-/* The Web API hands type as a string, the live state as rc_client's
-   number; both normalize to the lowercase string or ''. */
+/* achType() maps rc_client's numeric type or the Web API's string to
+   'missable', 'progression', 'win_condition' or ''. */
 const TYPE_NAMES = ['', 'missable', 'progression', 'win_condition'];
 
 function achType(a) {
@@ -969,14 +961,28 @@ function achType(a) {
                                     : (a.type || '').toLowerCase();
 }
 
-/* UP NEXT picker: the nearest locked achievements by median time, but
-   the next progression/win achievement always holds a slot - optional
-   unlocks running ahead of the story must not push it off the list. */
+function onPath(a) {
+  const ty = achType(a);
+  return ty === 'progression' || ty === 'win_condition';
+}
+
+/* Time cost of a set from its medians: beaten is the latest median on
+   the intended path, full the latest of all. */
+function setEstimates(list, medOf) {
+  const meds = list.map(medOf).filter(m => m > 0);
+  const path = list.filter(onPath).map(medOf).filter(m => m > 0);
+
+  return { full: meds.length ? Math.max(...meds) : 0,
+           beaten: path.length ? Math.max(...path) : 0 };
+}
+
+/* UP NEXT: the four locked achievements with the lowest medians. The
+   first locked progression or win-condition achievement takes the last
+   slot when it is not among them. */
 function upNextPick(list, med) {
   const byMed = (x, y) => med(x) - med(y);
   const locked = list.filter(a => a.state === 1 && med(a) > 0);
-  const spine = locked.filter(a =>
-    achType(a) === 'progression' || achType(a) === 'win_condition').sort(byMed);
+  const spine = locked.filter(onPath).sort(byMed);
   const next = locked.sort(byMed).slice(0, 4);
 
   if (spine.length && !next.includes(spine[0])) {
@@ -986,11 +992,10 @@ function upNextPick(list, med) {
   return { next, prog: spine.length ? spine[0] : null };
 }
 
-/* A locked missable whose median sits before a story point the player
-   has already cleared was probably lost on the way. */
+/* Locked missables whose median is at or before the latest median
+   among the unlocked progression and win-condition achievements. */
 function possiblyMissed(list, med) {
-  const passed = Math.max(0, ...list.filter(a => a.state === 2 &&
-    (achType(a) === 'progression' || achType(a) === 'win_condition')).map(med));
+  const passed = Math.max(0, ...list.filter(a => a.state === 2 && onPath(a)).map(med));
   const out = new Set();
 
   for (const a of list)
@@ -999,562 +1004,1167 @@ function possiblyMissed(list, med) {
   return out;
 }
 
-function typeTag(a) {
-  const ty = achType(a);
-  return ty ? ' &middot; <span' + (ty === 'missable' ? ' style="color:var(--amber)"' : '') +
-              '>' + t(ty.replace('_', ' ')) + '</span>'
-            : '';
-}
-
-function medianText(s) {
-  return Math.floor(s / 3600) + 'h' + String(Math.floor(s % 3600 / 60)).padStart(2, '0');
-}
-
-function sortAchievements(list) {
+function sortAchievements(list, order) {
   const byAuthor = (a, b) => a.order - b.order;
 
-  if (gameSort === 'median')
+  if (order === 'median')
     /* Never-unlocked-by-anyone (median 0) goes to the end. */
     return list.sort((a, b) =>
       (a.median > 0 ? a.median : Infinity) - (b.median > 0 ? b.median : Infinity) || byAuthor(a, b));
-  if (gameSort === 'type')
+  if (order === 'type')
     return list.sort((a, b) =>
       (TYPE_RANK[achType(a)] ?? 2) - (TYPE_RANK[achType(b)] ?? 2) || byAuthor(a, b));
   return list.sort(byAuthor);
 }
 
-async function renderGame() {
-  const el = document.getElementById('tab-game');
+/* ==== 02-store.js ==== */
+/* ---- The store: signals the components read ---------------------------- */
 
-  if (!gameId) {
-    el.innerHTML = '<div class="muted">' + t('pick a game in the library') + '</div>';
-    return;
-  }
+const { h, render, Fragment } = require('preact');
+const { useState, useEffect, useRef, useMemo } = require('preact/hooks');
+const { signal, computed, effect, batch } = require('@preact/signals');
+const html = require('htm').bind(h);
 
-  if (!gameCache[gameId]) {
-    const want = gameId;
+/* Slow state: a full /state once a second and on anything structural,
+   what the user clicked, what the tabs fetched. */
+const S = {
+  state: signal(null),          /* the last full state from the client */
+  profile: signal(null),        /* /profile: name and points */
+  version: signal(''),
+  tab: signal('live'),
+  gameId: signal(0),            /* the game open on GAME and BOARDS */
+  library: signal(null),
+  libraryAt: 0,
+  libFilter: signal('all'),
+  libConsoles: signal(new Set()),   /* empty = every console */
+  libConsolesOpen: signal(false),
+  gameSort: signal('author'),
+  gameFilter: signal('all'),
+  gameCache: {},                /* id -> /game answer */
+  gameTick: signal(0),          /* bumped when the cache changes */
+  boardsCache: {},
+  boardsTick: signal(0),
+  openBoards: signal(new Set()),
+  liveMeta: signal({ id: 0, byId: null, icon: '' }),  /* medians for the running game */
+  toast: signal(null),
+  powerOn: signal(0),           /* bumped when the console starts streaming */
+  closed: signal(false),
+  error: signal('')
+};
 
-    el.innerHTML = muted(t('loading...'));
-    /* The client answers one request at a time and a Web API poll can
-       hold it for a while; a card opened in the first second after start
-       has been seen to wait on that. Say so, and offer another try. */
-    const slow = setTimeout(() => {
-      el.innerHTML = muted(t('still loading; the client is busy with RetroAchievements') +
-        ' <a href="#" data-game="' + gameId + '">' + t('try again') + '</a>');
-    }, 12000);
-    try {
-      gameCache[want] = await (await fetch('/game?id=' + want)).json();
-    } catch (e) {
-      clearTimeout(slow);
-      if (want === gameId) el.innerHTML = muted(t('could not reach the client'));
-      return;
-    }
-    clearTimeout(slow);
-    if (want !== gameId) return; /* the user moved on; the cache keeps the answer */
-  }
+/* Fast state: the numbers a delta carries every snapshot, one signal
+   each. */
+const fast = {
+  frames: signal(0), packets: signal(0), gaps: signal(0), dupes: signal(0), torn: signal(0),
+  seconds: signal(0), rate: signal(0), loss: signal(0),
+  fSince: signal(0), fPolled: signal(-1), fSeen: signal(-1)
+};
 
-  const g = gameCache[gameId];
-  const list = sortAchievements((g.achievements || []).filter(a =>
-    gameFilter === 'all' ? true :
-    gameFilter === 'locked' ? !a.earned :
-    gameFilter === 'unlocked' ? !!a.earned :
-    achType(a) === gameFilter));
-
-  const chips = (pairs, cur, attr) => '<div class="filters">' +
-    pairs.map(([k, label]) => '<span class="chip' + (cur === k ? ' on' : '') +
-                              '" ' + attr + '="' + k + '">' + t(label) + '</span>').join('') + '</div>';
-
-  /* Time cost of the set: beaten = latest median on the intended
-     path, full = latest median of all. */
-  const est = setEstimates(g.achievements || [], a => a.median || 0,
-                           a => achType(a) === 'progression' || achType(a) === 'win_condition');
-  const estBeaten = est.beaten, estFull = est.full;
-
-  /* The family strip: the base game and its subsets as chips, the open
-     one lit. A subset is another game id, so a click is a plain load. */
-  const base = g.base || {};
-  const family = (g.subsets || []).length
-    ? '<div class="subsets">' +
-      (base.id ? '<span class="chip' + (base.id === g.id ? ' on' : '') + '" data-game="' + base.id + '">' +
-                 t('MAIN SET') + '</span>' : '') +
-      g.subsets.map(sub => '<span class="chip' + (sub.id === g.id ? ' on' : '') + '" data-game="' + sub.id + '">' +
-                           esc(sub.title).toUpperCase() + ' <span class="dimmer">' + sub.achievements + '</span></span>').join('') +
-      '</div>'
-    : '';
-
-  el.innerHTML =
-    '<div class="head">' +
-    (g.icon ? '<img src="' + MEDIA + g.icon + '" alt="">' : '') +
-    '<div style="flex:1"><h1>' + esc(g.title) + '</h1>' +
-    '<div class="muted" style="margin-bottom:10px">' + esc(g.console) + ' &middot; ' +
-    t('{n} achievements', { n: (g.achievements || []).length }) +
-    (estFull ? ' &middot; <span style="color:var(--accent)">' +
-               (estBeaten ? t('beaten ~{time}', { time: medianText(estBeaten) }) + ' &middot; ' : '') +
-               t('full set ~{time}', { time: medianText(estFull) }) + '</span>' +
-               ' <span class="dimmer">' + t('by median unlocks') + '</span>' : '') +
-    '</div>' +
-    '<div class="bar"><i style="width:' + pct(g.awarded, g.total) + '%"></i></div>' +
-    '<div style="display:flex;margin-top:8px"><span class="muted">' +
-    '<a href="https://retroachievements.org/game/' + g.id + '" target="_blank">' +
-    t('on retroachievements.org') + '</a>' +
-    '</span><span class="right">' + g.awarded + ' / ' + g.total + '</span></div></div></div>' +
-    family +
-    chips([['all', 'ALL'], ['locked', 'LOCKED'], ['unlocked', 'UNLOCKED'],
-           ['missable', 'MISSABLE'], ['progression', 'PROGRESSION'],
-           ['win_condition', 'WIN CONDITION']], gameFilter, 'data-gfilter') +
-    chips([['author', 'AUTHOR ORDER'], ['type', 'PROGRESSION PATH'],
-           ['median', 'MEDIAN TIME']], gameSort, 'data-gsort') +
-    list.map(a => {
-      const done = !!a.earned;
-      return '<div class="row' + (done ? ' done' : '') + '">' +
-        '<img src="' + BADGE + a.badge + (done ? '' : '_lock') + '.png" alt="">' +
-        '<div class="body"><div class="t">' + esc(a.title) + '</div>' +
-        '<div class="d">' + esc(a.description) + '</div></div>' +
-        '<div class="m">' +
-        (done ? '<span style="color:var(--green)">' + esc(a.earned.slice(0, 10)) + '</span>'
-              : '<span class="dimmer">' + t('locked') + '</span>') +
-        '<div class="dimmer" style="font-size:16px">' + t('{points} pts', { points: a.points }) +
-        typeTag(a) +
-        (a.median > 0 ? ' &middot; ~' + medianText(a.median) : '') + '</div></div></div>';
-    }).join('');
+/* Measured progress per achievement and the value per tracked
+   leaderboard: one signal per id, created on first use. */
+const liveVals = new Map();
+function liveVal(id) {
+  if (!liveVals.has(id)) liveVals.set(id, signal({ m: '', p: 0 }));
+  return liveVals.get(id);
+}
+const trackVals = new Map();
+function trackVal(id) {
+  if (!trackVals.has(id)) trackVals.set(id, signal(''));
+  return trackVals.get(id);
 }
 
-/* ---- BOARDS: leaderboards, with the live tracker on top ---------------- */
+/* What the page is listening to. The console has LIVE while it
+   streams; following takes over when it stops; otherwise idle. */
+const mode = computed(() => {
+  const s = S.state.value;
+  if (!s) return 'idle';
+  return s.console.connected ? 'console' : (s.follow || {}).active ? 'follow' : 'idle';
+});
 
-let boardsCache = {}, tracking = [], openBoards = new Set();
+/* Snapshots per second, from the frame counter's own movement, and
+   the share of packets lost over the last few seconds. */
+const rateWin = { frames: 0, at: 0 };
+const lossWin = [];
+function measure(c) {
+  const now = performance.now();
+  const frames = c.frames || 0, gaps = c.gaps || 0;
 
-async function renderBoards() {
-  const el = document.getElementById('tab-boards');
-  const id = gameId || 0;
-
-  if (!id) {
-    el.innerHTML = '<div class="muted">' + t('pick a game in the library') + '</div>';
-    return;
+  if (!rateWin.at || frames < rateWin.frames) { rateWin.frames = frames; rateWin.at = now; fast.rate.value = 0; }
+  else if (now - rateWin.at >= 1000) {
+    fast.rate.value = Math.round((frames - rateWin.frames) * 1000 / (now - rateWin.at));
+    rateWin.frames = frames; rateWin.at = now;
   }
 
-  if (!boardsCache[id]) {
-    el.innerHTML = '<div class="muted">' + t('loading...') + '</div>';
-    try {
-      boardsCache[id] = (await (await fetch('/boards?id=' + id)).json()).boards || [];
-    } catch (e) {
-      el.innerHTML = '<div class="muted">' + t('could not reach the client') + '</div>';
-      return;
-    }
-  }
-
-  const boards = boardsCache[id];
-
-  el.innerHTML =
-    (tracking.length
-      ? '<h2>' + t('TRACKING NOW &middot; FROM CONSOLE MEMORY') + '</h2>' +
-        tracking.map(tr =>
-          '<div class="row near"><div class="body"><div class="t">' + esc(tr.title) + '</div></div>' +
-          '<div class="m px" style="font-size:14px;color:var(--accent)" data-tr="' + tr.id + '">' +
-          esc(tr.value) + '</div></div>'
-        ).join('')
-      : '') +
-    '<h2>' + t('{n} LEADERBOARDS &middot; CLICK ONE TO EXPAND', { n: boards.length }) + '</h2>' +
-    boards.map(b => {
-      /* Closed row: one line, name and record. The click opens the
-         description and the record holder. */
-      const open = openBoards.has(b.id);
-      return '<div class="row clickable' + (open ? ' near' : '') + '" data-board="' + b.id + '">' +
-        '<div class="body"><div class="t">' + (open ? '&#9662; ' : '&#9656; ') + esc(b.title) + '</div>' +
-        (open ? '<div class="d">' + esc(b.description) + '</div>' : '') +
-        '</div><div class="m">' +
-        (b.topScore ? '<span style="color:var(--accent)">' + esc(b.topScore) + '</span>' +
-                      (open ? '<div class="dimmer" style="font-size:16px">' + esc(b.topUser) + '</div>' : '')
-                    : '<span class="dimmer">' + t('no entries') + '</span>') +
-        '</div></div>';
-    }).join('');
+  lossWin.push({ at: now, frames, gaps });
+  while (lossWin.length && now - lossWin[0].at > 3000) lossWin.shift();
+  const a = lossWin[0], b = lossWin[lossWin.length - 1];
+  const df = b.frames - a.frames, dg = b.gaps - a.gaps;
+  fast.loss.value = df + dg > 0 && dg >= 0 ? Math.min(1, dg / (df + dg)) : 0;
 }
 
-/* ---- SETTINGS: both credentials live here, not in a terminal ----------- */
+function setFast(c) {
+  fast.frames.value = c.frames || 0;
+  fast.packets.value = c.packets || 0;
+  fast.gaps.value = c.gaps || 0;
+  fast.dupes.value = c.dupes || 0;
+  fast.torn.value = c.torn || 0;
+  fast.seconds.value = c.seconds || 0;
+  measure(c);
+}
 
-let lastState = null;
+function setLive(list, trk) {
+  for (const a of list || []) {
+    const sig = liveVal(a.id), cur = sig.value;
+    const m = a.m != null ? a.m : (a.measured || ''), p = pctClamp(a.p != null ? a.p : a.percent);
+    if (cur.m !== m || cur.p !== p) sig.value = { m, p };
+  }
+  for (const tr of trk || []) {
+    const v = tr.v != null ? tr.v : tr.value;
+    const sig = trackVal(tr.id);
+    if (sig.value !== v) sig.value = v;
+  }
+}
+
+let lastUnlock = 0, wasConsole = false;
+
+/* Applies a full state: the counters, the live values, the follow
+   clocks, the state signal, the power-on trigger and the unlock toast. */
+function applyState(s) {
+  if (!s.game) s.game = { achievements: [] };
+  batch(() => {
+    const c = s.console || {};
+    const f = s.follow || {};
+
+    if (s.version) S.version.value = s.version;
+    setFast(c);
+    setLive(s.game.achievements, s.game.tracking);
+    if (f.active) {
+      fast.fSince.value = f.since || 0;
+      fast.fPolled.value = f.polled_ago >= 0 ? f.polled_ago : -1;
+      fast.fSeen.value = f.rp_ago >= 0 ? f.rp_ago : -1;
+    }
+    S.state.value = s;
+
+    /* connected went from false to true. */
+    if (c.connected && !wasConsole) S.powerOn.value++;
+    wasConsole = !!c.connected;
+
+    const u = s.unlocks && s.unlocks[0];
+    if (u && u.id !== lastUnlock && u.ago < 12) {
+      lastUnlock = u.id;
+      delete S.gameCache[s.game.id];
+      S.gameTick.value++;
+      /* The library is dropped and fetched again on the next visit. */
+      S.library.value = null;
+      S.toast.value = { id: u.id, title: u.title, badge: u.badge || '', points: u.points };
+      setTimeout(() => { if (S.toast.value && S.toast.value.id === u.id) S.toast.value = null; }, 6000);
+    }
+  });
+  if (s.game.id && S.liveMeta.value.id !== s.game.id) loadLiveMeta(s.game.id);
+}
+
+function applyDelta(d) {
+  batch(() => {
+    if (d.console) setFast(d.console);
+    setLive(d.live, d.tracking);
+  });
+}
+
+/* ==== 03-api.js ==== */
+/* ---- The client's endpoints -------------------------------------------- */
+
+async function getJSON(url) {
+  return (await fetch(url, { cache: 'no-store' })).json();
+}
 
 async function postForm(url, data) {
   const r = await fetch(url, { method: 'POST', body: new URLSearchParams(data) });
   return r.json();
 }
 
-/* Opened from another device: the page shows everything, but the
-   settings and the off switch belong to the PC the client runs on. */
-const REMOTE = !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(location.hostname);
-
-/* Rendered on demand, never from the live stream: a push that redrew
-   this tab would wipe whatever is being typed into it. */
-function renderSettings() {
-  const li = (lastState && lastState.login) || { ok: false, user: '', webapi: false };
-  const lan = (lastState && lastState.lan) || { on: false, url: '' };
-
-  if (REMOTE) {
-    document.getElementById('tab-settings').innerHTML =
-      '<div class="set">' +
-      '<h2>' + t('OTHER DEVICES') + '</h2>' +
-      '<div>' + t('this page is open from {host}',
-                  { host: '<span style="color:var(--green)">' + esc(location.host) + '</span>' }) + '</div>' +
-      '<div class="note">' +
-      t('account, Web API key, the network switch and QUIT are changed on the PC ' +
-        'that runs xerabora; from here you watch.') + '</div>' +
-      (li.ok ? '<div style="margin-top:14px">' +
-               t('signed in as {user}',
-                 { user: '<span style="color:var(--green)">' + esc(li.user) + '</span>' }) + '</div>' : '') +
-      '</div>';
-    return;
-  }
-
-  document.getElementById('tab-settings').innerHTML =
-    '<div class="set">' +
-    '<h2>' + t('RETROACHIEVEMENTS ACCOUNT') + '</h2>' +
-    (li.ok
-      ? '<div>' + t('signed in as {user}',
-                    { user: '<span style="color:var(--green)">' + esc(li.user) + '</span>' }) + '</div>' +
-        '<div class="note">' + t('unlocks from the console are credited to this account') + '</div>' +
-        '<button class="act" id="btn-logout">' + t('SIGN OUT') + '</button>'
-      : '<div class="note">' +
-        t('the account your unlocks are credited to; only a login token is stored') + '</div>' +
-        '<form id="form-login">' +
-        '<label>' + t('username') + '</label><input class="f" name="user" autocomplete="username">' +
-        '<label>' + t('password') + '</label><input class="f" name="password" type="password" autocomplete="current-password">' +
-        '<button class="act">' + t('SIGN IN') + '</button></form>') +
-    '<div class="msg" id="login-msg"></div>' +
-
-    '<h2 style="margin-top:26px">' + t('WEB API KEY') + '</h2>' +
-    '<div class="note">' +
-    t('a read-only key that fills the library, leaderboards and profile. ' +
-      'Get it at {link}, section "Keys", and paste it here.',
-      { link: '<a href="https://retroachievements.org/settings" target="_blank">retroachievements.org/settings</a>' }) +
-    '</div>' +
-    '<form id="form-apikey">' +
-    '<label>' + t('key') + ' ' +
-    (li.webapi ? '<span style="color:var(--green)">' + t('(saved, paste to replace)') + '</span>' : '') +
-    '</label><input class="f" name="key" autocomplete="off">' +
-    '<button class="act">' + t('SAVE KEY') + '</button></form>' +
-    '<div class="msg" id="apikey-msg"></div>' +
-
-    '<h2 style="margin-top:26px">' + t('OTHER DEVICES') + '</h2>' +
-    (lan.on
-      ? '<div>' + t('open to the network') + (lan.url
-          ? ': <a href="' + esc(lan.url) + '" style="color:var(--green)">' + esc(lan.url) + '</a>'
-          : ' ' + t('(no network address found yet)')) + '</div>' +
-        '<div class="note">' +
-        t('type that address into a phone or tablet on the same Wi-Fi and add the page ' +
-          'to the home screen. Other devices watch; settings and QUIT stay here. ' +
-          'On Windows, allow xerabora through the firewall when it asks.') + '</div>' +
-        '<button class="act" id="btn-lan">' + t('CLOSE TO THIS PC') + '</button>'
-      : '<div class="note">' +
-        t('the page is reachable from this PC only. Open it to the network and any ' +
-          'phone, tablet or second PC on the same Wi-Fi can watch this tracker.') + '</div>' +
-        '<button class="act" id="btn-lan">' + t('OPEN TO THE NETWORK') + '</button>') +
-    '<div class="msg" id="lan-msg"></div>' +
-    '</div>';
-
-  const msg = (id, text, good) => {
-    const el = document.getElementById(id);
-    el.textContent = text;
-    el.style.color = good ? 'var(--green)' : 'var(--amber)';
-  };
-
-  const loginForm = document.getElementById('form-login');
-  if (loginForm) loginForm.onsubmit = async e => {
-    e.preventDefault();
-    const btn = loginForm.querySelector('button');
-    btn.disabled = true;
-    msg('login-msg', t('signing in...'), true);
-    try {
-      const r = await postForm('/login', {
-        user: loginForm.user.value.trim(), password: loginForm.password.value });
-      if (r.ok) {
-        lastState = await (await fetch('/state', { cache: 'no-store' })).json();
-        renderSettings();
-        apply(lastState);
-      } else { msg('login-msg', r.error || t('failed'), false); btn.disabled = false; }
-    } catch (err) { msg('login-msg', t('could not reach the client'), false); btn.disabled = false; }
-  };
-
-  const lanBtn = document.getElementById('btn-lan');
-  if (lanBtn) lanBtn.onclick = async () => {
-    lanBtn.disabled = true;
-    msg('lan-msg', t(lan.on ? 'closing...' : 'opening...'), true);
-    try {
-      const r = await postForm('/lan', { on: lan.on ? '0' : '1' });
-      if (!r.ok) { msg('lan-msg', r.error || t('failed'), false); lanBtn.disabled = false; return; }
-      /* The listener reopens on the next request; give it a moment. */
-      await new Promise(res => setTimeout(res, 700));
-      lastState = await (await fetch('/state', { cache: 'no-store' })).json();
-      renderSettings();
-    } catch (err) { msg('lan-msg', t('could not reach the client'), false); lanBtn.disabled = false; }
-  };
-
-  const logoutBtn = document.getElementById('btn-logout');
-  if (logoutBtn) logoutBtn.onclick = async () => {
-    try { await postForm('/logout', {}); } catch (err) {}
-    if (lastState) lastState.login = { ok: false, user: '', webapi: li.webapi };
-    renderSettings();
-  };
-
-  const keyForm = document.getElementById('form-apikey');
-  keyForm.onsubmit = async e => {
-    e.preventDefault();
-    const btn = keyForm.querySelector('button');
-    btn.disabled = true;
-    msg('apikey-msg', t('saving...'), true);
-    try {
-      const r = await postForm('/apikey', { key: keyForm.key.value.trim() });
-      if (r.ok) {
-        if (lastState && lastState.login) lastState.login.webapi = true;
-        library = null;      /* refetched with the new key */
-        loadProfile();
-        renderSettings();
-        msg('apikey-msg', t('saved'), true);
-      } else { msg('apikey-msg', r.error || t('failed'), false); btn.disabled = false; }
-    } catch (err) { msg('apikey-msg', t('could not reach the client'), false); btn.disabled = false; }
-  };
+async function refreshState() {
+  applyState(await getJSON('/state'));
 }
 
-/* ---- Wiring ------------------------------------------------------------ */
-
-function show(name) {
-  tab = name;
-  for (const t of ['live', 'library', 'game', 'boards', 'settings'])
-    document.getElementById('tab-' + t).hidden = t !== name;
-  for (const b of document.querySelectorAll('nav button'))
-    b.classList.toggle('on', b.dataset.tab === name);
-  if (name === 'library') renderLibrary();
-  if (name === 'game') renderGame();
-  if (name === 'boards') renderBoards();
-  if (name === 'settings') renderSettings();
-}
-
-/* The red button in the footer. Hidden from other devices: the client
-   would answer 403 anyway. */
-async function quit() {
-  if (!confirm(t('Quit xerabora? Console telemetry and unlocks stop.'))) return;
-  try { await postForm('/quit', {}); } catch (err) { /* it is going away */ }
-  document.body.innerHTML =
-    '<div class="muted" style="padding:60px;text-align:center;font-size:20px">' +
-    t('xerabora is closed. This tab can be closed too.') + '</div>';
-}
-
-async function setFollow(el, on) {
-  el.classList.add('busy');
-  try {
-    const r = await postForm('/follow', { on });
-    if (r.ok) {
-      lastState = await (await fetch('/state', { cache: 'no-store' })).json();
-      liveSig = '';
-      apply(lastState);
-      return;
-    }
-    el.querySelector('.d').textContent = r.error || t('failed');
-  } catch (err) {
-    el.querySelector('.d').textContent = t('could not reach the client');
-  }
-  el.classList.remove('busy');
-}
-
-document.addEventListener('click', e => {
-  const nav = e.target.closest('nav button');
-  if (nav) return show(nav.dataset.tab);
-
-  const sw = e.target.closest('[data-follow]');
-  if (sw) return setFollow(sw, sw.dataset.follow);
-
-  const chip = e.target.closest('[data-filter]');
-  if (chip) { libFilter = chip.dataset.filter; return renderLibrary(); }
-
-  const ct = e.target.closest('[data-consoles-toggle]');
-  if (ct) { libConsolesOpen = !libConsolesOpen; return renderLibrary(); }
-
-  const con = e.target.closest('[data-console]');
-  if (con) {
-    const c = con.dataset.console;
-    libConsoles.has(c) ? libConsoles.delete(c) : libConsoles.add(c);
-    return renderLibrary();
-  }
-
-  const bd = e.target.closest('[data-board]');
-  if (bd) {
-    const id = +bd.dataset.board;
-    openBoards.has(id) ? openBoards.delete(id) : openBoards.add(id);
-    return renderBoards();
-  }
-
-  const gf = e.target.closest('[data-gfilter]');
-  if (gf) { gameFilter = gf.dataset.gfilter; return renderGame(); }
-
-  const gs = e.target.closest('[data-gsort]');
-  if (gs) { gameSort = gs.dataset.gsort; return renderGame(); }
-
-  const card = e.target.closest('[data-game]');
-  if (card) {
-    e.preventDefault();
-    gameId = +card.dataset.game;
-    if (card.tagName === 'A') delete gameCache[gameId]; /* "try again" */
-    return show('game');
-  }
-});
-
-/* The live feed. The client pushes a state whenever a snapshot lands,
-   so the numbers move at the game's rate rather than a poll timer's.
-   The browser reconnects on its own if the client restarts; the poll
-   below stays as the fallback for whatever is not pushed. */
+/* /events: one full state or one delta per message. The browser
+   reconnects on its own; tick() polls /state every 2 s as well. */
 function stream() {
   const es = new EventSource('/events');
   es.onmessage = e => {
     try {
       const d = JSON.parse(e.data);
-      if (d.delta) applyDelta(d); else apply(d);
-    } catch (err) {}
+      if (d.delta) applyDelta(d); else applyState(d);
+    } catch (err) { /* not JSON: skipped */ }
   };
 }
 
-/* rc_client's measured_percent is already 0..100. */
-function pctClamp(v) { return Math.max(0, Math.min(100, +v || 0)); }
-
-function setVals(sel, txt) {
-  for (const el of document.querySelectorAll(sel)) el.textContent = txt;
-}
-
-/* The numbers that move every frame, poured into the existing layout:
-   the DOM stays put, so CSS transitions play instead of being
-   torn down sixty times a second. */
-function updateLiveNumbers(c, live, trk) {
-  if (c) {
-    const fr = document.getElementById('cv-frames');
-    if (fr) fr.textContent = framesText(c);
-    const lo = document.getElementById('cv-lost');
-    if (lo) lo.innerHTML = lostText(c);
-    const se = document.getElementById('cv-session');
-    if (se) se.textContent = c.seconds ? hms(c.seconds) : '-';
-    document.getElementById('linkstats').textContent =
-      c.frames ? t('{frames} snapshots, {skipped} skipped',
-                   { frames: c.frames.toLocaleString(), skipped: c.gaps || 0 })
-      : c.packets ? t('{packets} packets', { packets: c.packets.toLocaleString() }) : '';
-    document.getElementById('clock').textContent = c.seconds ? hms(c.seconds) : '';
-  }
-  for (const a of live || []) {
-    if (a.m) setVals('[data-live-m="' + a.id + '"]', a.m);
-    for (const el of document.querySelectorAll('[data-live-p="' + a.id + '"]'))
-      el.style.width = pctClamp(a.p) + '%';
-  }
-  for (const t of trk || []) setVals('[data-tr="' + t.id + '"]', t.v);
-}
-
-function applyDelta(d) {
-  updateLiveNumbers(d.console, d.live, d.tracking);
-}
-
-/* A full state redraws a tab only when its structure changed: a new
-   game, an unlock, a tracker appearing. Otherwise the numbers are
-   updated in place, same as a delta. */
-let liveSig = '', boardsSig = '', settingsSig = '';
-
-function apply(s) {
-    const c = s.console;
-
-    lastState = s;
-    if (s.version) document.getElementById('ver').textContent = 'v' + s.version;
-    const li = s.login || { ok: true };
-    const f = s.follow || {};
-    document.getElementById('dot').className = 'dot' + ((c.connected || f.active) ? ' on' : '');
-    document.getElementById('chip-flash').classList.toggle('on', !!c.connected);
-    document.getElementById('linktext').innerHTML =
-      c.connected ? t('console live at {ip}', { ip: esc(c.ip) })
-      : f.active ? t('following {game} via RetroAchievements', { game: esc(s.game.title || '') }) +
-                   (f.online ? ' &middot; ' + t('playing now') : '')
-      : !li.ok ? '<span style="color:var(--amber)">' +
-                 t('not signed in to RetroAchievements &mdash; open SETTINGS to sign in') + '</span>'
-      : t('waiting for the console');
-
-    tracking = s.game.tracking || [];
-    const list = s.game.achievements || [];
-
-    if (tab === 'live') {
-      const sig = [s.game.serial, c.connected, c.status || '', s.game.title || '',
-                   (c.watch && c.watch.addresses) || 0,
-                   list.map(a => a.id + ':' + a.state).join(','),
-                   tracking.map(t => t.id).join(','),
-                   f.active ? [f.game_id, f.rp, f.online, f.failures, (f.session || []).length].join('|') : ''
-                  ].join('|');
-      if (sig !== liveSig) { liveSig = sig; renderLive(s); }
-    }
-    /* Also when the list empties: the console went away and the
-       tracked rows must go with it. */
-    if (tab === 'boards') {
-      const bsig = tracking.map(t => t.id).join(',');
-      if (bsig !== boardsSig) { boardsSig = bsig; renderBoards(); }
-    }
-    /* SETTINGS is drawn from the last state, so a page that opened on
-       that tab shows a signed-out form until the first state lands. */
-    if (tab === 'settings') {
-      const ssig = [li.ok, li.user, li.webapi, (s.lan || {}).on, (s.lan || {}).url,
-                    (s.follow || {}).on].join('|');
-      if (ssig !== settingsSig) { settingsSig = ssig; renderSettings(); }
-    }
-    updateLiveNumbers(c,
-      list.map(a => ({ id: a.id, m: a.measured, p: a.percent })),
-      tracking.map(t => ({ id: t.id, v: t.value })));
-    if (f.active) {
-      const po = document.getElementById('fv-polled');
-      if (po) po.textContent = f.polled_ago >= 0 ? agoText(f.polled_ago) : '\u2014';
-      const se = document.getElementById('fv-session');
-      if (se) se.textContent = f.since ? hms(f.since) : '\u2014';
-      const sn = document.getElementById('fv-seen');
-      if (sn && !f.online && !f.rp_date && f.rp_ago >= 0) sn.textContent = agoText(f.rp_ago);
-      document.getElementById('clock').textContent = f.since ? hms(f.since) : '';
-    }
-
-    const u = s.unlocks && s.unlocks[0];
-    if (u && u.id !== lastUnlock && u.ago < 12) {
-      lastUnlock = u.id;
-      delete gameCache[s.game.id];
-      if (tab === 'game' && gameId === s.game.id) renderGame();
-      /* The shelf changed too; give the server a moment to record it. */
-      library = null;
-      if (tab === 'library') setTimeout(renderLibrary, 3000);
-      const toastEl = document.getElementById('toast');
-      document.getElementById('toastimg').src = BADGE + (u.badge || '') + '.png';
-      document.getElementById('toasttext').textContent =
-        u.title + '  ' + t('+{points} pts', { points: u.points });
-      toastEl.style.display = 'flex';
-      setTimeout(() => { toastEl.style.display = 'none'; }, 6000);
-    }
-}
-
 async function tick() {
-  try {
-    apply(await (await fetch('/state', { cache: 'no-store' })).json());
-  } catch (e) { /* the client went away; keep trying */ }
+  try { await refreshState(); } catch (e) { /* keep polling */ }
   setTimeout(tick, 2000);
 }
 
 function loadProfile() {
-  fetch('/profile').then(r => r.json()).then(p => {
-    document.getElementById('who').textContent =
-      p.user ? t('{user} · {points} points',
-                 { user: p.user, points: p.points.toLocaleString() })
-             : t('no Web API key, see SETTINGS');
-  }).catch(() => {});
+  getJSON('/profile').then(p => { S.profile.value = p; }).catch(() => {});
 }
 
-translateMarkup();
-bindLangPicker();
-document.getElementById('btn-quit').hidden = REMOTE;
-document.getElementById('btn-quit').onclick = quit;
-loadProfile();
-/* #tab=boards opens straight on a tab: a deep link, and the tab a demo
-   or an OBS window should start on. */
+/* Fetches /library unless a copy younger than two minutes is held. */
+let libraryLoading = false;
+async function loadLibrary() {
+  if (libraryLoading) return;
+  if (S.library.value && Date.now() - S.libraryAt < 120000) return;
+  libraryLoading = true;
+  try {
+    S.library.value = (await getJSON('/library')).games || [];
+    S.libraryAt = Date.now();
+  } catch (e) {
+    S.library.value = { error: true };
+  }
+  libraryLoading = false;
+}
+
+/* Fetches /game once per id into S.gameCache and bumps gameTick. */
+const gameLoading = new Set();
+async function loadGame(id) {
+  if (!id || S.gameCache[id] || gameLoading.has(id)) return;
+  gameLoading.add(id);
+  try {
+    S.gameCache[id] = await getJSON('/game?id=' + id);
+  } catch (e) {
+    S.gameCache[id] = { id, error: true, achievements: [] };
+  }
+  gameLoading.delete(id);
+  S.gameTick.value++;
+}
+
+async function loadBoards(id) {
+  if (!id || S.boardsCache[id]) return;
+  S.boardsCache[id] = { loading: true };
+  try {
+    S.boardsCache[id] = { boards: (await getJSON('/boards?id=' + id)).boards || [] };
+  } catch (e) {
+    S.boardsCache[id] = { error: true };
+  }
+  S.boardsTick.value++;
+}
+
+/* Fetches /game for the running game and keeps its medians and types
+   by id in S.liveMeta. The answer fills S.gameCache too. */
+let liveMetaLoading = false;
+function loadLiveMeta(id) {
+  if (liveMetaLoading || !id) return;
+  liveMetaLoading = true;
+  getJSON('/game?id=' + id).then(g => {
+    const byId = {};
+    for (const a of g.achievements || [])
+      byId[a.id] = { median: a.median || 0, type: a.type || '' };
+    S.gameCache[id] = g;
+    S.gameTick.value++;
+    S.liveMeta.value = { id, byId, icon: g.icon || '' };
+    liveMetaLoading = false;
+  }).catch(() => { liveMetaLoading = false; });
+}
+
+function openGame(id) {
+  S.gameId.value = id;
+  S.tab.value = 'game';
+}
+
+/* ==== 10-components.js ==== */
+/* ---- Shared components ------------------------------------------------- */
+
+/* Section label with a rule after it; `count` is an optional tail. */
+function Eyebrow({ children, count }) {
+  return html`<h2 class="eyebrow">${children}${count != null && html`<span class="count">${count}</span>`}</h2>`;
+}
+
+/* One stat tile. `v` may be a signal: the text then updates in place. */
+function Cell({ k, v, cls }) {
+  return html`<div class="cell"><div class="k">${k}</div><div class=${'v ' + (cls || '')}>${v}</div></div>`;
+}
+
+function Bar({ value, thin }) {
+  return html`<div class=${'bar' + (thin ? ' thin' : '')}><i style=${{ width: pctClamp(value) + '%' }} /></div>`;
+}
+
+/* Measured progress of one achievement, read from its live signal. */
+function Mini({ id }) {
+  const v = liveVal(id).value;
+  return v.p > 0 ? html`<div class="mini"><i style=${{ width: v.p + '%' }} /></div>` : null;
+}
+
+function Measured({ id }) {
+  const v = liveVal(id).value;
+  return v.m ? html`<span class="lead acc">${v.m}</span>` : null;
+}
+
+function Chip({ on, onClick, children, n, cls, title }) {
+  return html`<span class=${'chip' + (on ? ' on' : '') + (cls ? ' ' + cls : '')} onClick=${onClick} title=${title}>
+    ${children}${n != null && html` <span class="n">${n}</span>`}</span>`;
+}
+
+function Empty({ children }) { return html`<div class="empty">${children}</div>`; }
+
+/* Achievement row: badge, title, description, a right column of
+   lines. `state` picks the look: done, near, na, locked. */
+function AchRow({ a, state, big, right, below }) {
+  const locked = state !== 'done';
+  return html`<div class=${'row ' + state + (big ? ' big' : '')}>
+    <img class="badge" src=${badgeUrl(a, locked)} alt="" loading="lazy" />
+    <div class="body">
+      <div class="t">${a.title}</div>
+      <div class="d">${a.description}</div>
+      ${below}
+    </div>
+    <div class="m">${right}</div>
+  </div>`;
+}
+
+/* Type tag for the right column: missable in amber, the rest muted. */
+function TypeTag({ a }) {
+  const ty = achType(a);
+  if (!ty) return null;
+  return html`<span class=${ty === 'missable' ? 'warn' : ''}>${t(ty.replace('_', ' '))}</span>`;
+}
+
+/* Points and the tags after them, one line. */
+function Pts({ a, extra }) {
+  const parts = [html`<span class="gold">${t('{points} pts', { points: a.points })}</span>`];
+  const tag = achType(a);
+  if (tag) parts.push(html`<${TypeTag} a=${a} />`);
+  if (extra) parts.push(...(Array.isArray(extra) ? extra : [extra]));
+  return html`<span class="tag">${parts.map((p, i) => html`${i ? ' · ' : ''}${p}`)}</span>`;
+}
+
+/* Labelled toggle; `busy` greys it while the client answers. */
+function Switch({ on, label, text, busy, onToggle }) {
+  return html`<div class=${'switch' + (on ? ' on' : '') + (busy ? ' busy' : '')} onClick=${onToggle}>
+    <span class="k">${label}</span>
+    <span class="d">${text}</span>
+    <span class="tog" />
+  </div>`;
+}
+
+function Btn({ children, onClick, primary, danger, sm, disabled, type, id }) {
+  const cls = 'btn' + (primary ? ' primary' : '') + (danger ? ' danger' : '') + (sm ? ' sm' : '');
+  return html`<button class=${cls} onClick=${onClick} disabled=${disabled} type=${type || 'button'} id=${id}>${children}</button>`;
+}
+
+/* The disc: the cover turned by a requestAnimationFrame loop. Speed
+   follows the snapshot rate; the loss share slows it; each new gap
+   knocks the speed down for a moment and lights the hole red. */
+function Disc({ src }) {
+  const face = useRef();
+  const disc = useRef();
+
+  useEffect(() => {
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) return undefined;
+    let angle = 0, last = performance.now(), raf = 0;
+    let gaps = fast.gaps.peek(), kick = 0, stalled = false;
+
+    const loop = now => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+
+      const g = fast.gaps.peek();
+      if (g > gaps) kick = Math.min(1, kick + 0.6);
+      gaps = g;
+      kick = Math.max(0, kick - dt * 1.6);
+
+      const rate = fast.rate.peek();
+      const base = rate > 0 ? 90 + rate * 3 : 25;
+      const speed = base * (1 - 0.75 * fast.loss.peek()) * (1 - 0.92 * kick);
+      angle = (angle + speed * dt) % 360;
+      if (face.current) face.current.style.transform = 'rotate(' + angle.toFixed(2) + 'deg)';
+
+      const stall = kick > 0.35;
+      if (stall !== stalled && disc.current) {
+        disc.current.classList.toggle('stall', stall);
+        stalled = stall;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return html`<div class="disc" ref=${disc}>
+    <div class="face" ref=${face}>
+      ${src && html`<img src=${src} alt="" />`}
+      <div class="iris" /><div class="grooves" />
+    </div>
+    <div class="sheen" /><div class="rim" /><div class="hole" />
+  </div>`;
+}
+
+/* The cover of the game on LIVE: a disc while the console streams, a
+   still cover with a signal ring while following, plain otherwise. */
+function Cover({ src }) {
+  const m = mode.value;
+  if (m === 'console') return html`<${Disc} src=${src} />`;
+  const img = src ? html`<img class="cover" src=${src} alt="" />` : html`<div class="cover" />`;
+  if (m === 'follow') return html`<div class="cover-wrap">${img}<div class="ring" /></div>`;
+  return img;
+}
+
+function Toast() {
+  const u = S.toast.value;
+  if (!u) return null;
+  return html`<div class="toast">
+    <img src=${BADGE + u.badge + '.png'} alt="" />
+    <div>
+      <div class="k">${t('ACHIEVEMENT UNLOCKED')}</div>
+      <div class="t">${u.title}</div>
+      <div class="p">${t('+{points} pts', { points: u.points })}</div>
+    </div>
+  </div>`;
+}
+
+/* One sweep of light, mounted for 1.3 s when the console connects. */
+function PowerOn() {
+  const n = S.powerOn.value;
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    if (!n) return undefined;
+    setShown(n);
+    const id = setTimeout(() => setShown(0), 1300);
+    return () => clearTimeout(id);
+  }, [n]);
+  return shown ? html`<div class="poweron" key=${shown} />` : null;
+}
+
+/* ==== 20-live.js ==== */
+/* ---- LIVE: the console's session, or the account's play elsewhere ------ */
+
+const STATUS = {
+  'active':         ['achievement set active, unlocks are tracked', 'ok'],
+  'no-hash':        ["image not identified &mdash; run 'RA: check game support' in the game's OPL menu", 'warn'],
+  'telemetry-only': ['telemetry only &mdash; no achievement set could be loaded for this image', 'warn'],
+  'identifying':    ['loading the achievement set for this image &mdash; a few seconds', 'warn'],
+  'stale':          ["console watch list is out of date &mdash; run 'RA: check game support' again", 'warn']
+};
+
+/* Frame counter with the rate, or the packet count before the first frame. */
+const framesText = computed(() => {
+  const fr = fast.frames.value, r = fast.rate.value;
+  return fr ? fr.toLocaleString() + (r ? ' · ' + r + '/s' : '')
+            : t('{packets} packets', { packets: fast.packets.value.toLocaleString() });
+});
+const sessionText = computed(() => fast.seconds.value ? hms(fast.seconds.value) : '—');
+const fSinceText = computed(() => fast.fSince.value ? hms(fast.fSince.value) : '—');
+const fPolledText = computed(() => fast.fPolled.value >= 0 ? agoText(fast.fPolled.value) : '—');
+
+/* FOLLOW MY PLAY: hidden on REMOTE and without a Web API key. Posts
+   /follow and fetches the state again. */
+function FollowSwitch({ s }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const f = s.follow || {}, li = s.login || {};
+
+  if (REMOTE || !li.webapi) return null;
+  const text = err ? err
+    : s.console.connected ? t('the console has LIVE while it streams; following takes over when it stops')
+    : f.on ? t('LIVE shows the game you are in on any emulator with RetroAchievements, and the unlocks as they land')
+           : t('off. Turn it on and LIVE follows your account on any emulator with RetroAchievements');
+
+  const toggle = async () => {
+    setBusy(true); setErr('');
+    try {
+      const r = await postForm('/follow', { on: f.on ? '0' : '1' });
+      if (r.ok) await refreshState(); else setErr(r.error || t('failed'));
+    } catch (e) { setErr(t('could not reach the client')); }
+    setBusy(false);
+  };
+  return html`<${Switch} on=${!!f.on} label=${t('FOLLOW MY PLAY')} text=${text} busy=${busy} onToggle=${toggle} />`;
+}
+
+/* One line per counter in a tile: the string is split on its dots. */
+function lines(text) {
+  return text.split(' \u00b7 ').map((p, i) => html`${i ? html`<br />` : ''}${p}`);
+}
+
+/* The three loss counters; the component redraws when any one moves. */
+function Lost() {
+  return lines(t('{gaps} skipped \u00b7 {dupes} repeated \u00b7 {torn} torn',
+                 { gaps: fast.gaps.value, dupes: fast.dupes.value, torn: fast.torn.value }));
+}
+
+/* CONSOLE panel: link, serial, counters, watch list, session clock. */
+function ConsolePanel({ s }) {
+  const c = s.console;
+  if (!c.connected && !c.packets) return null;
+  if (!c.connected && (s.follow || {}).active) return null;
+
+  const st = STATUS[c.status];
+  const w = c.watch || {};
+  const watch = w.addresses
+    ? lines(t('{addresses} addr &middot; {bytes} B &middot; {parts} parts',
+              { addresses: w.addresses, bytes: w.bytes, parts: w.parts }))
+    : '—';
+
+  return html`<${Fragment}>
+    <${Eyebrow}>${t('CONSOLE')}<//>
+    ${st && html`<div class=${'banner ' + st[1]}>${t(st[0])}</div>`}
+    <div class="stats">
+      <${Cell} k=${t('LINK')} v=${c.connected ? c.ip : html`<span class="mute">${t('lost')}</span>`} />
+      <${Cell} k=${t('GAME')} v=${s.game.serial || '—'} />
+      <${Cell} k=${t('SNAPSHOTS')} v=${framesText} />
+      <${Cell} k=${t('LOST')} v=${html`<${Lost} />`} />
+      <${Cell} k=${t('WATCH LIST')} v=${watch} />
+      <${Cell} k=${t('SESSION')} v=${sessionText} />
+    </div>
+    ${s.game.hash && html`<div class="hash">${t('hash {hash}', { hash: s.game.hash })}</div>`}
+  <//>`;
+}
+
+/* FOLLOWING panel: the rich presence line, the poll, this session's unlocks. */
+function FollowPanel({ s }) {
+  const f = s.follow;
+  if (!f || !f.active) return null;
+  const seen = f.online ? html`<span class="ok">${t('playing now')}</span>`
+             : f.rp_date ? f.rp_date
+             : fast.fSeen.value >= 0 ? agoText(fast.fSeen.value) : '—';
+  const session = f.session || [];
+
+  return html`<${Fragment}>
+    <${Eyebrow}>${t('FOLLOWING')}<//>
+    <div class="banner ok">${f.rp ? f.rp : t('no rich presence line yet')}</div>
+    <div class="stats">
+      <${Cell} k=${t('PLATFORM')} v=${s.game.console || '—'} />
+      <${Cell} k=${t('LAST SEEN')} v=${seen} />
+      <${Cell} k=${t('SOURCE')} v=${t('RetroAchievements &middot; every 20 s')} />
+      <${Cell} k=${t('POLLED')} v=${fPolledText} />
+      <${Cell} k=${t('SESSION')} v=${fSinceText} />
+      <${Cell} k=${t('UNLOCKS')} v=${session.length} />
+    </div>
+    ${f.failures ? html`<div class="note warn">${t('the Web API is not answering; retrying')}</div>` : null}
+    ${session.length > 0 && html`<${Eyebrow}>${t('THIS SESSION')}<//>
+      ${session.map(u => html`<div class="row done" key=${u.id}>
+        <img class="badge" src=${BADGE + u.badge + '.png'} alt="" />
+        <div class="body"><div class="t">${u.title}</div>
+          <div class="d">${agoText(u.ago)}${u.hardcore ? ' · ' + t('hardcore') : ''}</div></div>
+        <div class="m"><span class="lead ok">+${u.points}</span></div>
+      </div>`)}`}
+  <//>`;
+}
+
+/* The game's head: cover, title, progress bar, counts. */
+function LiveHead({ s, list, done, ptsDone, ptsAll, icon }) {
+  return html`<div class="head">
+    <${Cover} src=${icon ? MEDIA + icon : ''} />
+    <div class="body">
+      <h1>${s.game.title || s.game.serial}</h1>
+      <${Bar} value=${pct(done, list.length)} />
+      <div class="sub">
+        <span>${s.game.checked_only ? t('from an image check, not from a running game') : (s.game.serial || s.game.console || '')}</span>
+        <span class="right"><b>${done}</b> / ${list.length} <span class="mute">·</span> <span class="gold">${ptsDone}</span><span class="mute"> / ${t('{points} pts', { points: ptsAll })}</span></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ALL ACHIEVEMENTS: one list, or one per subset when there are several. */
+function AchievementGroups({ list, subsets, row }) {
+  if (!subsets || subsets.length < 2) return list.map(row);
+  return subsets.map(sub => {
+    const mine = list.filter(a => a.subset === sub.id);
+    if (!mine.length) return null;
+    const done = mine.filter(a => a.state === 2).length;
+    return html`<${Fragment} key=${sub.id}>
+      <${Eyebrow} count=${done + ' / ' + mine.length}>${sub.title.toUpperCase()}<//>
+      ${mine.map(row)}
+    <//>`;
+  });
+}
+
+/* One row of ALL ACHIEVEMENTS; reads the achievement's live signal for
+   the measured value and the progress. */
+function LiveRow({ a, missed }) {
+  const isDone = a.state === 2;
+  /* state 3 is rc_client's disabled state: 'not on hardware'. */
+  const na = a.state === 3;
+  const lv = liveVal(a.id).value;
+  const near = !isDone && !na && lv.p > 0;
+  const state = isDone ? 'done' : na ? 'na' : near ? 'near' : 'locked';
+  return html`<${AchRow} a=${a} state=${state}
+    below=${!isDone && !na && html`<${Mini} id=${a.id} />`}
+    right=${html`<${Fragment}>
+      ${isDone ? html`<span class="lead ok">${t('unlocked')}</span>`
+        : na ? html`<span class="lead warn">${t('not on hardware')}</span>`
+        : lv.m ? html`<span class="lead acc">${lv.m}</span>`
+        : html`<span class="lead">${t('locked')}</span>`}
+      <${Pts} a=${a} extra=${missed ? html`<span class="warn">${t('possibly skipped')}</span>` : null} />
+    <//>`} />`;
+}
+
+function LiveTab() {
+  const s = S.state.value;
+  if (!s) return html`<${Empty}>${t('loading...')}<//>`;
+
+  const list = s.game.achievements || [];
+  const f = s.follow || {};
+
+  if (!list.length) {
+    return html`<div class="tab">
+      <${FollowSwitch} s=${s} /><${ConsolePanel} s=${s} />
+      <${Empty}>${s.console.connected
+        ? t('console connected, waiting for a game with achievements')
+        : f.on && (s.login || {}).webapi
+          ? t('following your RetroAchievements activity: start a game on the console, or in any emulator with RetroAchievements on, and it shows up here within half a minute')
+          : t('start a game on the console, or browse your library above')}<//>
+    </div>`;
+  }
+
+  const done = list.filter(a => a.state === 2).length;
+  const ptsDone = list.filter(a => a.state === 2).reduce((n, a) => n + (a.points || 0), 0);
+  const ptsAll = list.reduce((n, a) => n + (a.points || 0), 0);
+
+  const lm = S.liveMeta.value;
+  const meta = lm.id === s.game.id ? lm.byId : null;
+  const medOf = a => meta ? ((meta[a.id] || {}).median || 0) : 0;
+  const missed = meta ? possiblyMissed(list, medOf) : new Set();
+  const position = meta ? Math.max(0, ...list.filter(a => a.state === 2).map(medOf)) : 0;
+  const est = meta ? setEstimates(list, medOf) : null;
+
+  /* UP NEXT: the nearest locked achievements by median, drawn big. */
+  let ahead = null;
+  if (meta) {
+    const picked = upNextPick(list, medOf);
+    if (picked.next.length) {
+      ahead = html`<${Eyebrow}>${t('UP NEXT &middot; BY MEDIAN UNLOCK TIME')}<//>
+        ${picked.next.map(a => html`<${AchRow} key=${a.id} a=${a} state="near" big
+          below=${html`<${Mini} id=${a.id} />`}
+          right=${html`<${Fragment}>
+            <${Measured} id=${a.id} />
+            ${a === picked.prog && html`<span class="tag acc">${t('next in progression')}</span>`}
+            ${missed.has(a.id) ? html`<span class="tag warn">${t('possibly skipped')}</span>`
+              : medOf(a) <= position ? html`<span class="tag warn">${t('usually done by now')}</span>` : null}
+            <${Pts} a=${a} extra=${'~' + medianText(medOf(a))} />
+          <//>`} />`)}`;
+    }
+  }
+
+  const trackers = (s.game.tracking || []).length
+    ? html`<${Eyebrow}>${t('TRACKING NOW')}<//>
+        ${s.game.tracking.map(tr => html`<div class="row near" key=${tr.id}>
+          <div class="body"><div class="t">${tr.title}</div></div>
+          <div class="m"><span class="lead acc">${trackVal(tr.id)}</span></div>
+        </div>`)}`
+    : null;
+
+  const strip = html`<div class="stats">
+    <${Cell} k=${t('ACHIEVEMENTS')} v=${done + ' / ' + list.length} />
+    <${Cell} k=${t('POINTS')} v=${html`<span class="gold">${ptsDone}</span> / ${ptsAll}`} />
+    <${Cell} k=${t('BEATEN AT')} v=${est && est.beaten ? '~' + medianText(est.beaten) : '—'} />
+    <${Cell} k=${t('FULL SET AT')} v=${est && est.full ? '~' + medianText(est.full) : '—'} />
+    <${Cell} k=${t('YOUR POSITION')} v=${position ? '~' + medianText(position) : '—'} />
+    <${Cell} k=${t('MISSABLES LEFT')} v=${list.filter(a => a.state !== 2 && achType(a) === 'missable').length} />
+  </div>`;
+
+  const row = a => html`<${LiveRow} key=${a.id} a=${a} missed=${missed.has(a.id)} />`;
+
+  const showAll = ahead || trackers || (s.game.subsets || []).length > 1;
+
+  return html`<div class="tab">
+    <${FollowSwitch} s=${s} />
+    <${FollowPanel} s=${s} />
+    <${ConsolePanel} s=${s} />
+    <${LiveHead} s=${s} list=${list} done=${done} ptsDone=${ptsDone} ptsAll=${ptsAll}
+      icon=${(meta && lm.icon) || s.game.icon || ''} />
+    ${strip}
+    ${ahead}
+    ${trackers}
+    ${showAll && html`<${Eyebrow} count=${done + ' / ' + list.length}>${t('ALL ACHIEVEMENTS')}<//>`}
+    <${AchievementGroups} list=${list} subsets=${s.game.subsets} row=${row} />
+  </div>`;
+}
+
+/* ==== 21-library.js ==== */
+/* ---- LIBRARY: every game the account touched, from the Web API --------- */
+
+/* HighestAwardKind: mastered and completed are the hardcore and softcore
+   full clears; beaten comes in the same two flavours. */
+function awardBadge(g) {
+  const a = g.award || '';
+  if (a === 'mastered') return html`<span class="award gold">${t('MASTERED')}</span>`;
+  if (a === 'completed') return html`<span class="award green">${t('COMPLETED · SC')}</span>`;
+  if (a === 'beaten-hardcore') return html`<span class="award blue">${t('BEATEN')}</span>`;
+  if (a === 'beaten-softcore') return html`<span class="award blue">${t('BEATEN · SC')}</span>`;
+  return null;
+}
+
+function GameCard({ g }) {
+  const art = g.icon ? MEDIA + g.icon : '';
+  return html`<div class="card" onClick=${() => openGame(g.id)}>
+    <div class="art">
+      ${art && html`<div class="blur" style=${{ backgroundImage: 'url(' + art + ')' }} />`}
+      ${art && html`<img src=${art} loading="lazy" alt="" onError=${e => e.target.remove()} />`}
+    </div>
+    <div class="meta">
+      <div class="name">${g.title}</div>
+      <${Bar} value=${pct(g.awarded, g.total)} thin />
+      <div class="foot">
+        <span>${g.awarded} / ${g.total}${g.hardcore > 0 && g.hardcore < g.awarded
+          ? html` <span class="mute">${t('({n} hc)', { n: g.hardcore })}</span>` : ''}</span>
+        <span class="right">${awardBadge(g) || html`<span class="mute">${g.console}</span>`}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+const LIB_FILTERS = [['all', 'ALL {n}'], ['new', 'NOT STARTED'], ['progress', 'IN PROGRESS'],
+                     ['beaten', 'BEATEN'], ['mastered', 'MASTERED']];
+
+function LibraryTab() {
+  useEffect(() => { loadLibrary(); }, []);
+  const library = S.library.value;
+
+  if (!library) return html`<div class="tab"><${Empty}>${t('loading your library...')}<//></div>`;
+  if (library.error) return html`<div class="tab"><${Empty}>${t('could not reach the client')}<//></div>`;
+
+  const filter = S.libFilter.value;
+  const consoles = S.libConsoles.value;
+  const open = S.libConsolesOpen.value;
+
+  const isMastered = g => g.mastered || (g.total > 0 && g.awarded >= g.total);
+  const shown = library.filter(g => {
+    const ok =
+      filter === 'all' ? true :
+      filter === 'new' ? g.awarded === 0 :
+      filter === 'progress' ? g.awarded > 0 && g.awarded < g.total && !(g.award || '').startsWith('beaten') :
+      filter === 'beaten' ? (g.award || '').startsWith('beaten') :
+      isMastered(g);
+    return ok && (consoles.size === 0 || consoles.has(g.console));
+  });
+
+  /* Console chips: several can be on; an empty set means all. */
+  const perConsole = {};
+  for (const g of library) perConsole[g.console] = (perConsole[g.console] || 0) + 1;
+  const names = Object.keys(perConsole).sort();
+  const conLabel = consoles.size === 0 ? t('ALL CONSOLES')
+    : t(consoles.size > 1 ? '{n} CONSOLES' : '{n} CONSOLE', { n: consoles.size });
+  const toggleConsole = c => {
+    const next = new Set(consoles);
+    next.has(c) ? next.delete(c) : next.add(c);
+    S.libConsoles.value = next;
+  };
+
+  return html`<div class="tab">
+    <div class="filters">
+      ${LIB_FILTERS.map(([k, label]) => html`<${Chip} key=${k} on=${filter === k}
+        onClick=${() => { S.libFilter.value = k; }}>${t(label, { n: library.length })}<//>`)}
+      <${Chip} on=${consoles.size > 0} onClick=${() => { S.libConsolesOpen.value = !open; }}>
+        ${conLabel} ${open ? '▴' : '▾'}<//>
+    </div>
+    ${open && html`<div class="filters">
+      ${names.map(c => html`<${Chip} key=${c} on=${consoles.has(c)} n=${perConsole[c]}
+        onClick=${() => toggleConsole(c)}>${c.toUpperCase()}<//>`)}
+    </div>`}
+    <div class="grid">${shown.map(g => html`<${GameCard} key=${g.id} g=${g} />`)}</div>
+    ${!shown.length && html`<${Empty}>${t('nothing matches these filters')}<//>`}
+  </div>`;
+}
+
+/* ==== 22-game.js ==== */
+/* ---- GAME: one set in full, from the Web API --------------------------- */
+
+const GAME_FILTERS = [['all', 'ALL'], ['locked', 'LOCKED'], ['unlocked', 'UNLOCKED'],
+                      ['missable', 'MISSABLE'], ['progression', 'PROGRESSION'],
+                      ['win_condition', 'WIN CONDITION']];
+const GAME_SORTS = [['author', 'AUTHOR ORDER'], ['type', 'PROGRESSION PATH'], ['median', 'MEDIAN TIME']];
+
+/* The base game and its subsets as chips, the open one lit. A click
+   opens that game id. */
+function Family({ g }) {
+  if (!(g.subsets || []).length) return null;
+  const base = g.base || {};
+  return html`<div class="subsets">
+    ${base.id > 0 && html`<${Chip} on=${base.id === g.id} onClick=${() => openGame(base.id)}>${t('MAIN SET')}<//>`}
+    ${g.subsets.map(sub => html`<${Chip} key=${sub.id} on=${sub.id === g.id} n=${sub.achievements}
+      onClick=${() => openGame(sub.id)}>${sub.title.toUpperCase()}<//>`)}
+  </div>`;
+}
+
+/* "loading..." for the first 12 s, then a note that the client is busy
+   and a link that clears the cache entry and fetches again. */
+function Loading({ id }) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    const tm = setTimeout(() => setSlow(true), 12000);
+    return () => clearTimeout(tm);
+  }, [id]);
+  if (!slow) return html`<${Empty}>${t('loading...')}<//>`;
+  return html`<${Empty}>${t('still loading; the client is busy with RetroAchievements')}${' '}
+    <a href="#" onClick=${e => { e.preventDefault(); delete S.gameCache[id]; loadGame(id); }}>${t('try again')}</a><//>`;
+}
+
+function GameTab() {
+  const id = S.gameId.value;
+  S.gameTick.value; /* re-render when a fetch lands */
+  useEffect(() => { loadGame(id); }, [id]);
+
+  if (!id) return html`<div class="tab"><${Empty}>${t('pick a game in the library')}<//></div>`;
+  const g = S.gameCache[id];
+  if (!g) return html`<div class="tab"><${Loading} id=${id} /></div>`;
+  if (g.error) return html`<div class="tab"><${Empty}>${t('could not reach the client')}<//></div>`;
+
+  const sort = S.gameSort.value, filter = S.gameFilter.value;
+  const all = g.achievements || [];
+  const list = sortAchievements(all.filter(a =>
+    filter === 'all' ? true :
+    filter === 'locked' ? !a.earned :
+    filter === 'unlocked' ? !!a.earned :
+    achType(a) === filter), sort);
+  const est = setEstimates(all, a => a.median || 0);
+
+  return html`<div class="tab">
+    <div class="head">
+      ${g.icon ? html`<img class="cover" src=${MEDIA + g.icon} alt="" />` : html`<div class="cover" />`}
+      <div class="body">
+        <h1>${g.title}</h1>
+        <div class="note" style=${{ marginBottom: '10px' }}>
+          ${g.console} · ${t('{n} achievements', { n: all.length })}
+          ${est.full > 0 && html` · <span class="acc">${est.beaten > 0 && t('beaten ~{time}', { time: medianText(est.beaten) }) + ' · '}${t('full set ~{time}', { time: medianText(est.full) })}</span> <span class="mute">${t('by median unlocks')}</span>`}
+        </div>
+        <${Bar} value=${pct(g.awarded, g.total)} />
+        <div class="sub">
+          <a href=${'https://retroachievements.org/game/' + g.id} target="_blank" rel="noopener">${t('on retroachievements.org')}</a>
+          <span class="right"><b>${g.awarded}</b> / ${g.total}</span>
+        </div>
+      </div>
+    </div>
+    <${Family} g=${g} />
+    <div class="filters">
+      ${GAME_FILTERS.map(([k, label]) => html`<${Chip} key=${k} on=${filter === k}
+        onClick=${() => { S.gameFilter.value = k; }}>${t(label)}<//>`)}
+    </div>
+    <div class="filters">
+      ${GAME_SORTS.map(([k, label]) => html`<${Chip} key=${k} on=${sort === k}
+        onClick=${() => { S.gameSort.value = k; }}>${t(label)}<//>`)}
+    </div>
+    ${list.map(a => html`<${AchRow} key=${a.id} a=${a} state=${a.earned ? 'done' : 'locked'}
+      right=${html`<${Fragment}>
+        ${a.earned ? html`<span class="lead ok">${a.earned.slice(0, 10)}</span>`
+                   : html`<span class="lead">${t('locked')}</span>`}
+        <${Pts} a=${a} extra=${a.median > 0 ? '~' + medianText(a.median) : null} />
+      <//>`} />`)}
+  </div>`;
+}
+
+/* ==== 23-boards.js ==== */
+/* ---- BOARDS: leaderboards, with the live trackers on top --------------- */
+
+function BoardsTab() {
+  const id = S.gameId.value;
+  S.boardsTick.value; /* re-render when a fetch lands */
+  useEffect(() => { loadBoards(id); }, [id]);
+
+  if (!id) return html`<div class="tab"><${Empty}>${t('pick a game in the library')}<//></div>`;
+  const b = S.boardsCache[id];
+  if (!b || b.loading) return html`<div class="tab"><${Empty}>${t('loading...')}<//></div>`;
+  if (b.error) return html`<div class="tab"><${Empty}>${t('could not reach the client')}<//></div>`;
+
+  const s = S.state.value;
+  const tracking = (s && s.game.tracking) || [];
+  const open = S.openBoards.value;
+  const toggle = bid => {
+    const next = new Set(open);
+    next.has(bid) ? next.delete(bid) : next.add(bid);
+    S.openBoards.value = next;
+  };
+
+  return html`<div class="tab">
+    ${tracking.length > 0 && html`<${Eyebrow}>${t('TRACKING NOW &middot; FROM CONSOLE MEMORY')}<//>
+      ${tracking.map(tr => html`<div class="row near" key=${tr.id}>
+        <div class="body"><div class="t">${tr.title}</div></div>
+        <div class="m"><span class="lead acc">${trackVal(tr.id)}</span></div>
+      </div>`)}`}
+    <${Eyebrow}>${t('{n} LEADERBOARDS &middot; CLICK ONE TO EXPAND', { n: b.boards.length })}<//>
+    ${b.boards.map(bd => {
+      const isOpen = open.has(bd.id);
+      return html`<div class=${'row clickable' + (isOpen ? ' near' : '')} key=${bd.id} onClick=${() => toggle(bd.id)}>
+        <div class="body">
+          <div class="t">${isOpen ? '▾ ' : '▸ '}${bd.title}</div>
+          ${isOpen && html`<div class="d">${bd.description}</div>`}
+        </div>
+        <div class="m">
+          ${bd.topScore ? html`<span class="lead acc">${bd.topScore}</span>${isOpen && html`<span class="tag">${bd.topUser}</span>`}`
+                        : html`<span>${t('no entries')}</span>`}
+        </div>
+      </div>`;
+    })}
+  </div>`;
+}
+
+/* ==== 24-settings.js ==== */
+/* ---- SETTINGS: account, Web API key, the network switch ---------------- */
+
+/* The tab re-renders on this key: the login and the network setting,
+   not the whole state. */
+const settingsKey = computed(() => {
+  const s = S.state.value;
+  if (!s) return '';
+  const li = s.login || {}, lan = s.lan || {};
+  return [li.ok, li.user, li.webapi, lan.on, lan.url].join('|');
+});
+
+function Msg({ text, good }) {
+  return html`<div class=${'msg ' + (good ? 'ok' : 'warn')}>${text}</div>`;
+}
+
+function AccountBlock({ li }) {
+  const [msg, setMsg] = useState(['', true]);
+  const [busy, setBusy] = useState(false);
+
+  const signIn = async e => {
+    e.preventDefault();
+    const form = e.target;
+    setBusy(true); setMsg([t('signing in...'), true]);
+    try {
+      const r = await postForm('/login', { user: form.user.value.trim(), password: form.password.value });
+      if (r.ok) { setMsg(['', true]); await refreshState(); }
+      else setMsg([r.error || t('failed'), false]);
+    } catch (err) { setMsg([t('could not reach the client'), false]); }
+    setBusy(false);
+  };
+  const signOut = async () => {
+    try { await postForm('/logout', {}); } catch (err) { /* gone already */ }
+    try { await refreshState(); } catch (err) { /* the poll catches up */ }
+  };
+
+  return html`<div class="block">
+    <${Eyebrow}>${t('RETROACHIEVEMENTS ACCOUNT')}<//>
+    ${li.ok
+      ? html`<div>${tv('signed in as {user}', { user: html`<span class="ok">${li.user}</span>` })}</div>
+          <div class="note">${t('unlocks from the console are credited to this account')}</div>
+          <${Btn} onClick=${signOut}>${t('SIGN OUT')}<//>`
+      : html`<div class="note">${t('the account your unlocks are credited to; only a login token is stored')}</div>
+          <form onSubmit=${signIn}>
+            <label>${t('username')}</label><input class="f" name="user" autocomplete="username" />
+            <label>${t('password')}</label><input class="f" name="password" type="password" autocomplete="current-password" />
+            <${Btn} type="submit" primary disabled=${busy}>${t('SIGN IN')}<//>
+          </form>`}
+    <${Msg} text=${msg[0]} good=${msg[1]} />
+  </div>`;
+}
+
+function KeyBlock({ li }) {
+  const [msg, setMsg] = useState(['', true]);
+  const [busy, setBusy] = useState(false);
+
+  const save = async e => {
+    e.preventDefault();
+    const form = e.target;
+    setBusy(true); setMsg([t('saving...'), true]);
+    try {
+      const r = await postForm('/apikey', { key: form.key.value.trim() });
+      if (r.ok) {
+        form.key.value = '';
+        S.library.value = null;
+        loadProfile();
+        await refreshState();
+        setMsg([t('saved'), true]);
+      } else setMsg([r.error || t('failed'), false]);
+    } catch (err) { setMsg([t('could not reach the client'), false]); }
+    setBusy(false);
+  };
+
+  return html`<div class="block">
+    <${Eyebrow}>${t('WEB API KEY')}<//>
+    <div class="note">${tv('a read-only key that fills the library, leaderboards and profile. Get it at {link}, section "Keys", and paste it here.',
+      { link: html`<a href="https://retroachievements.org/settings" target="_blank" rel="noopener">retroachievements.org/settings</a>` })}</div>
+    <form onSubmit=${save}>
+      <label>${t('key')} ${li.webapi && html`<span class="ok">${t('(saved, paste to replace)')}</span>`}</label>
+      <input class="f" name="key" autocomplete="off" />
+      <${Btn} type="submit" primary disabled=${busy}>${t('SAVE KEY')}<//>
+    </form>
+    <${Msg} text=${msg[0]} good=${msg[1]} />
+  </div>`;
+}
+
+function LanBlock({ lan }) {
+  const [msg, setMsg] = useState(['', true]);
+  const [busy, setBusy] = useState(false);
+
+  const flip = async () => {
+    setBusy(true); setMsg([t(lan.on ? 'closing...' : 'opening...'), true]);
+    try {
+      const r = await postForm('/lan', { on: lan.on ? '0' : '1' });
+      if (!r.ok) { setMsg([r.error || t('failed'), false]); setBusy(false); return; }
+      /* The listener reopens on the next request. */
+      await new Promise(res => setTimeout(res, 700));
+      await refreshState();
+      setMsg(['', true]);
+    } catch (err) { setMsg([t('could not reach the client'), false]); }
+    setBusy(false);
+  };
+
+  return html`<div class="block">
+    <${Eyebrow}>${t('OTHER DEVICES')}<//>
+    ${lan.on
+      ? html`<div>${t('open to the network')}${lan.url
+            ? html`: <a class="ok" href=${lan.url}>${lan.url}</a>`
+            : ' ' + t('(no network address found yet)')}</div>
+          <div class="note">${t('type that address into a phone or tablet on the same Wi-Fi and add the page to the home screen. Other devices watch; settings and QUIT stay here. On Windows, allow xerabora through the firewall when it asks.')}</div>
+          <${Btn} onClick=${flip} disabled=${busy}>${t('CLOSE TO THIS PC')}<//>`
+      : html`<div class="note">${t('the page is reachable from this PC only. Open it to the network and any phone, tablet or second PC on the same Wi-Fi can watch this tracker.')}</div>
+          <${Btn} onClick=${flip} primary disabled=${busy}>${t('OPEN TO THE NETWORK')}<//>`}
+    <${Msg} text=${msg[0]} good=${msg[1]} />
+  </div>`;
+}
+
+function SettingsTab() {
+  settingsKey.value;
+  const s = S.state.peek();
+  const li = (s && s.login) || { ok: false, user: '', webapi: false };
+  const lan = (s && s.lan) || { on: false, url: '' };
+
+  if (REMOTE) {
+    return html`<div class="tab"><div class="set">
+      <${Eyebrow}>${t('OTHER DEVICES')}<//>
+      <div>${tv('this page is open from {host}', { host: html`<span class="ok">${location.host}</span>` })}</div>
+      <div class="note">${t('account, Web API key, the network switch and QUIT are changed on the PC that runs xerabora; from here you watch.')}</div>
+      ${li.ok && html`<div style=${{ marginTop: '14px' }}>${tv('signed in as {user}', { user: html`<span class="ok">${li.user}</span>` })}</div>`}
+    </div></div>`;
+  }
+
+  return html`<div class="tab"><div class="set">
+    <${AccountBlock} li=${li} />
+    <${KeyBlock} li=${li} />
+    <${LanBlock} lan=${lan} />
+  </div></div>`;
+}
+
+/* ==== 90-app.js ==== */
+/* ---- The page: header, status strip, the open tab, footer -------------- */
+
+const linkStats = computed(() => {
+  if (mode.value !== 'console') return '';
+  const fr = fast.frames.value;
+  if (fr) return t('{frames} snapshots, {skipped} skipped', { frames: fr.toLocaleString(), skipped: fast.gaps.value });
+  const pk = fast.packets.value;
+  return pk ? t('{packets} packets', { packets: pk.toLocaleString() }) : '';
+});
+
+/* The footer clock: the console session, or the following session. */
+const clockText = computed(() => {
+  const m = mode.value;
+  if (m === 'console') return fast.seconds.value ? hms(fast.seconds.value) : '';
+  if (m === 'follow') return fast.fSince.value ? hms(fast.fSince.value) : '';
+  return '';
+});
+
+function Header() {
+  const tab = S.tab.value;
+  const p = S.profile.value;
+  /* The separator is inside the points span; a narrow header hides the span. */
+  const who = p === null ? ''
+    : p.user ? html`<b>${p.user}</b><span class="pts">${t('{user} \u00b7 {points} points', { user: '', points: p.points.toLocaleString() })}</span>`
+    : t('no Web API key, see SETTINGS');
+
+  return html`<header class="top"><div class="wrap">
+    <a class="brand" href="#" onClick=${e => { e.preventDefault(); S.tab.value = 'live'; }}>
+      <span>xe<span class="r">R</span><span class="a">A</span>bora</span>
+      ${S.version.value && html`<span class="ver">v${S.version.value}</span>`}
+    </a>
+    <nav class="tabs">
+      ${TABS.map(name => html`<button key=${name} class=${tab === name ? 'on' : ''}
+        onClick=${() => { S.tab.value = name; }}>${t(name.toUpperCase())}</button>`)}
+    </nav>
+    <div class="hdr-right">
+      <span class="who">${who}</span>
+      <select class="lang" aria-label="Language" value=${lang} onChange=${e => setLang(e.target.value)}>
+        ${LANGS.map(([code, name]) => html`<option key=${code} value=${code} title=${name}>${(code || 'en').split('-')[0].toUpperCase()}</option>`)}
+      </select>
+    </div>
+  </div></header>`;
+}
+
+function Status() {
+  const s = S.state.value;
+  const c = (s && s.console) || {};
+  const f = (s && s.follow) || {};
+  const li = (s && s.login) || { ok: true };
+  const m = mode.value;
+  const text = !s ? t('waiting for the console')
+    : c.connected ? t('console live at {ip}', { ip: c.ip })
+    : f.active ? t('following {game} via RetroAchievements', { game: s.game.title || '' }) + (f.online ? ' · ' + t('playing now') : '')
+    : !li.ok ? html`<span class="warn">${t('not signed in to RetroAchievements &mdash; open SETTINGS to sign in')}</span>`
+    : t('waiting for the console');
+
+  return html`<div class="status"><div class="wrap">
+    <span class=${'dot' + ((c.connected || f.active) ? ' on' : '')} />
+    ${m !== 'idle' && html`<span class="mode">${t(m === 'console' ? 'CONSOLE' : 'FOLLOWING')}</span>`}
+    <span class="text">${text}</span>
+    <span class="counters">${linkStats}</span>
+  </div></div>`;
+}
+
+async function quit() {
+  if (!confirm(t('Quit xerabora? Console telemetry and unlocks stop.'))) return;
+  try { await postForm('/quit', {}); } catch (err) { /* it is going away */ }
+  S.closed.value = true;
+}
+
+function Footer() {
+  const s = S.state.value;
+  const connected = !!(s && s.console.connected);
+  return html`<footer><div class="wrap">
+    <${Chip} on cls="static" title="every unlock is softcore">${t('SOFTCORE')}<//>
+    <${Chip} on=${connected} cls="static" title="the gold flash on the TV: lit while a console streams">${t('FLASH')}<//>
+    <span class="clock">${clockText}</span>
+    ${!REMOTE && html`<${Btn} danger sm onClick=${quit}>${t('QUIT')}<//>`}
+  </div></footer>`;
+}
+
+function App() {
+  if (S.closed.value)
+    return html`<div class="closed">${t('xerabora is closed. This tab can be closed too.')}</div>`;
+
+  const tab = S.tab.value;
+  const err = S.error.value;
+  return html`<div class="app">
+    <${Header} />
+    <${Status} />
+    <main class="wrap">
+      ${err && html`<div class="err">${'page error: ' + err}</div>`}
+      ${tab === 'live' ? html`<${LiveTab} />`
+        : tab === 'library' ? html`<${LibraryTab} />`
+        : tab === 'game' ? html`<${GameTab} />`
+        : tab === 'boards' ? html`<${BoardsTab} />`
+        : html`<${SettingsTab} />`}
+    </main>
+    <${Footer} />
+    <${Toast} />
+    <${PowerOn} />
+  </div>`;
+}
+
+/* Uncaught errors go to the error box at the top of main. */
+function showError(err) { S.error.value = String(err && err.stack ? err.stack : err); }
+window.addEventListener('error', e => showError(e.error || e.message));
+window.addEventListener('unhandledrejection', e => showError(e.reason));
+
+/* data-mode on <html>: the accent and the washes follow it in CSS. */
+effect(() => { document.documentElement.dataset.mode = mode.value; });
+
+/* #tab=boards opens straight on a tab; #game=5761 opens that game's card. */
 {
   const q = new URLSearchParams(location.hash.slice(1) || location.search);
   const want = q.get('tab');
   const game = +q.get('game');
 
-  /* #game=5761 opens that game's card, a link worth sharing. */
-  if (game > 0) { gameId = game; show('game'); }
-  else show(['live', 'library', 'game', 'boards', 'settings'].includes(want) ? want : 'live');
+  if (game > 0) S.gameId.value = game;
+  S.tab.value = TABS.includes(want) ? want : game > 0 ? 'game' : 'live';
 }
+
+render(html`<${App} />`, document.getElementById('app'));
+loadProfile();
 stream();
 tick();
+
 </script>
+</body>
+</html>

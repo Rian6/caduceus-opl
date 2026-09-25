@@ -1,0 +1,69 @@
+/* ---- Tokens -------------------------------------------------------------
+   Colours, radii, fonts, easing. [data-theme] on <html> swaps the whole
+   set; [data-mode] shifts the accent and the washes. The palette is the
+   project site's. */
+:root {
+  color-scheme: dark;
+
+  --bg: #0A1020;
+  --bg-raised: #0F1729;
+  --bg-sunken: #060B17;
+  --bg-hover: #16213A;
+  --line: #1E2A45;
+  --line-strong: #2C3C62;
+  --ink: #E8ECF5;
+  --ink-soft: #AEB8D0;
+  --ink-mute: #7C88A6;
+  --white: #FFFFFF;
+
+  --blue: #3D8BFF;
+  --blue-bright: #34D0FF;
+  --gold: #E0A526;
+  --ok: #5FD38A;
+  --warn: #F2B96B;
+  --danger: #FF6B6B;
+
+  /* Accent: overridden per mode below. */
+  --accent: var(--blue);
+  --accent-ink: #06101F;
+  --accent-soft: rgba(61, 139, 255, 0.14);
+  --accent-line: rgba(61, 139, 255, 0.5);
+  --accent-glow: rgba(61, 139, 255, 0.35);
+  --bar: linear-gradient(90deg, #2F6FD8, var(--blue-bright));
+
+  /* Opacity of the two washes behind the page (10-base.css). */
+  --wash-blue: 0.55;
+  --wash-gold: 0;
+
+  --radius: 12px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+  --shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+
+  --font-display: "Chakra Petch", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --mode-t: 0.7s;
+}
+
+:root[data-mode="console"] {
+  --accent: var(--gold);
+  --accent-soft: rgba(224, 165, 38, 0.15);
+  --accent-line: rgba(224, 165, 38, 0.55);
+  --accent-glow: rgba(224, 165, 38, 0.4);
+  --bar: linear-gradient(90deg, #B37F14, #F3C86B);
+  --wash-blue: 0.25;
+  --wash-gold: 1;
+}
+
+:root[data-mode="follow"] {
+  --accent: var(--blue-bright);
+  --accent-soft: rgba(52, 208, 255, 0.13);
+  --accent-line: rgba(52, 208, 255, 0.5);
+  --accent-glow: rgba(52, 208, 255, 0.35);
+  --bar: linear-gradient(90deg, #2A8DC8, #7FE6FF);
+  --wash-blue: 0.9;
+  --wash-gold: 0;
+}
