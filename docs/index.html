@@ -226,37 +226,64 @@
   @media (max-width: 720px) { .demo iframe { height: 620px; } }
 
   /* Mock-ups of the client's own page, in its colours whatever the theme. */
-  .app { background: #0B1528; border: 1px solid #1E2F52; border-radius: 6px; overflow: hidden; font-family: var(--font-mono); color: #E8EEF8; }
-  .app__bar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: #0D1A33; border-bottom: 1px solid #1E2F52; font-size: 0.68rem; letter-spacing: 0.06em; color: #8FA3C7; }
-  .app__bar .brand-mini { font-weight: 700; font-size: 0.8rem; letter-spacing: 0; color: #E8EEF8; margin-right: 6px; }
-  .app__bar .brand-mini .r { color: #3D8BFF; } .app__bar .brand-mini .a { color: #E0A526; }
-  .app__bar .tab { padding: 3px 7px; } .app__bar .tab.on { background: #7FD6FF; color: #05101F; font-weight: 700; }
-  .app__bar .who { margin-left: auto; letter-spacing: 0; }
-  .app__status { display: flex; justify-content: space-between; gap: 12px; padding: 9px 14px; background: #0E1F3A; font-size: 0.78rem; color: #CFE3FF; }
-  .app__status .dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: #5CF29A; box-shadow: 0 0 6px #5CF29A; vertical-align: 1px; }
-  .app__status .dot.off { background: #2C3E66; box-shadow: none; }
-  .app__label { margin: 12px 14px 4px; font-size: 0.58rem; letter-spacing: 0.1em; color: #6C7A9C; }
-  .app__panel { margin: 0 14px 10px; padding: 10px 12px; background: #10203A; border-left: 3px solid #6FE3FF; font-size: 0.84rem; }
-  .app__panel.muted { border-left-color: #2C3E66; color: #8FA3C7; }
-  .app__tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 14px 14px; }
-  .app__tiles .tile { background: #10203A; padding: 8px 10px; }
-  .app__tiles .tile b { display: block; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #8FA3C7; margin-bottom: 3px; }
-  .app__tiles .tile span { font-size: 0.84rem; }
-  .app__toast { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 8px 12px; background: #E0A526; color: #1A1200; font-weight: 700; font-size: 0.9rem; }
-  .app__toast img { display: block; width: 40px; height: 40px; }
-  .app__card { display: flex; justify-content: space-between; gap: 12px; margin: 0 14px 8px; padding: 10px 12px; background: #10203A; border-left: 3px solid #6FE3FF; }
-  .app__card:last-child { margin-bottom: 14px; }
-  .app__card b { display: block; font-size: 0.95rem; margin-bottom: 3px; }
-  .app__card span { display: block; font-size: 0.78rem; color: #9FB7D8; }
-  .app__card em { font-style: normal; font-size: 0.72rem; color: #8FA3C7; text-align: right; white-space: nowrap; }
-  .app__card em strong { display: block; color: #6FE3FF; font-size: 0.82rem; margin-bottom: 2px; }
-  .app__card em u { text-decoration: none; color: #E0A526; }
-  .app__form { padding: 6px 14px 14px; }
-  .app__form label { display: block; margin: 10px 0 4px; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #8FA3C7; }
-  .app__form .field { padding: 7px 10px; background: #071120; border: 1px solid #1E2F52; font-size: 0.82rem; }
-  .app__form .field em { font-style: normal; color: #6C7A9C; }
-  .app__btn { display: inline-block; margin-top: 12px; padding: 6px 12px; background: #7FD6FF; color: #05101F; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; }
-  .app__btn.ghost { background: transparent; color: #8FA3C7; border: 1px solid #2C3E66; }
+  /* The client's page as it looks today, drawn with the page's own
+     tokens; fixed dark values, since the page itself has no light theme. */
+  .app {
+    --m-bg: #0A1020; --m-raised: #0F1729; --m-sunken: #060B17; --m-line: #1E2A45; --m-line-strong: #2C3C62;
+    --m-ink: #E8ECF5; --m-soft: #AEB8D0; --m-mute: #7C88A6; --m-gold: #E0A526; --m-blue: #3D8BFF; --m-ok: #5FD38A; --m-warn: #F2B96B;
+    --acc: var(--m-blue); --acc-ink: #06101F; --acc-soft: rgba(61, 139, 255, 0.14); --acc-line: rgba(61, 139, 255, 0.5);
+    background: var(--m-bg); border: 1px solid var(--m-line); border-radius: 12px; overflow: hidden;
+    font-family: var(--font-body); font-size: 0.8rem; color: var(--m-ink);
+  }
+  .app.console { --acc: var(--m-gold); --acc-soft: rgba(224, 165, 38, 0.15); --acc-line: rgba(224, 165, 38, 0.55);
+    background: radial-gradient(80% 55% at 18% -8%, rgba(224, 165, 38, 0.18), transparent 62%) var(--m-bg); }
+  .app__bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(10, 16, 32, 0.8); border-bottom: 1px solid var(--m-line); }
+  .app__bar .brand-mini { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em; color: #FFFFFF; margin-right: 6px; }
+  .app__bar .brand-mini .r { color: var(--m-blue); } .app__bar .brand-mini .a { color: var(--m-gold); }
+  .app__bar .tab { font-family: var(--font-display); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--m-mute); padding: 5px 7px; border-radius: 7px; }
+  .app__bar .tab.on { color: var(--acc-ink); background: var(--acc); }
+  .app__bar .who { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 0.66rem; color: var(--m-soft); white-space: nowrap; }
+  .app__bar .who b { color: #FFFFFF; font-weight: 500; } .app__bar .who i { font-style: normal; color: var(--m-gold); }
+  .app__status { display: flex; align-items: center; gap: 9px; padding: 7px 12px; background: rgba(15, 23, 41, 0.6); border-bottom: 1px solid var(--m-line); font-family: var(--font-mono); font-size: 0.72rem; color: var(--m-ink); }
+  .app__status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--m-mute); flex: none; }
+  .app__status .dot.on { background: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft), 0 0 10px var(--acc); }
+  .app__status .mode { font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acc); border: 1px solid var(--acc-line); background: var(--acc-soft); padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+  .app__status .right { margin-left: auto; font-size: 0.66rem; color: var(--m-mute); white-space: nowrap; }
+  .app__body { padding: 2px 12px 12px; }
+  .app__label { display: flex; align-items: center; gap: 8px; margin: 12px 0 6px; font-family: var(--font-display); font-weight: 600; font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--m-mute); }
+  .app__label::after { content: ""; flex: 1; height: 1px; background: var(--m-line); }
+  .app__panel { padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(95, 211, 138, 0.4); background: var(--m-raised); color: var(--m-ok); font-size: 0.76rem; margin-bottom: 8px; }
+  .app__panel.muted { border-color: var(--m-line); color: var(--m-mute); }
+  .app__head { display: flex; align-items: center; gap: 12px; margin: 10px 0 8px; }
+  .app__head .cover { width: 56px; height: 56px; border-radius: 10px; background: var(--m-sunken); border: 1px solid var(--m-line); flex: none; }
+  .app__head h4 { margin: 0 0 5px; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: #FFFFFF; }
+  .app__head .body { flex: 1; min-width: 0; }
+  .app__head .bar { height: 7px; border-radius: 999px; background: var(--m-sunken); border: 1px solid var(--m-line); overflow: hidden; }
+  .app__head .bar i { display: block; height: 100%; width: 3%; background: linear-gradient(90deg, #2F6FD8, #34D0FF); }
+  .app__head .sub { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; font-family: var(--font-mono); font-size: 0.64rem; color: var(--m-soft); }
+  .app__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .app__tiles .tile { background: var(--m-raised); border: 1px solid var(--m-line); border-radius: 8px; padding: 7px 9px; min-width: 0; }
+  .app__tiles .tile b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-mute); margin-bottom: 4px; }
+  .app__tiles .tile span { font-family: var(--font-mono); font-size: 0.78rem; color: var(--m-ink); overflow-wrap: anywhere; }
+  .app__tiles .tile span small { display: block; font-size: 0.78rem; }
+  .app__row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; background: var(--m-raised); border: 1px solid var(--acc-line); border-radius: 8px; }
+  .app__row img { width: 36px; height: 36px; border-radius: 7px; flex: none; filter: saturate(0.4) brightness(0.75); }
+  .app__row .body { flex: 1; min-width: 0; }
+  .app__row .body b { display: block; font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; color: #FFFFFF; }
+  .app__row .body span { font-size: 0.72rem; color: var(--m-soft); }
+  .app__row .m { flex: none; text-align: right; font-family: var(--font-mono); font-size: 0.64rem; line-height: 1.6; color: var(--m-mute); }
+  .app__row .m .gold { color: var(--m-gold); } .app__row .m .warn { color: var(--m-warn); } .app__row .m .acc { display: block; color: var(--acc); }
+  .app__row .m .hide { display: inline-block; margin-top: 4px; padding: 3px 7px; border-radius: 999px; border: 1px solid var(--m-line); font-family: var(--font-display); font-weight: 600; font-size: 0.5rem; letter-spacing: 0.1em; color: var(--m-mute); }
+  .app__toast { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px auto; padding: 9px 12px; width: max-content; max-width: 100%; background: var(--m-raised); border: 1px solid var(--m-gold); border-radius: 12px; box-shadow: 0 0 0 4px rgba(224, 165, 38, 0.15); }
+  .app__toast img { display: block; width: 40px; height: 40px; border-radius: 8px; }
+  .app__toast .k { font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-gold); }
+  .app__toast .t { font-weight: 700; color: #FFFFFF; font-size: 0.85rem; }
+  .app__toast .p { font-family: var(--font-mono); font-size: 0.7rem; color: var(--m-ok); }
+  .app__form label { display: block; margin: 8px 0 3px; font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-mute); }
+  .app__form .field { padding: 7px 10px; border-radius: 8px; background: var(--m-sunken); border: 1px solid var(--m-line); font-family: var(--font-mono); font-size: 0.74rem; color: var(--m-ink); }
+  .app__form .note { font-size: 0.72rem; color: var(--m-soft); margin: 2px 0 4px; }
+  .app__btn { display: inline-block; margin-top: 8px; padding: 7px 11px; border-radius: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--acc); color: var(--acc-ink); }
+  .app__btn.ghost { background: var(--m-raised); color: var(--m-ink); border: 1px solid var(--m-line-strong); }
   .term .u-line { background: var(--gold-soft); display: inline-block; width: 100%; box-shadow: inset 3px 0 0 var(--gold); padding-left: 10px; margin-left: -18px; padding-right: 18px; width: calc(100% + 36px); }
   .term .cursor { display: inline-block; width: 0.6em; height: 1.05em; background: var(--term-ink); vertical-align: -0.2em; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
@@ -437,11 +464,11 @@
     <div class="cols">
       <div>
         <h3>LIVE</h3>
-        <p>The running game as the console sees it: measured progress, UP NEXT by the median time other players took, live leaderboard trackers, and a CONSOLE panel with the link, the snapshot rate and the losses.</p>
+        <p>The running game as the console sees it: measured progress, UP NEXT by the median time other players took (HIDE drops one you gave up on), live leaderboard trackers, and a CONSOLE panel with the link, the snapshot rate and the losses.</p>
       </div>
       <div>
         <h3>LIBRARY, GAME, BOARDS</h3>
-        <p>Every game you have touched, on every system, with progress and awards. One set in full: the author's order, the intended path with missables flagged, the median unlock times. A game's leaderboards with the top entries.</p>
+        <p>Every game you have touched, on every system, with two bars, softcore and hardcore, and the award. One set in full: the author's order, the intended path with missables flagged, the median unlock times. A game's leaderboards with the top entries.</p>
       </div>
       <div>
         <h3>FOLLOW MY PLAY</h3>
@@ -450,6 +477,10 @@
       <div>
         <h3>SETTINGS</h3>
         <p>Your account, your Web API key and the switch that opens the page to a phone on the same Wi-Fi. Nothing else to set: the language menu sits in the header, FOLLOW MY PLAY on LIVE, and the red QUIT in the footer.</p>
+      </div>
+      <div>
+        <h3>On a phone</h3>
+        <p>OPEN TO THE NETWORK on SETTINGS serves the page to your Wi-Fi. On a narrow screen the tabs move to a bar along the bottom. While the console streams the page turns gold and the cover spins as a disc; while following an emulator it turns blue.</p>
       </div>
       <div>
         <h3>Made for streaming</h3>
@@ -519,12 +550,15 @@
           <p>Leave it running while you play. The LIVE tab shows everything below; the same lines go to <code>xerabora.log</code> next to the saved login. If Windows asks about the firewall, allow it on private networks.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab on">SETTINGS</span><span class="who">Hacan359 · 10 847 points</span></div>
-            <div class="app__status"><span><i class="dot off"></i>waiting for the console on UDP 18194</span><span>&nbsp;</span></div>
-            <div class="app__form">
-              <label>RetroAchievements login</label><div class="field">hacan359 <em>· signed in, only the token is stored</em></div>
-              <label>Web API key</label><div class="field">••••••••••••••••••••••••••••••••</div>
-              <span class="app__btn">SAVE</span>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab on">SETTINGS</span><span class="who">no Web API key, see SETTINGS</span></div>
+            <div class="app__status"><i class="dot"></i><span>waiting for the console</span></div>
+            <div class="app__body">
+              <div class="app__label">RETROACHIEVEMENTS ACCOUNT</div>
+              <div class="app__form"><label>username</label><div class="field">hacan359</div><label>password</label><div class="field">••••••••••</div><span class="app__btn">SIGN IN</span></div>
+              <div class="app__label">WEB API KEY</div>
+              <div class="app__form"><div class="note">a read-only key that fills the library, leaderboards and profile</div><div class="field">••••••••••••••••••••••••••••••••</div><span class="app__btn">SAVE KEY</span></div>
+              <div class="app__label">OTHER DEVICES</div>
+              <div class="app__form"><div class="note">the page is reachable from this PC only</div><span class="app__btn ghost">OPEN TO THE NETWORK</span></div>
             </div>
           </div>
           <span class="cap">Both fields can wait: the library needs the key, an unlock needs the login.</span>
@@ -551,12 +585,14 @@
   Rename
   Delete
 
-<span class="notice">  PC client found at 192.168.1.10 xerabora/1.0.0</span>
+<span class="notice">  PC client found at 192.168.1.10 xerabora/0.1.0-alpha.12</span>
 <span class="notice">  Reply in 3 ms, console at 192.168.1.142</span></pre>
           </div>
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who">Hacan359 · 10 847 points</span></div>
-            <div class="app__status"><span><i class="dot off"></i>console at 192.168.1.142 answered the link test</span><span>&nbsp;</span></div>
-            <div class="app__panel muted">start a game on the console, or browse your library above</div>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who"><b>Hacan359</b> · <i>10 847 points</i></span></div>
+            <div class="app__status"><i class="dot"></i><span>waiting for the console</span></div>
+            <div class="app__body">
+              <div class="app__panel muted" style="margin-top:12px">start a game on the console, or browse your library above</div>
+            </div>
           </div>
         </div>
       </div>
@@ -570,15 +606,17 @@
           <div class="tip"><b>Before you start the game.</b> This step fetches the list of addresses the console will read. Skip it and the game starts as plain OPL: no telemetry, nothing on the page. <code>RetroAchievements does not know this image</code> means the game plays without achievements.</div>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who">Hacan359 · 10 847 points</span></div>
-            <div class="app__status"><span><i class="dot off"></i>console at 192.168.1.142, no game running</span><span>&nbsp;</span></div>
-            <div class="app__label">CONSOLE</div>
-            <div class="app__panel">Need for Speed: Underground 2 · 76 achievements · watch list sent</div>
-            <div class="app__tiles">
-              <div class="tile"><b>game</b><span>SLUS_210.65</span></div>
-              <div class="tile"><b>image</b><span>f45e0a19…</span></div>
-              <div class="tile"><b>watch list</b><span>490 addr · 1351 B · 2 parts</span></div>
-              <div class="tile"><b>cannot unlock here</b><span>0 of 76</span></div>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who"><b>Hacan359</b> · <i>10 847 points</i></span></div>
+            <div class="app__status"><i class="dot"></i><span>waiting for the console</span></div>
+            <div class="app__body">
+              <div class="app__label">CONSOLE</div>
+              <div class="app__panel">achievement set active, unlocks are tracked</div>
+              <div class="app__tiles">
+                <div class="tile"><b>game</b><span>SLUS_210.65</span></div>
+                <div class="tile"><b>watch list</b><span>490 addr<small>1351 B</small><small>2 parts</small></span></div>
+                <div class="tile"><b>session</b><span>—</span></div>
+              </div>
+              <div class="app__head"><div class="cover"></div><div class="body"><h4>Need for Speed: Underground 2</h4><div class="bar"><i></i></div><div class="sub"><span>from an image check, not from a running game</span><span>0 / 76 · 0 / 530 pts</span></div></div></div>
             </div>
           </div>
           <span class="cap">The console asks a few times while it collects the list in chunks. Normal.</span>
@@ -593,17 +631,19 @@
           <p>The LIVE tab lights up: console connected, the set, the first snapshot, and how many achievements cannot unlock on real hardware. From here on it is playing. A game you did not check stays dark here: it runs, without telemetry.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who">Hacan359 · 10 847 points</span></div>
-            <div class="app__status"><span><i class="dot"></i>console live at 192.168.1.142</span><span>60 snapshots, 0 skipped</span></div>
-            <div class="app__label">CONSOLE</div>
-            <div class="app__panel">achievement set active, unlocks are tracked</div>
-            <div class="app__tiles">
-              <div class="tile"><b>link</b><span>192.168.1.142</span></div>
-              <div class="tile"><b>game</b><span>SLUS_210.65</span></div>
-              <div class="tile"><b>snapshots</b><span>60 · 53/s</span></div>
-              <div class="tile"><b>lost</b><span>0 skipped · 0 rep · 0 torn</span></div>
-              <div class="tile"><b>watch list</b><span>490 addr · 1351 B · 2 parts</span></div>
-              <div class="tile"><b>session</b><span>0:00:01</span></div>
+          <div class="app console"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who"><b>Hacan359</b> · <i>10 847 points</i></span></div>
+            <div class="app__status"><i class="dot on"></i><span class="mode">CONSOLE</span><span>console live at 192.168.1.142</span><span class="right">60 snapshots, 0 skipped</span></div>
+            <div class="app__body">
+              <div class="app__label">CONSOLE</div>
+              <div class="app__panel">achievement set active, unlocks are tracked</div>
+              <div class="app__tiles">
+                <div class="tile"><b>link</b><span>192.168.1.142</span></div>
+                <div class="tile"><b>game</b><span>SLUS_210.65</span></div>
+                <div class="tile"><b>snapshots</b><span>60 · 53/s</span></div>
+                <div class="tile"><b>lost</b><span>0 skipped<small>0 repeated</small><small>0 torn</small></span></div>
+                <div class="tile"><b>watch list</b><span>490 addr<small>1351 B</small><small>2 parts</small></span></div>
+                <div class="tile"><b>session</b><span>0:00:01</span></div>
+              </div>
             </div>
           </div>
           <span class="cap">Need for Speed: Underground 2, 0 of 76, and the first UP NEXT cards appear below this panel.</span>
@@ -618,12 +658,14 @@
           <p>Lose the network for five seconds and the PC says so. When the stream returns, it picks up where it was.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who">Hacan359 · 10 847 points</span></div>
-            <div class="app__status"><span><i class="dot"></i>console live at 192.168.1.142</span><span>32 400 snapshots, 3 387 skipped</span></div>
-            <div class="app__toast"><img src="https://media.retroachievements.org/Badge/609318.png" alt="" width="40" height="40"><span>Yo Noobie&nbsp;&nbsp;+2 pts</span></div>
-            <div class="app__label">UP NEXT · BY MEDIAN UNLOCK TIME</div>
-            <div class="app__card"><div><b>Bring My Car Back... Now!</b><span>Complete all three races available before going to Rachel's place</span></div><em>~0h43 · <u>missable</u></em></div>
-            <div class="app__card"><div><b>Making a Name</b><span>Complete Stage 1</span></div><em><strong>next in progression</strong>~1h14 · progression</em></div>
+          <div class="app console"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">LIVE</span><span class="tab">LIBRARY</span><span class="tab">GAME</span><span class="tab">BOARDS</span><span class="tab">SETTINGS</span><span class="who"><b>Hacan359</b> · <i>10 847 points</i></span></div>
+            <div class="app__status"><i class="dot on"></i><span class="mode">CONSOLE</span><span>console live at 192.168.1.142</span><span class="right">32 400 snapshots, 12 skipped</span></div>
+            <div class="app__body">
+              <div class="app__toast"><img src="https://media.retroachievements.org/Badge/609318.png" alt="" width="40" height="40"><div><div class="k">ACHIEVEMENT UNLOCKED</div><div class="t">Yo Noobie</div><div class="p">+2 pts</div></div></div>
+              <div class="app__label">UP NEXT · BY MEDIAN UNLOCK TIME</div>
+              <div class="app__row"><img src="https://media.retroachievements.org/Badge/609319_lock.png" alt="" width="36" height="36"><div class="body"><b>Bring My Car Back... Now!</b><span>Complete all three races available before going to Rachel's place</span></div><div class="m"><span class="gold">2 pts</span> · <span class="warn">missable</span> · ~0h43<br><span class="hide">✕ HIDE</span></div></div>
+              <div class="app__row"><img src="https://media.retroachievements.org/Badge/609321_lock.png" alt="" width="36" height="36"><div class="body"><b>Making a Name</b><span>Complete Stage 1</span></div><div class="m"><span class="acc">next in progression</span><span class="gold">5 pts</span> · progression · ~1h14<br><span class="hide">✕ HIDE</span></div></div>
+            </div>
           </div>
           <span class="cap">On the TV the screen dips to gold and comes back. Lose the network for five seconds and the status bar says so.</span>
         </div>
@@ -653,8 +695,8 @@
       </div>
       <div class="vcard warn">
         <span class="eyebrow">Not yet</span>
-        <h3>SMB share, internal HDD, UL and ZSO images</h3>
-        <p>A share hashes fine, but a game with an achievement set does not run from it yet: it boots, the console connects, and about a minute in it stops loading. Games without a set run from a share as before. Nobody has run the RA additions from an internal HDD or from UL and ZSO images; expect problems we have not seen.</p>
+        <h3>SMB share, HDL partitions, UL and ZSO images</h3>
+        <p>A share hashes fine, but a game with an achievement set does not run from it: it boots, the console connects, and about a minute in it stops loading. Games without a set run from a share as before. An internal HDD with an exFAT partition, which OPL reads over BDM, behaves like the stick for one tester; games on HDL partitions, UL and ZSO images are not hashed.</p>
       </div>
     </div>
   </div>
@@ -686,8 +728,8 @@
     </div>
     <div class="cols">
       <div>
-        <h3>Pointer chains on the console</h3>
-        <p>The agent reads flat addresses today. Next it reads the pointer bases too and the client asks for the targets on the following frame, so the sets that dereference pointers unlock on real hardware as well.</p>
+        <h3>Deeper pointer chains, more image formats</h3>
+        <p>The console follows pointer chains, up to 128 per game; a set that needs more keeps its direct reads. Raising that ceiling and hashing ZSO images are the next console-side pieces.</p>
       </div>
       <div>
         <h3>Guidance that does not depend on the source</h3>
@@ -725,8 +767,8 @@
         <p>OPL can write to game memory through its cheat engine, so the client does not claim hardcore. The RA team decides whether a real-hardware client can qualify; we cannot grant it ourselves.</p>
       </div>
       <div>
-        <h3>Flat addresses only</h3>
-        <p>The console reads the addresses on the watch list and follows no pointers. Achievements that dereference a pointer stay active but cannot unlock, and the PC counts them for you. Most PS2 sets lose few or none.</p>
+        <h3>128 pointer chains</h3>
+        <p>The console follows pointer chains, up to 128 per game. A set that needs more drops the chains past the ceiling, and the PC counts what it could not compile. Beyond Good &amp; Evil, the worst case measured, has 31 of 115 out of reach; most PS2 sets lose none.</p>
       </div>
       <div>
         <h3>Same subnet</h3>
@@ -734,7 +776,7 @@
       </div>
       <div>
         <h3>Plain ISO or the disc</h3>
-        <p>The image check reads <code>.iso</code> files named <code>Title.iso</code> or the OPL Manager way (<code>SLUS_123.45.Title.iso</code>) in <code>DVD</code> or <code>CD</code> on a USB stick or a share, and the disc in the drive. UL/USBExtreme, ZSO and the internal HDD are not hashed yet. Play from the stick or the disc: a game with a set does not run from a share yet.</p>
+        <p>The image check reads <code>.iso</code> files named <code>Title.iso</code> or the OPL Manager way (<code>SLUS_123.45.Title.iso</code>) in <code>DVD</code> or <code>CD</code> on a USB stick or a share, and the disc in the drive. UL/USBExtreme, ZSO and HDL partitions are not hashed; an exFAT partition on the internal HDD counts as a stick. Play from the stick or the disc: a game with a set does not run from a share.</p>
       </div>
       <div>
         <h3>Hooks need libpad</h3>
@@ -765,11 +807,11 @@
       </details>
       <details>
         <summary>Which games work?</summary>
-        <p>Any PS2 game with an achievement set whose logic reads flat addresses, which covers most of them. The check in the game's menu tells you the counts for your game before you play: total, unlocked, and how many cannot unlock on real hardware yet.</p>
+        <p>Any PS2 game with an achievement set. Sets of any size load, and pointer chains are followed up to 128 per game. The check in the game's menu tells you the counts for your game before you play: total, unlocked, and how many cannot unlock on real hardware yet.</p>
       </details>
       <details>
         <summary>Do I need a network share or an internal HDD?</summary>
-        <p>Neither. A USB stick with your images, or the disc, is the tested setup. A share is fine for the loader and the watch lists, but a game with an achievement set does not run from it yet; games without a set do. We have not tried the internal HDD, and the loader cannot hash HDD games yet: they sit on HDL partitions rather than in <code>.iso</code> files.</p>
+        <p>Neither. A USB stick with your images, or the disc, is the tested setup. A share is fine for the loader and the watch lists, but a game with an achievement set does not run from it; games without a set do. An internal HDD with an exFAT partition that OPL reads over BDM works like the stick for one tester; the loader cannot hash HDL partitions.</p>
       </details>
       <details>
         <summary>The unlock showed on the page but the TV did not flash.</summary>

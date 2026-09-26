@@ -7,8 +7,8 @@ on, how the two menu items behave, and how in-game tracking works.
 > [!WARNING]
 > **Experimental.** This is a hobby experiment, not a finished product.
 > Treat it as one, and use it at your own risk. The tested setup is a USB
-> stick holding your game images; the internal HDD is untested, and
-> without a USB stick you may hit problems.
+> stick holding your game images or the original disc; an exFAT HDD
+> partition over BDM worked for one tester, the rest is untried.
 
 ## Overview
 
@@ -35,8 +35,10 @@ is configured anywhere — the console finds the client by broadcast.
    in to your RetroAchievements account.
 5. Your game images (`.iso`) on a USB stick, or the original disc in the
    drive. These two we have tested, and they are the ones to play from.
-   A game with an achievement set does not run from a network share yet;
-   a game without one does. The internal HDD is untested.
+   A game with an achievement set does not run from a network share;
+   a game without one does. An internal HDD with an exFAT partition,
+   which OPL reads over BDM, behaves like the stick for one tester; HDL
+   partitions are not hashed.
 
 A network share is not required (see "Running from USB only" below). It
 is fine for the loader itself, `conf_apps.cfg`, the watch lists and the

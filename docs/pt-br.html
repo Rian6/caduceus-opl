@@ -226,37 +226,64 @@
   @media (max-width: 720px) { .demo iframe { height: 620px; } }
 
   /* Mock-ups of the client's own page, in its colours whatever the theme. */
-  .app { background: #0B1528; border: 1px solid #1E2F52; border-radius: 6px; overflow: hidden; font-family: var(--font-mono); color: #E8EEF8; }
-  .app__bar { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: #0D1A33; border-bottom: 1px solid #1E2F52; font-size: 0.68rem; letter-spacing: 0.06em; color: #8FA3C7; }
-  .app__bar .brand-mini { font-weight: 700; font-size: 0.8rem; letter-spacing: 0; color: #E8EEF8; margin-right: 6px; }
-  .app__bar .brand-mini .r { color: #3D8BFF; } .app__bar .brand-mini .a { color: #E0A526; }
-  .app__bar .tab { padding: 3px 7px; } .app__bar .tab.on { background: #7FD6FF; color: #05101F; font-weight: 700; }
-  .app__bar .who { margin-left: auto; letter-spacing: 0; }
-  .app__status { display: flex; justify-content: space-between; gap: 12px; padding: 9px 14px; background: #0E1F3A; font-size: 0.78rem; color: #CFE3FF; }
-  .app__status .dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: #5CF29A; box-shadow: 0 0 6px #5CF29A; vertical-align: 1px; }
-  .app__status .dot.off { background: #2C3E66; box-shadow: none; }
-  .app__label { margin: 12px 14px 4px; font-size: 0.58rem; letter-spacing: 0.1em; color: #6C7A9C; }
-  .app__panel { margin: 0 14px 10px; padding: 10px 12px; background: #10203A; border-left: 3px solid #6FE3FF; font-size: 0.84rem; }
-  .app__panel.muted { border-left-color: #2C3E66; color: #8FA3C7; }
-  .app__tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 14px 14px; }
-  .app__tiles .tile { background: #10203A; padding: 8px 10px; }
-  .app__tiles .tile b { display: block; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #8FA3C7; margin-bottom: 3px; }
-  .app__tiles .tile span { font-size: 0.84rem; }
-  .app__toast { display: flex; align-items: center; gap: 12px; margin: 12px 14px 0; padding: 8px 12px; background: #E0A526; color: #1A1200; font-weight: 700; font-size: 0.9rem; }
-  .app__toast img { display: block; width: 40px; height: 40px; }
-  .app__card { display: flex; justify-content: space-between; gap: 12px; margin: 0 14px 8px; padding: 10px 12px; background: #10203A; border-left: 3px solid #6FE3FF; }
-  .app__card:last-child { margin-bottom: 14px; }
-  .app__card b { display: block; font-size: 0.95rem; margin-bottom: 3px; }
-  .app__card span { display: block; font-size: 0.78rem; color: #9FB7D8; }
-  .app__card em { font-style: normal; font-size: 0.72rem; color: #8FA3C7; text-align: right; white-space: nowrap; }
-  .app__card em strong { display: block; color: #6FE3FF; font-size: 0.82rem; margin-bottom: 2px; }
-  .app__card em u { text-decoration: none; color: #E0A526; }
-  .app__form { padding: 6px 14px 14px; }
-  .app__form label { display: block; margin: 10px 0 4px; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #8FA3C7; }
-  .app__form .field { padding: 7px 10px; background: #071120; border: 1px solid #1E2F52; font-size: 0.82rem; }
-  .app__form .field em { font-style: normal; color: #6C7A9C; }
-  .app__btn { display: inline-block; margin-top: 12px; padding: 6px 12px; background: #7FD6FF; color: #05101F; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; }
-  .app__btn.ghost { background: transparent; color: #8FA3C7; border: 1px solid #2C3E66; }
+  /* The client's page as it looks today, drawn with the page's own
+     tokens; fixed dark values, since the page itself has no light theme. */
+  .app {
+    --m-bg: #0A1020; --m-raised: #0F1729; --m-sunken: #060B17; --m-line: #1E2A45; --m-line-strong: #2C3C62;
+    --m-ink: #E8ECF5; --m-soft: #AEB8D0; --m-mute: #7C88A6; --m-gold: #E0A526; --m-blue: #3D8BFF; --m-ok: #5FD38A; --m-warn: #F2B96B;
+    --acc: var(--m-blue); --acc-ink: #06101F; --acc-soft: rgba(61, 139, 255, 0.14); --acc-line: rgba(61, 139, 255, 0.5);
+    background: var(--m-bg); border: 1px solid var(--m-line); border-radius: 12px; overflow: hidden;
+    font-family: var(--font-body); font-size: 0.8rem; color: var(--m-ink);
+  }
+  .app.console { --acc: var(--m-gold); --acc-soft: rgba(224, 165, 38, 0.15); --acc-line: rgba(224, 165, 38, 0.55);
+    background: radial-gradient(80% 55% at 18% -8%, rgba(224, 165, 38, 0.18), transparent 62%) var(--m-bg); }
+  .app__bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(10, 16, 32, 0.8); border-bottom: 1px solid var(--m-line); }
+  .app__bar .brand-mini { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em; color: #FFFFFF; margin-right: 6px; }
+  .app__bar .brand-mini .r { color: var(--m-blue); } .app__bar .brand-mini .a { color: var(--m-gold); }
+  .app__bar .tab { font-family: var(--font-display); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--m-mute); padding: 5px 7px; border-radius: 7px; }
+  .app__bar .tab.on { color: var(--acc-ink); background: var(--acc); }
+  .app__bar .who { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 0.66rem; color: var(--m-soft); white-space: nowrap; }
+  .app__bar .who b { color: #FFFFFF; font-weight: 500; } .app__bar .who i { font-style: normal; color: var(--m-gold); }
+  .app__status { display: flex; align-items: center; gap: 9px; padding: 7px 12px; background: rgba(15, 23, 41, 0.6); border-bottom: 1px solid var(--m-line); font-family: var(--font-mono); font-size: 0.72rem; color: var(--m-ink); }
+  .app__status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--m-mute); flex: none; }
+  .app__status .dot.on { background: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft), 0 0 10px var(--acc); }
+  .app__status .mode { font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--acc); border: 1px solid var(--acc-line); background: var(--acc-soft); padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+  .app__status .right { margin-left: auto; font-size: 0.66rem; color: var(--m-mute); white-space: nowrap; }
+  .app__body { padding: 2px 12px 12px; }
+  .app__label { display: flex; align-items: center; gap: 8px; margin: 12px 0 6px; font-family: var(--font-display); font-weight: 600; font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--m-mute); }
+  .app__label::after { content: ""; flex: 1; height: 1px; background: var(--m-line); }
+  .app__panel { padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(95, 211, 138, 0.4); background: var(--m-raised); color: var(--m-ok); font-size: 0.76rem; margin-bottom: 8px; }
+  .app__panel.muted { border-color: var(--m-line); color: var(--m-mute); }
+  .app__head { display: flex; align-items: center; gap: 12px; margin: 10px 0 8px; }
+  .app__head .cover { width: 56px; height: 56px; border-radius: 10px; background: var(--m-sunken); border: 1px solid var(--m-line); flex: none; }
+  .app__head h4 { margin: 0 0 5px; font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: #FFFFFF; }
+  .app__head .body { flex: 1; min-width: 0; }
+  .app__head .bar { height: 7px; border-radius: 999px; background: var(--m-sunken); border: 1px solid var(--m-line); overflow: hidden; }
+  .app__head .bar i { display: block; height: 100%; width: 3%; background: linear-gradient(90deg, #2F6FD8, #34D0FF); }
+  .app__head .sub { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; font-family: var(--font-mono); font-size: 0.64rem; color: var(--m-soft); }
+  .app__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .app__tiles .tile { background: var(--m-raised); border: 1px solid var(--m-line); border-radius: 8px; padding: 7px 9px; min-width: 0; }
+  .app__tiles .tile b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-mute); margin-bottom: 4px; }
+  .app__tiles .tile span { font-family: var(--font-mono); font-size: 0.78rem; color: var(--m-ink); overflow-wrap: anywhere; }
+  .app__tiles .tile span small { display: block; font-size: 0.78rem; }
+  .app__row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; background: var(--m-raised); border: 1px solid var(--acc-line); border-radius: 8px; }
+  .app__row img { width: 36px; height: 36px; border-radius: 7px; flex: none; filter: saturate(0.4) brightness(0.75); }
+  .app__row .body { flex: 1; min-width: 0; }
+  .app__row .body b { display: block; font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; color: #FFFFFF; }
+  .app__row .body span { font-size: 0.72rem; color: var(--m-soft); }
+  .app__row .m { flex: none; text-align: right; font-family: var(--font-mono); font-size: 0.64rem; line-height: 1.6; color: var(--m-mute); }
+  .app__row .m .gold { color: var(--m-gold); } .app__row .m .warn { color: var(--m-warn); } .app__row .m .acc { display: block; color: var(--acc); }
+  .app__row .m .hide { display: inline-block; margin-top: 4px; padding: 3px 7px; border-radius: 999px; border: 1px solid var(--m-line); font-family: var(--font-display); font-weight: 600; font-size: 0.5rem; letter-spacing: 0.1em; color: var(--m-mute); }
+  .app__toast { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px auto; padding: 9px 12px; width: max-content; max-width: 100%; background: var(--m-raised); border: 1px solid var(--m-gold); border-radius: 12px; box-shadow: 0 0 0 4px rgba(224, 165, 38, 0.15); }
+  .app__toast img { display: block; width: 40px; height: 40px; border-radius: 8px; }
+  .app__toast .k { font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-gold); }
+  .app__toast .t { font-weight: 700; color: #FFFFFF; font-size: 0.85rem; }
+  .app__toast .p { font-family: var(--font-mono); font-size: 0.7rem; color: var(--m-ok); }
+  .app__form label { display: block; margin: 8px 0 3px; font-family: var(--font-display); font-weight: 600; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-mute); }
+  .app__form .field { padding: 7px 10px; border-radius: 8px; background: var(--m-sunken); border: 1px solid var(--m-line); font-family: var(--font-mono); font-size: 0.74rem; color: var(--m-ink); }
+  .app__form .note { font-size: 0.72rem; color: var(--m-soft); margin: 2px 0 4px; }
+  .app__btn { display: inline-block; margin-top: 8px; padding: 7px 11px; border-radius: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; background: var(--acc); color: var(--acc-ink); }
+  .app__btn.ghost { background: var(--m-raised); color: var(--m-ink); border: 1px solid var(--m-line-strong); }
   .term .u-line { background: var(--gold-soft); display: inline-block; width: 100%; box-shadow: inset 3px 0 0 var(--gold); padding-left: 10px; margin-left: -18px; padding-right: 18px; width: calc(100% + 36px); }
   .term .cursor { display: inline-block; width: 0.6em; height: 1.05em; background: var(--term-ink); vertical-align: -0.2em; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
@@ -437,11 +464,11 @@
     <div class="cols">
       <div>
         <h3>AO VIVO</h3>
-        <p>O jogo rodando como o console o vê: progresso medido, A SEGUIR pelo tempo mediano que os outros jogadores levaram, rastreadores de placar ao vivo, e um painel CONSOLE com a conexão, a taxa de snapshots e as perdas.</p>
+        <p>O jogo rodando como o console o vê: progresso medido, A SEGUIR pelo tempo mediano que os outros jogadores levaram (OCULTAR tira uma de que você desistiu), rastreadores de placar ao vivo, e um painel CONSOLE com a conexão, a taxa de snapshots e as perdas.</p>
       </div>
       <div>
         <h3>BIBLIOTECA, JOGO, PLACARES</h3>
-        <p>Todo jogo em que você tocou, em todo sistema, com progresso e prêmios. Um conjunto inteiro: a ordem do autor, o caminho pretendido com as perdíveis marcadas, os tempos medianos de desbloqueio. Os placares de um jogo com as melhores marcas.</p>
+        <p>Todo jogo em que você tocou, em todo sistema, com duas barras, softcore e hardcore, e o prêmio. Um conjunto inteiro: a ordem do autor, o caminho pretendido com as perdíveis marcadas, os tempos medianos de desbloqueio. Os placares de um jogo com as melhores marcas.</p>
       </div>
       <div>
         <h3>SEGUIR MINHA JOGATINA</h3>
@@ -450,6 +477,10 @@
       <div>
         <h3>AJUSTES</h3>
         <p>Sua conta, sua chave da Web API e o interruptor que abre a página para um celular na mesma Wi-Fi. Nada mais para configurar: o menu de idioma fica no cabeçalho, SEGUIR MINHA JOGATINA no AO VIVO, e o SAIR vermelho no rodapé.</p>
+      </div>
+      <div>
+        <h3>No celular</h3>
+        <p>ABRIR PARA A REDE em AJUSTES serve a página no seu Wi-Fi. Numa tela estreita as abas vão para uma barra na parte de baixo. Enquanto o console transmite, a página fica dourada e a capa gira como um disco; enquanto segue um emulador, fica azul.</p>
       </div>
       <div>
         <h3>Feito para streaming</h3>
@@ -514,12 +545,15 @@
           <p>Deixe rodando enquanto você joga. A aba AO VIVO mostra tudo abaixo; as mesmas linhas vão para o <code>xerabora.log</code> ao lado do login salvo. Se o Windows perguntar sobre o firewall, libere em redes privadas.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab on">AJUSTES</span><span class="who">Hacan359 · 10 847 pontos</span></div>
-            <div class="app__status"><span><i class="dot off"></i>aguardando o console na UDP 18194</span><span>&nbsp;</span></div>
-            <div class="app__form">
-              <label>login do RetroAchievements</label><div class="field">hacan359 <em>· conectado, só o token é guardado</em></div>
-              <label>chave da Web API</label><div class="field">••••••••••••••••••••••••••••••••</div>
-              <span class="app__btn">SALVAR</span>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab on">AJUSTES</span><span class="who">sem chave da Web API, veja AJUSTES</span></div>
+            <div class="app__status"><i class="dot"></i><span>aguardando o console</span></div>
+            <div class="app__body">
+              <div class="app__label">CONTA RETROACHIEVEMENTS</div>
+              <div class="app__form"><label>usuário</label><div class="field">hacan359</div><label>senha</label><div class="field">••••••••••</div><span class="app__btn">ENTRAR</span></div>
+              <div class="app__label">CHAVE DA WEB API</div>
+              <div class="app__form"><div class="note">uma chave somente de leitura que preenche a biblioteca, os placares e o perfil</div><div class="field">••••••••••••••••••••••••••••••••</div><span class="app__btn">SALVAR CHAVE</span></div>
+              <div class="app__label">OUTROS DISPOSITIVOS</div>
+              <div class="app__form"><div class="note">a página só é acessível deste PC</div><span class="app__btn ghost">ABRIR PARA A REDE</span></div>
             </div>
           </div>
           <span class="cap">Os dois campos podem esperar: a biblioteca precisa da chave, um desbloqueio precisa do login.</span>
@@ -546,12 +580,14 @@
   Rename
   Delete
 
-<span class="notice">  cliente PC encontrado em 192.168.1.10 xerabora/1.0.0</span>
+<span class="notice">  cliente PC encontrado em 192.168.1.10 xerabora/0.1.0-alpha.12</span>
 <span class="notice">  Resposta em 3 ms, console em 192.168.1.142</span></pre>
           </div>
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who">Hacan359 · 10 847 pontos</span></div>
-            <div class="app__status"><span><i class="dot off"></i>console em 192.168.1.142 respondeu ao teste de conexão</span><span>&nbsp;</span></div>
-            <div class="app__panel muted">comece um jogo no console, ou explore sua biblioteca acima</div>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who"><b>Hacan359</b> · <i>10 847 pontos</i></span></div>
+            <div class="app__status"><i class="dot"></i><span>aguardando o console</span></div>
+            <div class="app__body">
+              <div class="app__panel muted" style="margin-top:12px">comece um jogo no console, ou explore sua biblioteca acima</div>
+            </div>
           </div>
         </div>
       </div>
@@ -565,15 +601,17 @@
           <div class="tip"><b>Antes de iniciar o jogo.</b> Este passo busca a lista de endereços que o console vai ler. Pule ele e o jogo inicia como OPL puro: sem telemetria, nada na página. <code>RetroAchievements does not know this image</code> significa que o jogo roda sem conquistas.</div>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who">Hacan359 · 10 847 pontos</span></div>
-            <div class="app__status"><span><i class="dot off"></i>console em 192.168.1.142, nenhum jogo rodando</span><span>&nbsp;</span></div>
-            <div class="app__label">CONSOLE</div>
-            <div class="app__panel">Need for Speed: Underground 2 · 76 conquistas · lista vigiada enviada</div>
-            <div class="app__tiles">
-              <div class="tile"><b>jogo</b><span>SLUS_210.65</span></div>
-              <div class="tile"><b>imagem</b><span>f45e0a19…</span></div>
-              <div class="tile"><b>lista vigiada</b><span>490 end · 1351 B · 2 partes</span></div>
-              <div class="tile"><b>não pode desbloquear aqui</b><span>0 de 76</span></div>
+          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who"><b>Hacan359</b> · <i>10 847 pontos</i></span></div>
+            <div class="app__status"><i class="dot"></i><span>aguardando o console</span></div>
+            <div class="app__body">
+              <div class="app__label">CONSOLE</div>
+              <div class="app__panel">conjunto de conquistas ativo, desbloqueios rastreados</div>
+              <div class="app__tiles">
+                <div class="tile"><b>jogo</b><span>SLUS_210.65</span></div>
+                <div class="tile"><b>lista vigiada</b><span>490 end<small>1351 B</small><small>2 partes</small></span></div>
+                <div class="tile"><b>sessão</b><span>—</span></div>
+              </div>
+              <div class="app__head"><div class="cover"></div><div class="body"><h4>Need for Speed: Underground 2</h4><div class="bar"><i></i></div><div class="sub"><span>de uma verificação de imagem, não de um jogo em execução</span><span>0 / 76 · 0 / 530 pts</span></div></div></div>
             </div>
           </div>
           <span class="cap">O console pergunta algumas vezes enquanto junta a lista em pedaços. Normal.</span>
@@ -588,17 +626,19 @@
           <p>A aba AO VIVO acende: console conectado, o conjunto, o primeiro snapshot, e quantas conquistas não podem desbloquear em hardware real. Daqui em diante é jogar. Um jogo que você não verificou fica apagado aqui: ele roda, sem telemetria.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who">Hacan359 · 10 847 pontos</span></div>
-            <div class="app__status"><span><i class="dot"></i>console ao vivo em 192.168.1.142</span><span>60 snapshots, 0 pulados</span></div>
-            <div class="app__label">CONSOLE</div>
-            <div class="app__panel">conjunto de conquistas ativo, desbloqueios rastreados</div>
-            <div class="app__tiles">
-              <div class="tile"><b>conexão</b><span>192.168.1.142</span></div>
-              <div class="tile"><b>jogo</b><span>SLUS_210.65</span></div>
-              <div class="tile"><b>snapshots</b><span>60 · 53/s</span></div>
-              <div class="tile"><b>perdidos</b><span>0 pulados · 0 rep · 0 quebrados</span></div>
-              <div class="tile"><b>lista vigiada</b><span>490 end · 1351 B · 2 partes</span></div>
-              <div class="tile"><b>sessão</b><span>0:00:01</span></div>
+          <div class="app console"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who"><b>Hacan359</b> · <i>10 847 pontos</i></span></div>
+            <div class="app__status"><i class="dot on"></i><span class="mode">CONSOLE</span><span>console ao vivo em 192.168.1.142</span><span class="right">60 snapshots, 0 pulados</span></div>
+            <div class="app__body">
+              <div class="app__label">CONSOLE</div>
+              <div class="app__panel">conjunto de conquistas ativo, desbloqueios rastreados</div>
+              <div class="app__tiles">
+                <div class="tile"><b>conexão</b><span>192.168.1.142</span></div>
+                <div class="tile"><b>jogo</b><span>SLUS_210.65</span></div>
+                <div class="tile"><b>snapshots</b><span>60 · 53/s</span></div>
+                <div class="tile"><b>perdidos</b><span>0 pulados<small>0 repetidos</small><small>0 corrompidos</small></span></div>
+                <div class="tile"><b>lista vigiada</b><span>490 end<small>1351 B</small><small>2 partes</small></span></div>
+                <div class="tile"><b>sessão</b><span>0:00:01</span></div>
+              </div>
             </div>
           </div>
           <span class="cap">Need for Speed: Underground 2, 0 de 76, e os primeiros cartões A SEGUIR aparecem abaixo deste painel.</span>
@@ -613,12 +653,14 @@
           <p>Perca a rede por cinco segundos e o PC avisa. Quando o fluxo volta, ele continua de onde parou.</p>
         </div>
         <div class="step-vis">
-          <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who">Hacan359 · 10 847 pontos</span></div>
-            <div class="app__status"><span><i class="dot"></i>console ao vivo em 192.168.1.142</span><span>32 400 snapshots, 3 387 pulados</span></div>
-            <div class="app__toast"><img src="https://media.retroachievements.org/Badge/609318.png" alt="" width="40" height="40"><span>Yo Noobie&nbsp;&nbsp;+2 pts</span></div>
-            <div class="app__label">A SEGUIR · PELO TEMPO MEDIANO DE DESBLOQUEIO</div>
-            <div class="app__card"><div><b>Bring My Car Back... Now!</b><span>Complete all three races available before going to Rachel's place</span></div><em>~0h43 · <u>perdível</u></em></div>
-            <div class="app__card"><div><b>Making a Name</b><span>Complete Stage 1</span></div><em><strong>próxima na progressão</strong>~1h14 · progressão</em></div>
+          <div class="app console"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">AO VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JOGO</span><span class="tab">PLACARES</span><span class="tab">AJUSTES</span><span class="who"><b>Hacan359</b> · <i>10 847 pontos</i></span></div>
+            <div class="app__status"><i class="dot on"></i><span class="mode">CONSOLE</span><span>console ao vivo em 192.168.1.142</span><span class="right">32 400 snapshots, 12 pulados</span></div>
+            <div class="app__body">
+              <div class="app__toast"><img src="https://media.retroachievements.org/Badge/609318.png" alt="" width="40" height="40"><div><div class="k">CONQUISTA DESBLOQUEADA</div><div class="t">Yo Noobie</div><div class="p">+2 pts</div></div></div>
+              <div class="app__label">A SEGUIR · PELO TEMPO MEDIANO DE DESBLOQUEIO</div>
+              <div class="app__row"><img src="https://media.retroachievements.org/Badge/609319_lock.png" alt="" width="36" height="36"><div class="body"><b>Bring My Car Back... Now!</b><span>Complete all three races available before going to Rachel's place</span></div><div class="m"><span class="gold">2 pts</span> · <span class="warn">perdível</span> · ~0h43<br><span class="hide">✕ OCULTAR</span></div></div>
+              <div class="app__row"><img src="https://media.retroachievements.org/Badge/609321_lock.png" alt="" width="36" height="36"><div class="body"><b>Making a Name</b><span>Complete Stage 1</span></div><div class="m"><span class="acc">próxima na progressão</span><span class="gold">5 pts</span> · progressão · ~1h14<br><span class="hide">✕ OCULTAR</span></div></div>
+            </div>
           </div>
           <span class="cap">Na TV a tela mergulha em dourado e volta. Perca a rede por cinco segundos e a barra de status avisa.</span>
         </div>
@@ -648,8 +690,8 @@
       </div>
       <div class="vcard warn">
         <span class="eyebrow">Ainda não</span>
-        <h3>Compartilhamento SMB, HD interno, imagens UL e ZSO</h3>
-        <p>Um compartilhamento calcula o hash normalmente, mas um jogo com conjunto de conquistas ainda não roda dali: ele inicia, o console conecta, e cerca de um minuto depois para de carregar. Jogos sem conjunto rodam de um compartilhamento como antes. Ninguém rodou as adições RA de um HD interno nem de imagens UL e ZSO; espere problemas que não vimos.</p>
+        <h3>Compartilhamento SMB, partições HDL, imagens UL e ZSO</h3>
+        <p>Um compartilhamento calcula o hash normalmente, mas um jogo com conjunto de conquistas não roda dali: ele inicia, o console conecta, e cerca de um minuto depois para de carregar. Jogos sem conjunto rodam de um compartilhamento como antes. Um HD interno com partição exFAT, que o OPL lê por BDM, se comporta como o pendrive para um testador; jogos em partições HDL e imagens UL e ZSO não têm hash.</p>
       </div>
     </div>
   </div>
@@ -681,8 +723,8 @@
     </div>
     <div class="cols">
       <div>
-        <h3>Cadeias de ponteiros no console</h3>
-        <p>Hoje o agente lê endereços diretos. Depois ele passa a ler também as bases dos ponteiros, e o cliente pede os alvos no quadro seguinte, para que os conjuntos que usam ponteiros também desbloqueiem em hardware real.</p>
+        <h3>Cadeias de ponteiros mais longas, mais formatos de imagem</h3>
+        <p>O console segue cadeias de ponteiros, até 128 por jogo; um conjunto que precisa de mais mantém suas leituras diretas. Subir esse limite e calcular o hash de imagens ZSO são as próximas peças do lado do console.</p>
       </div>
       <div>
         <h3>Orientação que não depende da fonte</h3>
@@ -720,8 +762,8 @@
         <p>O OPL consegue escrever na memória do jogo pelo motor de cheats dele, então o cliente não reivindica hardcore. A equipe do RA decide se um cliente em hardware real pode se qualificar; não podemos nos dar isso sozinhos.</p>
       </div>
       <div>
-        <h3>Só endereços diretos</h3>
-        <p>O console lê os endereços da lista vigiada e não segue ponteiros. Conquistas que usam ponteiro continuam ativas mas não desbloqueiam, e o PC conta elas para você. A maioria dos conjuntos de PS2 perde poucas ou nenhuma.</p>
+        <h3>128 cadeias de ponteiros</h3>
+        <p>O console segue cadeias de ponteiros, até 128 por jogo. Um conjunto que precisa de mais descarta as cadeias além do limite, e o PC conta o que não conseguiu compilar. Beyond Good &amp; Evil, o pior caso medido, tem 31 de 115 fora de alcance; a maioria dos conjuntos de PS2 não perde nenhuma.</p>
       </div>
       <div>
         <h3>Mesma sub-rede</h3>
@@ -729,7 +771,7 @@
       </div>
       <div>
         <h3>ISO simples ou o disco</h3>
-        <p>A verificação da imagem lê arquivos <code>.iso</code> chamados <code>Title.iso</code> ou no padrão do OPL Manager (<code>SLUS_123.45.Title.iso</code>) em <code>DVD</code> ou <code>CD</code> num pendrive ou compartilhamento, e o disco no leitor. UL/USBExtreme, ZSO e o HD interno ainda não têm hash. Jogue pelo pendrive ou pelo disco: um jogo com conjunto ainda não roda de um compartilhamento.</p>
+        <p>A verificação da imagem lê arquivos <code>.iso</code> chamados <code>Title.iso</code> ou no padrão do OPL Manager (<code>SLUS_123.45.Title.iso</code>) em <code>DVD</code> ou <code>CD</code> num pendrive ou compartilhamento, e o disco no leitor. UL/USBExtreme, ZSO e partições HDL não têm hash; uma partição exFAT no HD interno conta como pendrive. Jogue pelo pendrive ou pelo disco: um jogo com conjunto não roda de um compartilhamento.</p>
       </div>
       <div>
         <h3>Os hooks precisam da libpad</h3>
@@ -760,11 +802,11 @@
       </details>
       <details>
         <summary>Quais jogos funcionam?</summary>
-        <p>Qualquer jogo de PS2 com conjunto de conquistas cuja lógica leia endereços diretos, o que cobre a maioria. A verificação no menu do jogo te diz as contas antes de jogar: total, desbloqueadas, e quantas ainda não podem desbloquear em hardware real.</p>
+        <p>Qualquer jogo de PS2 com conjunto de conquistas. Conjuntos de qualquer tamanho carregam, e as cadeias de ponteiros são seguidas até 128 por jogo. A verificação no menu do jogo te diz as contas antes de jogar: total, desbloqueadas, e quantas ainda não podem desbloquear em hardware real.</p>
       </details>
       <details>
         <summary>Preciso de um compartilhamento de rede ou de um HD interno?</summary>
-        <p>Nenhum dos dois. Um pendrive com suas imagens, ou o disco, é a configuração testada. Um compartilhamento serve para o loader e as listas vigiadas, mas um jogo com conjunto de conquistas ainda não roda dali; jogos sem conjunto rodam. Não testamos o HD interno, e o loader ainda não consegue calcular o hash de jogos no HD: eles ficam em partições HDL em vez de arquivos <code>.iso</code>.</p>
+        <p>Nenhum dos dois. Um pendrive com suas imagens, ou o disco, é a configuração testada. Um compartilhamento serve para o loader e as listas vigiadas, mas um jogo com conjunto de conquistas não roda dali; jogos sem conjunto rodam. Um HD interno com partição exFAT que o OPL lê por BDM funciona como o pendrive para um testador; o loader não consegue calcular o hash de partições HDL.</p>
       </details>
       <details>
         <summary>O desbloqueio apareceu na página mas a TV não piscou.</summary>

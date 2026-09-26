@@ -42,9 +42,9 @@ loader hashes the image the RetroAchievements way and asks the PC. The
 PC fetches the achievement set, derives every memory address the set
 reads, and sends that *watch list* back. While you play, the in-game core
 copies those addresses into a snapshot every frame and `raudp` on the
-IOP sends it as one or two UDP packets, built by hand and handed
-straight to the network driver so the game's own traffic is never
-blocked. On the PC, rcheevos (the engine the emulators use) evaluates
+IOP sends it as UDP packets, one for most sets and up to nine for the
+biggest, built by hand and handed straight to the network driver so the
+game's own traffic is never blocked. On the PC, rcheevos (the engine the emulators use) evaluates
 the achievements against the snapshots. When one unlocks, the PC sends
 a notice back and the console flashes the screen gold by writing two
 GS registers. Nothing is written into the game or the image.
@@ -58,8 +58,10 @@ behaves like OPL 1.2.0 with extra items in the menus.
 - A PS2 with a network adapter and a way to run OPL (FMCB, FHDB or similar).
 - Your game images on a USB stick, or the original disc in the drive. These
   two we have tested, and they are the ones to play from. A game with an
-  achievement set does not run from a network share yet; a game without
-  one does. The internal HDD is untested.
+  achievement set does not run from a network share; a game without one
+  does. An internal HDD with an exFAT partition, which OPL reads over
+  BDM, behaves like the stick for one tester; games on HDL partitions
+  are not hashed.
 - A PC on the same local network, Windows, Linux or macOS.
 - A [RetroAchievements](https://retroachievements.org) account.
 
@@ -96,7 +98,8 @@ shows nothing for it.
    notice shows the game title and the achievement counts (total,
    unlocked, unsupported). Supported games get an `RA` prefix in the list
    and a badge on the cover art. `RetroAchievements does not know this
-   image` means the game plays without achievements.
+   image` means the game plays without achievements; a set the PC
+   refuses is named with its reason (wrong dump, server down).
 7. Start the game. Within about 30 seconds the **LIVE** tab shows the
    console connected, the set and the first snapshot. An unlock shows on
    the page, on your profile, and as a short gold flash over the game on
@@ -164,15 +167,20 @@ refresh rate, so you know what is live and what is a poll.
 
 | Tab | What you see | Source | Refresh |
 |---|---|---|---|
-| **LIVE**, console streaming | The running game as the console sees it: each achievement's state, measured progress ("3 of 10"), UP NEXT by the median time other players took, missable warnings, live leaderboard trackers, a CONSOLE panel with the link, the snapshot rate and the losses, and a strip with points, the time the set costs and where you stand in it. Sets with subsets list each subset under its own heading. | rcheevos on the console's snapshots; medians from the Web API | every frame |
+| **LIVE**, console streaming | The running game as the console sees it: each achievement's state, measured progress ("3 of 10"), UP NEXT by the median time other players took (HIDE drops one you gave up on and the next median takes its slot), missable warnings, live leaderboard trackers, a CONSOLE panel with the link, the snapshot rate and the losses, and a strip with points, the time the set costs and where you stand in it. Sets with subsets list each subset under its own heading. | rcheevos on the console's snapshots; medians from the Web API | every frame |
 | **LIVE**, following | The game your account is in on any emulator with RetroAchievements, the rich presence line, whether the server sees you online, this session's unlocks, UP NEXT and the missable warnings. No measured progress and no trackers: those need a memory source. | Web API (profile, recent unlocks) | every 20 s, the online flag once a minute |
-| **LIBRARY** | Every game your account has touched, up to 500: progress, the highest award, filters by status and console. Not the whole RetroAchievements catalogue: only what you have played. | Web API (completion progress) | cached 2 min |
+| **LIBRARY** | Every game your account has touched, up to 500: two bars per game, softcore and hardcore, the highest award in the corner of the cover, filters by status and console. Not the whole RetroAchievements catalogue: only what you have played. | Web API (completion progress) | cached 2 min |
 | **GAME** | One set in full: the author's order, the intended path (progression, win condition, missables flagged) or the median-time order; each achievement's points, unlock date and median. A game's subsets and its main set as a strip of chips, so you move between them without leaving the tab. | Web API (game info, game progression, the console's game list for subsets) | cached 30 s |
 | **BOARDS** | A game's leaderboards with the top entry and your own, and, when the console plays, the trackers moving with the game. | Web API; trackers from the console | on open |
 | **Header** | Your name and points. The language menu: English, Brazilian Portuguese, Spanish. | Web API (profile) | on load |
 
 Unlocks reach your profile the moment rcheevos fires them, with a toast
 on the page, a short sound on the PC and the gold flash on the console.
+
+<p align="center">
+  <img src="docs/screenshots/follow.png" alt="LIVE, following: the game your account is in on an emulator" width="352">
+  <img src="docs/screenshots/game.png" alt="GAME: one set in full" width="352">
+</p>
 
 ## What it does not do
 
@@ -200,6 +208,10 @@ opens the running copy's page. The client exits by itself about 15
 seconds after its last page is closed, and at once from the red **QUIT**
 in the footer.
 
+- **The look follows the source.** Idle, the page is blue-grey. While a
+  console streams it turns gold and the cover spins as a disc that slows
+  and stumbles on lost snapshots. While following an emulator it turns
+  blue, with a ring around the cover.
 - **Settings** hold the account, the Web API key and the network switch.
   Login is optional: the library, the game view and the boards work on
   the key alone; unlocking needs the account.
@@ -212,7 +224,8 @@ in the footer.
   your Wi-Fi; type the address it shows into a phone or tablet and add
   the page to the home screen. Up to four pages watch at once. Other
   devices see everything; the login, the key, the switches and QUIT
-  work only from the PC that runs the client.
+  work only from the PC that runs the client. On a narrow screen the
+  tabs move to a bar along the bottom.
 - **Stream-ready.** OBS takes the page as a browser source; `--obs DIR`
   writes text labels and a `data.json` for everything else. `#tab=live`
   opens a window straight on a tab.
@@ -230,7 +243,8 @@ in the footer.
   We do not sign the build; signing takes a paid Apple developer account.
 
 <p align="center">
-  <img src="docs/screenshots/library.png" alt="LIBRARY: every system, one shelf" width="720">
+  <img src="docs/screenshots/library.png" alt="LIBRARY: every system, one shelf" width="470">
+  <img src="docs/screenshots/phone.png" alt="LIVE on a phone" width="234">
 </p>
 
 ## Any hardware, one protocol
@@ -250,10 +264,9 @@ hash, and speak the protocol. The client does the rest.
 
 ## Where this is going
 
-- **Pointer chains on the console.** The agent reads flat addresses
-  today. Next it reads the pointer bases too and the client asks for the
-  targets on the following frame, so sets that dereference pointers
-  unlock on real hardware as well.
+- **Deeper pointer chains, more image formats.** The console follows
+  chains up to 128 per game; raising that ceiling and hashing ZSO images
+  are the next console-side pieces.
 - **Guidance wherever you play.** UP NEXT, missable warnings and the
   progression order come from RetroAchievements data, so they work for
   any game you have started, on the console, on a PC or in an emulator.
