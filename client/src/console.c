@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -25,8 +26,9 @@ struct game_row
     char hash[33];
 };
 
-static struct game_row g_games[64];
+static struct game_row *g_games = NULL;
 static int g_games_count = 0;
+static int g_games_cap = 0;
 
 static int valid_hash(const char *hash)
 {
@@ -54,6 +56,27 @@ static void save_games(void)
     fclose(f);
 }
 
+/* Appends a pair, doubling the table when it is full. Returns 0, or -1
+   when memory runs out; the pair is then not remembered. */
+static int add_game(const char *serial, const char *hash)
+{
+    if (g_games_count == g_games_cap) {
+        int cap = g_games_cap ? g_games_cap * 2 : 64;
+        struct game_row *grown = realloc(g_games, (size_t)cap * sizeof(*grown));
+
+        if (grown == NULL) {
+            log_warn("out of memory: %s = %s not remembered", serial, hash);
+            return -1;
+        }
+        g_games = grown;
+        g_games_cap = cap;
+    }
+    snprintf(g_games[g_games_count].serial, sizeof(g_games[0].serial), "%s", serial);
+    snprintf(g_games[g_games_count].hash, sizeof(g_games[0].hash), "%s", hash);
+    g_games_count++;
+    return 0;
+}
+
 void console_load_games(void)
 {
     char path[600], line[128], serial[16], hash[40];
@@ -66,11 +89,8 @@ void console_load_games(void)
         return;
     while (fgets(line, sizeof(line), f) != NULL) {
         if (sscanf(line, "%15s %39s", serial, hash) == 2 && valid_hash(hash) &&
-            g_games_count < (int)(sizeof(g_games) / sizeof(g_games[0]))) {
-            snprintf(g_games[g_games_count].serial, sizeof(g_games[0].serial), "%s", serial);
-            snprintf(g_games[g_games_count].hash, sizeof(g_games[0].hash), "%s", hash);
-            g_games_count++;
-        }
+            add_game(serial, hash) != 0)
+            break;
     }
     fclose(f);
     if (g_games_count > 0)
@@ -94,12 +114,8 @@ void console_remember_game(const char *serial, const char *hash)
         }
     }
 
-    if (g_games_count >= (int)(sizeof(g_games) / sizeof(g_games[0])))
+    if (add_game(serial, hash) != 0)
         return;
-
-    snprintf(g_games[g_games_count].serial, sizeof(g_games[0].serial), "%s", serial);
-    snprintf(g_games[g_games_count].hash, sizeof(g_games[0].hash), "%s", hash);
-    g_games_count++;
     log_info("remembered %s = %s", serial, hash);
     save_games();
 }
