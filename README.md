@@ -4,64 +4,76 @@
 
 # xeRAbora
 
-Two things in one repository. The first is RetroAchievements on a real
-PlayStation 2: a fork of Open PS2 Loader reads the running game's memory
-and streams it to a PC, which runs rcheevos and unlocks the achievement
-on your profile. No emulator. The second is xeRAbora itself, a desktop
-RetroAchievements client that works with or without that console: your
-library, each game's achievements, leaderboards, and your account's
-activity from any emulator. The console is one live source for it.
+**RetroAchievements on a real PlayStation 2.** A patched Open PS2 Loader
+sends the game's memory to your PC every frame. xeRAbora checks it
+against the achievement set, unlocks the achievement on your
+RetroAchievements profile and flashes the TV gold. No emulator, nothing
+written into the game.
+
+No PS2 at hand? The same client follows your play on any emulator with
+RetroAchievements: library, achievements, leaderboards, what to chase
+next. See [Without a PS2](#without-a-ps2).
 
 **Project page:** [hacan359.github.io/xerabora](https://hacan359.github.io/xerabora/),
 the setup as a walkthrough: [How to start](https://hacan359.github.io/xerabora/#start).
 
 > [!WARNING]
-> **Experimental.** A hobby project in alpha. The PS2 side is tested with
-> games on a USB stick and from the original disc, on two consoles. Use
-> it at your own risk.
+> **Experimental.** A hobby project in alpha. Use it at your own risk.
 
 <p align="center">
   <img src="docs/screenshots/live.png" alt="LIVE: the console session" width="720">
 </p>
 
----
-
-# Part one: achievements on a real PlayStation 2
-
 ## How it works
 
-```
-PS2 game ──► ee_core reads watched addresses every frame (VBLANK)
-         ──► SIF DMA ──► raudp (IOP) builds UDP frames, bypasses the TCP/IP stack
-         ──► Ethernet ──► xerabora on the PC ──► rcheevos ──► retroachievements.org
-                      ◄── RAU1 unlock notice ◄──
+```mermaid
+flowchart LR
+  PS2["PS2<br/>OPL-RA runs the game"] -- "game memory, every frame" --> PC["xeRAbora on the PC<br/>rcheevos"]
+  PC -- "unlock" --> RA["retroachievements.org"]
+  PC -. "gold flash on the TV" .-> PS2
 ```
 
-The console never talks to RetroAchievements. Before you play, the
-loader hashes the image the RetroAchievements way and asks the PC. The
-PC fetches the achievement set, derives every memory address the set
-reads, and sends that *watch list* back. While you play, the in-game core
-copies those addresses into a snapshot every frame and `raudp` on the
-IOP sends it as UDP packets, one for most sets and up to nine for the
-biggest, built by hand and handed straight to the network driver so the
-game's own traffic is never blocked. On the PC, rcheevos (the engine the emulators use) evaluates
-the achievements against the snapshots. When one unlocks, the PC sends
-a notice back and the console flashes the screen gold by writing two
-GS registers. Nothing is written into the game or the image.
+**Once per game, in the OPL menu** (RA: check game support):
 
-The PS2 agent is a fork of [Open PS2 Loader](https://github.com/hacan359/Open-PS2-Loader/tree/ra),
-branch `ra`; it ships as `OPL-RA.ELF` with every release here and
-behaves like OPL 1.2.0 with extra items in the menus.
+```mermaid
+sequenceDiagram
+  participant PS2 as PS2, OPL-RA menu
+  participant PC as xeRAbora
+  participant RA as retroachievements.org
+  Note over PS2: hash the image
+  PS2->>PC: hash
+  PC->>RA: which game is this?
+  RA-->>PC: achievement set
+  Note over PC: derive every address the set reads
+  PC-->>PS2: watch list + counts
+  Note over PS2: notice on the TV
+```
+
+**Every frame of the game:**
+
+```mermaid
+flowchart LR
+  subgraph CON["PlayStation 2"]
+    EE["EE: ee_core reads<br/>the watch list at VBLANK"] -- "SIF DMA" --> IOP["IOP: raudp<br/>builds UDP frames"]
+    IOP --> SMAP["SMAP<br/>network driver"]
+    GS["GS: gold flash"]
+  end
+  SMAP -- "UDP, 1-9 packets" --> X["xeRAbora<br/>rcheevos"]
+  X -- "unlock" --> RA["retroachievements.org"]
+  X -. "unlock notice (RAU1)" .-> GS
+```
+
+`raudp` hands its frames straight to the network driver and leaves the
+game's TCP/IP stack alone. The console agent is a fork of
+[Open PS2 Loader](https://github.com/hacan359/Open-PS2-Loader/tree/ra),
+branch `ra`; it ships as `OPL-RA.ELF` with every release and behaves like
+OPL 1.2.0 with extra items in the menus.
 
 ## What you need
 
 - A PS2 with a network adapter and a way to run OPL (FMCB, FHDB or similar).
-- Your game images on a USB stick, or the original disc in the drive. These
-  two we have tested, and they are the ones to play from. A game with an
-  achievement set does not run from a network share; a game without one
-  does. An internal HDD with an exFAT partition, which OPL reads over
-  BDM, behaves like the stick for one tester; games on HDL partitions
-  are not hashed.
+- Your games as `.iso` images wherever OPL runs them (USB stick, internal
+  HDD over BDM), or the original disc in the drive.
 - A PC on the same local network, Windows, Linux or macOS.
 - A [RetroAchievements](https://retroachievements.org) account.
 
@@ -119,49 +131,27 @@ virtual memory cards, per-game compatibility patches and cheats are not
 available: they live inside the part of OPL that emulates the drive,
 which a real disc does not use.
 
-Disc mode is experimental. It has been verified with Shadow of the
-Colossus only; a game it cannot boot may hang the console hard (black
-screen, the reset button does nothing). Power the console off and back
-on to recover. Transformers: The Game is one known case.
+## Without a PS2
 
-## What the console side does not do
+With the console off, xeRAbora follows your RetroAchievements account.
+The screens stay the same; what changes is who unlocks.
 
-- **Hardcore.** OPL can write to game memory through its cheat engine,
-  so the client does not claim hardcore mode. Every unlock is softcore.
-  Whether a real-hardware client can ever qualify is the RA team's call.
-- **Deep pointer chains.** The console follows pointers now, up to 128
-  chains per game. A set that needs more keeps its direct reads and
-  drops the chains; the client counts what it could not compile and says
-  so. A chain is also left out when its offset is not constant or its
-  parent is a delta read. Beyond Good & Evil, the worst case measured,
-  has 31 of 115 out of reach; X-Men Origins and TMNT have none.
-- **Another subnet.** The console learns the PC's MAC address from the
-  discovery reply; a PC behind a router is heard but cannot be answered.
-- **Other image formats.** The check reads plain ISO images whose boot
-  executable sits in the root directory (all retail discs do), named
-  `Title.iso` or the OPL Manager way, `SLUS_123.45.Title.iso`. ZSO and
-  UL images are not hashed, and HDD games sit on HDL partitions the
-  hasher does not read.
-- **Games without libpad.** Telemetry starts when the game opens its
-  controller through libpad, which is how OPL's in-game hooks attach. A
-  game with unusual input code may never start sending; the PC then
-  shows no snapshots.
-- **The data cache.** Reads see RAM, not the EE data cache, so a value
-  the game wrote very recently can lag by a fraction of a frame.
-- **A disc the drive cannot read all the way** fails the check with
-  "could not read SYSTEM.CNF". That is the disc or the laser, not the
-  software.
+```mermaid
+flowchart LR
+  subgraph A["With the PS2"]
+    P1["PS2"] -- "memory" --> X1["xeRAbora<br/>unlocks"]
+    X1 -- "unlock" --> R1["RetroAchievements"]
+  end
+  subgraph B["With an emulator"]
+    E2["Emulator<br/>unlocks"] -- "unlock" --> R2["RetroAchievements"]
+    R2 -- "Web API, every 20 s" --> X2["xeRAbora"]
+  end
+```
 
----
-
-# Part two: xeRAbora, the RetroAchievements client
-
-Everything below works without a console. What the client knows comes
-from three places: your **Web API key** (read-only, fills everything you
-browse), your **login** (needed only to unlock), and, when one streams,
-**the console** (the only source of measured progress and live
-trackers). Here is what each tab shows and where it comes from, with the
-refresh rate, so you know what is live and what is a poll.
+With the PS2, xeRAbora runs the rules itself, so it shows measured
+progress ("3 of 10") and live leaderboard trackers. With an emulator it
+reads your account: the game you are in, the unlocks as they land, UP
+NEXT and the missable warnings.
 
 ## What it shows, and where the data comes from
 
@@ -181,24 +171,6 @@ on the page, a short sound on the PC and the gold flash on the console.
   <img src="docs/screenshots/follow.png" alt="LIVE, following: the game your account is in on an emulator" width="352">
   <img src="docs/screenshots/game.png" alt="GAME: one set in full" width="352">
 </p>
-
-## What it does not do
-
-- It **does not post leaderboard entries.** The trackers run and show
-  on BOARDS, but RetroAchievements takes entries from hardcore only.
-- It **does not claim hardcore**, for the reason in part one.
-- It **does not browse the catalogue.** Games open from your library;
-  there is no search across RetroAchievements.
-- It **does not know which emulator you are in** when following. The
-  Web API exposes the game, the platform and the rich presence line,
-  nothing about the emulator or its core.
-- It **does not translate RetroAchievements' text.** Achievement titles
-  and descriptions, game titles and rich presence come from the server
-  in English. The three languages cover the page itself.
-- It **does not work offline.** Every tab is the Web API or the console;
-  there is no local copy of your library.
-- It **does not write anything to RetroAchievements** beyond the unlocks:
-  no comments, no claims, no awards.
 
 ## The client itself
 
@@ -261,26 +233,6 @@ console needs to read that console's memory, compute the RetroAchievements
 hash, and speak the protocol. The client does the rest.
 
 ---
-
-## Where this is going
-
-- **Deeper pointer chains, more image formats.** The console follows
-  chains up to 128 per game; raising that ceiling and hashing ZSO images
-  are the next console-side pieces.
-- **Guidance wherever you play.** UP NEXT, missable warnings and the
-  progression order come from RetroAchievements data, so they work for
-  any game you have started, on the console, on a PC or in an emulator.
-  The goal is a companion that walks you through a set so you miss
-  nothing on the way to mastery.
-- **More agents, one protocol.** An agent for another console, or for an
-  emulator that wants the same window, speaks the protocol and the
-  client does the rest.
-- **Louder unlocks.** Controller rumble in step with the flash, a badge
-  on the TV, a mastery alert on the page, Discord presence.
-- **For streams.** A compact overlay layout for OBS, live counters from
-  the game's own values, leaderboard trackers beside the video.
-- **Hardcore.** RetroAchievements decides who qualifies; the question is
-  with the RA team.
 
 ## Building
 
