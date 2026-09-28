@@ -4,15 +4,13 @@
 
 # xeRAbora
 
-**RetroAchievements on a real PlayStation 2.** A patched Open PS2 Loader
-sends the game's memory to your PC every frame. xeRAbora checks it
-against the achievement set, unlocks the achievement on your
-RetroAchievements profile and flashes the TV gold. No emulator, nothing
-written into the game.
+**RetroAchievements on a real PlayStation 2.** You play on the console,
+and the achievements you earn go to your RetroAchievements profile. The
+TV flashes gold on each one. No emulator.
 
-No PS2 at hand? The same client follows your play on any emulator with
-RetroAchievements: library, achievements, leaderboards, what to chase
-next. See [Without a PS2](#without-a-ps2).
+Without a PS2, the same client shows your play on any emulator with
+RetroAchievements: library, achievements, leaderboards. See
+[Without a PS2](#without-a-ps2).
 
 **Project page:** [hacan359.github.io/xerabora](https://hacan359.github.io/xerabora/),
 the setup as a walkthrough: [How to start](https://hacan359.github.io/xerabora/#start).
@@ -26,48 +24,16 @@ the setup as a walkthrough: [How to start](https://hacan359.github.io/xerabora/#
 
 ## How it works
 
-```mermaid
-flowchart LR
-  PS2["PS2<br/>OPL-RA runs the game"] -- "game memory, every frame" --> PC["xeRAbora on the PC<br/>rcheevos"]
-  PC -- "unlock" --> RA["retroachievements.org"]
-  PC -. "gold flash on the TV" .-> PS2
-```
+The console runs a patched Open PS2 Loader, `OPL-RA.ELF`. The PC runs
+xeRAbora. Both sit on the same home network.
 
-**Once per game, in the OPL menu** (RA: check game support):
+Before you play a game for the first time, choose **RA: check game
+support** in its OPL menu. The PC finds the game on RetroAchievements and
+tells the console what to watch.
 
-```mermaid
-sequenceDiagram
-  participant PS2 as PS2, OPL-RA menu
-  participant PC as xeRAbora
-  participant RA as retroachievements.org
-  Note over PS2: hash the image
-  PS2->>PC: hash
-  PC->>RA: which game is this?
-  RA-->>PC: achievement set
-  Note over PC: derive every address the set reads
-  PC-->>PS2: watch list + counts
-  Note over PS2: notice on the TV
-```
-
-**Every frame of the game:**
-
-```mermaid
-flowchart LR
-  subgraph CON["PlayStation 2"]
-    EE["EE: ee_core reads<br/>the watch list at VBLANK"] -- "SIF DMA" --> IOP["IOP: raudp<br/>builds UDP frames"]
-    IOP --> SMAP["SMAP<br/>network driver"]
-    GS["GS: gold flash"]
-  end
-  SMAP -- "UDP, 1-9 packets" --> X["xeRAbora<br/>rcheevos"]
-  X -- "unlock" --> RA["retroachievements.org"]
-  X -. "unlock notice (RAU1)" .-> GS
-```
-
-`raudp` hands its frames straight to the network driver and leaves the
-game's TCP/IP stack alone. The console agent is a fork of
-[Open PS2 Loader](https://github.com/hacan359/Open-PS2-Loader/tree/ra),
-branch `ra`; it ships as `OPL-RA.ELF` with every release and behaves like
-OPL 1.2.0 with extra items in the menus.
+While you play, the console sends the PC what happens in the game. When
+you earn an achievement, the PC records it on your profile and the TV
+flashes gold.
 
 ## What you need
 
@@ -133,25 +99,10 @@ which a real disc does not use.
 
 ## Without a PS2
 
-With the console off, xeRAbora follows your RetroAchievements account.
-The screens stay the same; what changes is who unlocks.
-
-```mermaid
-flowchart LR
-  subgraph A["With the PS2"]
-    P1["PS2"] -- "memory" --> X1["xeRAbora<br/>unlocks"]
-    X1 -- "unlock" --> R1["RetroAchievements"]
-  end
-  subgraph B["With an emulator"]
-    E2["Emulator<br/>unlocks"] -- "unlock" --> R2["RetroAchievements"]
-    R2 -- "Web API, every 20 s" --> X2["xeRAbora"]
-  end
-```
-
-With the PS2, xeRAbora runs the rules itself, so it shows measured
-progress ("3 of 10") and live leaderboard trackers. With an emulator it
-reads your account: the game you are in, the unlocks as they land, UP
-NEXT and the missable warnings.
+Without the console, xeRAbora shows your RetroAchievements account while
+you play on an emulator: the current game, new unlocks, what to go for
+next and what you can miss. Progress inside an achievement ("3 of 10")
+and live leaderboards work only with the PS2.
 
 ## What it shows, and where the data comes from
 
