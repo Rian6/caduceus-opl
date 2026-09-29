@@ -285,13 +285,16 @@ static int queryISOGameListCache(const struct game_cache_list *cache, base_game_
     return ENOENT;
 }
 
-/* RA: log of computed hashes.
+/* RA: log of computed hashes and the steps on the way, for the debug
+   build only. The release shows the outcome as a notice and writes
+   nothing.
 
    Hashing runs ONLY on demand and for one image at a time. Hashing
    every image during the scan would run before the menu appears: ten
    images over the network, each mounted and its executable read, keep
    the console on the splash screen for minutes, and an image that does
    not mount waits for a timeout on top. */
+#ifdef RA_DEBUG
 static FILE *ra_hashlog = NULL;
 
 void raHashLogOpen(const char *path)
@@ -370,6 +373,28 @@ void raHashLogClose(void)
         ra_hashlog = NULL;
     }
 }
+#else
+void raHashLogOpen(const char *path)
+{
+    (void)path;
+}
+
+void raHashStep(const char *what)
+{
+    (void)what;
+}
+
+void raHashLogAdd(const char *name, const char *startup, const char *hash)
+{
+    (void)name;
+    (void)startup;
+    (void)hash;
+}
+
+void raHashLogClose(void)
+{
+}
+#endif
 
 static int scanForISO(char *path, char type, struct game_list_t **glist)
 {

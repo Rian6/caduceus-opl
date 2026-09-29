@@ -65,7 +65,8 @@ int sbTestPCLinkDeferred(void);
 void raHashStep(const char *what);
 /* RA: the hash log, shared with the disc flow in discsupport.c. Open
    before hashing, close after: raHashStep and ranet.c drop their crumbs
-   into whatever log is open. */
+   into whatever log is open. Debug build only; the release build has
+   these as no-ops. */
 void raHashLogOpen(const char *path);
 void raHashLogAdd(const char *name, const char *startup, const char *hash);
 void raHashLogClose(void);
