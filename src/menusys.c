@@ -1165,8 +1165,10 @@ void menuHandleInputGameMenu()
                 }
             }
         } else if (menuID == GAME_RA_TEST) {
-            sbTestPCLinkDeferred();
-            guiShowRANotice("Looking for the PC client...", NULL);
+            if (sbTestPCLinkDeferred())
+                guiShowRANotice("Looking for the PC client...", NULL);
+            else
+                guiShowRANotice("A connection test is already running", NULL);
         } else if (menuID == GAME_COMPAT_SETTINGS) {
             guiGameShowCompatConfig(selected_item->item->current->item.id, selected_item->item->userdata, itemConfig);
         } else if (menuID == GAME_CHEAT_SETTINGS) {

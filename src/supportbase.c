@@ -997,17 +997,27 @@ static void sbHashGameDeferredWorker(void)
     ra_hash_busy = 0;
 }
 
+/* One test at a time, like the image check: a second press while the
+   first still polls would queue a second three-second wait. */
+static volatile int ra_link_busy = 0;
+
 static void sbTestPCLinkWorker(void)
 {
     char line1[96], line2[96];
 
     raNetTestLink(line1, sizeof(line1), line2, sizeof(line2));
     guiShowRANotice(line1, line2);
+    ra_link_busy = 0;
 }
 
-void sbTestPCLinkDeferred(void)
+int sbTestPCLinkDeferred(void)
 {
+    if (ra_link_busy)
+        return 0;
+    ra_link_busy = 1;
+
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &sbTestPCLinkWorker);
+    return 1;
 }
 
 void sbHashGame(const char *path, const char *name, const char *ext, const char *startup, int format)
@@ -1089,7 +1099,7 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
             } else {
                 raHashStep("7-pc-did-not-answer");
                 guiShowRANotice("The PC client did not answer",
-                                "Check that ps2ra runs, or try 'RA: test PC connection'");
+                                "Check that xerabora runs, or try 'RA: test PC connection'");
             }
 
             raHashSetStepLog(NULL);

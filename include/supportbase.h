@@ -59,8 +59,9 @@ int sbLoadCheats(const char *path, const char *file);
 int sbLoadWatchList(const char *path, const char *file);
 
 /* RetroAchievements: ask the PC client to answer, from the I/O thread;
-   the result is shown as a notice. */
-void sbTestPCLinkDeferred(void);
+   the result is shown as a notice. Returns 1 when queued, 0 when a test
+   is already running. */
+int sbTestPCLinkDeferred(void);
 void raHashStep(const char *what);
 /* RA: the hash log, shared with the disc flow in discsupport.c. Open
    before hashing, close after: raHashStep and ranet.c drop their crumbs

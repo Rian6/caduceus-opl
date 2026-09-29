@@ -600,7 +600,7 @@ static void ra_send_one(void)
 {
     USE_SMAP_REGS;
     iop_sys_clock_t t0, t1;
-    u32 nb = 0, parts = 1, part;
+    u32 nb = 0, parts = 1, part, sq = 0;
     int ret;
 
     ra_rxq = SMAP_REG8(SMAP_R_RXFIFO_FRAME_CNT);
@@ -627,7 +627,7 @@ static void ra_send_one(void)
        matches after the copy means a newer snapshot overwrote part of
        what was copied: the snapshot is torn and dropped. */
     if (ra_snap != NULL) {
-        u32 sq = ra_snap->seq;
+        sq = ra_snap->seq;
 
         if (ra_snap->magic == RA_SNAP_MAGIC) {
             const u8 *src = (const u8 *)ra_snap + RA_SNAP_HDR;
@@ -698,8 +698,10 @@ static void ra_send_one(void)
     if (ra_us > ra_us_max)
         ra_us_max = ra_us;
 
+    /* The seq taken before the copy, not the buffer's current one: a
+       snapshot that landed during the sends is still pending. */
     if (nb > 0) {
-        ra_sent_sq = ra_snap->seq;
+        ra_sent_sq = sq;
         ra_sent_any = 1;
     }
 }

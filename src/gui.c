@@ -265,7 +265,9 @@ static void guiRenderNotifications(char *string, int y)
 /* RetroAchievements notices, raised from the I/O thread (image check
    result, PC link test). Rendered by the GUI thread below. */
 static char raNotice[2][96];
-static int raNoticeLines = 0;
+/* volatile: written from the I/O thread and read by the GUI thread; the
+   hide-fill-show order below must reach memory in that order. */
+static volatile int raNoticeLines = 0;
 static clock_t raNoticeTimer = 0;
 
 void guiShowRANotice(const char *line1, const char *line2)

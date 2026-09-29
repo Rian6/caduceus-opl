@@ -65,6 +65,33 @@ int GetNodeCount(void)
     return gNodeCount;
 }
 
+/* Whether the entries are what the reader expects: a size of 1, 2 or 4
+   bytes each, adding up to the declared snapshot size. The list arrives
+   over the network and is read inside the game; anything else is
+   refused here. Addresses are not checked: one outside the game's
+   memory is legal and goes into the snapshot as zero. */
+static int CheckEntries(const unsigned int *ents, int count, int bytes)
+{
+    int i, sum = 0;
+
+    for (i = 0; i < count; i++) {
+        unsigned int size = RA_WATCH_SIZE(ents[i]);
+
+        if (size != 1 && size != 2 && size != 4) {
+            LOG("RA: entry %d reads %u bytes; refusing the list\n", i, size);
+            return -1;
+        }
+        sum += (int)size;
+    }
+
+    if (sum != bytes) {
+        LOG("RA: entries add up to %d bytes, header says %d; refusing the list\n", sum, bytes);
+        return -1;
+    }
+
+    return 0;
+}
+
 /* Takes the chain list if it is sound, drops all of it otherwise.
 
    ee_core walks these in an interrupt handler with the game running, so
@@ -254,6 +281,9 @@ int SetWatchList(const void *data, int len, const char *startup)
 
     memcpy(gWatchList, (const unsigned char *)data + sizeof(*hdr), need);
 
+    if (CheckEntries(gWatchList, (int)hdr->count, (int)hdr->bytes) != 0)
+        return -8;
+
     gWatchCount = (int)hdr->count;
     gWatchBytes = (int)hdr->bytes;
     snprintf(gWatchStartup, sizeof(gWatchStartup), "%s", startup);
@@ -344,6 +374,11 @@ int LoadWatchList(const char *path, const char *startup)
         LOG("RA: short read on the list: %d of %u\n", got, (unsigned)(hdr.count * sizeof(unsigned int)));
         close(fd);
         return -7;
+    }
+
+    if (CheckEntries(gWatchList, (int)hdr.count, (int)hdr.bytes) != 0) {
+        close(fd);
+        return -8;
     }
 
     gWatchCount = (int)hdr.count;
