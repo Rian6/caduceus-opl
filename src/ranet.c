@@ -39,8 +39,8 @@
     mechanism everything else in OPL uses;
   - a packet of 64 bytes or LESS (or unaligned edges): the bytes go
     into a side structure, rests_pkt, and the recv_intr callback copies
-    them out at the end of the RPC. On real hardware this path produced
-    "recvfrom returned 14, buffer full of zeros". The ps2sdk
+    them out at the end of the RPC. That path returns the length with a
+    buffer full of zeros. The ps2sdk
     do_recvfrom also hands fromlen to lwIP uninitialised (so the sender
     address comes back as zeros: lwIP 2.2.1 copies min(fromlen, 16)
     bytes) and DMAs the 144-byte rests_pkt into a 128-byte _intr_data
@@ -67,8 +67,7 @@
 #include "include/util.h"
 #include "include/ioman.h"
 #include "include/ranet.h"
-#include "include/supportbase.h" /* raHashStep: crumbs to the log on the share;
-                                    LOG output is invisible in the menu on hardware */
+#include "include/supportbase.h" /* raHashStep: crumbs to the hash log */
 #include "include/ethsupport.h"  /* ethGetNetConfig: own IP for the request */
 #include "include/rawatch.h"     /* SetWatchList: list straight into memory */
 #include "include/gui.h"         /* guiWarning: the untracked-launch notice */

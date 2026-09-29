@@ -425,7 +425,6 @@ static int scanForISO(char *path, char type, struct game_list_t **glist)
             } else if (cacheLoaded && queryISOGameListCache(&cache, &cachedGInfo, dirent->d_name) == 0) {
                 // use cached entry
                 memcpy(game, &cachedGInfo, sizeof(base_game_info_t));
-
             } else {
                 // need to mount and read SYSTEM.CNF
                 char startup[GAME_STARTUP_MAX];
@@ -1040,10 +1039,8 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
 
         /* The file name follows the game's format, the way
            sbCreatePath_name builds it. In the old naming scheme
-           (OPL Manager's default: "SLPM_656.88.Berserk.iso") the scan
-           strips the ID off the displayed name, so it has to go back
-           in front of it here -- the first tester report was exactly
-           "image did not open" on every such file. */
+           ("SLPM_656.88.Name.iso") the scan strips the ID off the
+           displayed name, so it goes back in front of it here. */
         if (format == GAME_FORMAT_OLD_ISO)
             snprintf(iso, sizeof(iso), "%s%s/%s.%s%s", path, dirs[i], startup, name, ext);
         else

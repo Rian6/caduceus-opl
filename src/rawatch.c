@@ -8,9 +8,10 @@
   The PC client builds the file from the game's achievement set on
   RetroAchievements. The format is modules/network/common/ra_watch.h.
 
-  The list lives in a static array of the loader; ee_core copies it
-  during its initialisation, while loader memory is still intact. This
-  is the same trick the cheat list uses (cheatman.c + cheat_api.c).
+  The list is read into a static array of the loader. At launch
+  PlaceWatchBlock copies it, its chains and room for the snapshot behind
+  the IOP modules in module storage, where the kernel keeps it out of
+  the game's memory; ee_core uses it there.
 */
 
 #include <stdio.h>
@@ -121,7 +122,7 @@ static void TakeNodes(const struct ra_node *nodes, unsigned int count)
    Module storage is the one region below the game that survives the
    launch, because the IOP modules in it are reloaded at every IOP
    reset. The block follows them and is sized to the set: a few hundred
-   bytes for most games, 17 KB for the largest counted so far.
+   bytes for most games, 17 KB at the ceilings.
 
    Layout, in words: entries[count], then nodes as (w, offset) pairs,
    then two scratch words per node for ee_core, then the snapshot

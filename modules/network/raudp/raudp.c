@@ -79,7 +79,7 @@ static u8 ra_dst_mac[6];
 
 /* The EE lands a snapshot every frame, 16.7 ms. Polling four times a
    frame and sending only a new seq catches each one; sleeping a whole
-   frame plus the work per pass missed one in twelve (lab/skips, 08.09). */
+   frame plus the work per pass falls behind and misses one in twelve. */
 #define RA_POLL_US         4000
 #define RA_IDLE_TICKS      4    /* no snapshot: one header-only packet per frame */
 #define RA_KEEPALIVE_TICKS 250  /* a second without a new snapshot: repeat the last */
@@ -159,8 +159,8 @@ static int ra_sock = -1;
 /* ---- Packet header ---------------------------------------------------
    Text header, then the raw snapshot bytes. Fields are fixed width so
    the PC client can parse them without a tokenizer, and the layout is
-   computed here instead of by hand: hand-counted offsets kept going
-   wrong during development.
+   computed here instead of by hand, so a field change cannot leave an
+   offset stale.
 
      RA15 seq=000000 sz=0000 us=00000 mx=00000 rxq=000 fail=000000
           err=+000 sk=000000 lk=0000 sq=000000 ds=000000 bad=0000

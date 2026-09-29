@@ -92,7 +92,7 @@ static unsigned int le32(const unsigned char *p)
    menu the IOP still runs the console's own CDVDMAN, so cdrom0: is the
    drive. */
 /* A crumb with numbers in it. The drive tells us why it refused only
-   through sceCdGetError, and a bare step name hid that once already. */
+   through sceCdGetError, and a bare step name would hide that. */
 static void step_num(const char *what, unsigned int a, unsigned int b, int c)
 {
     char line[64];
@@ -116,10 +116,7 @@ static void step_num(const char *what, unsigned int a, unsigned int b, int c)
   (src/ps2sdk-ref/iop/cdvd/cdvdman/src/cdvdman.c, ~3936) is skipped
   for DVDs (`!s->m_dvd_flag`), so on a DVD a single sceCdRead that
   hits a bad spot just fails. cdfs retries above the driver for that
-  reason. The first hardware run failed exactly like this: sector 16
-  and the root directory read, an extent 1.69M sectors in did not
-  (SCECdErREAD), and the ROM's cdrom0: file read of the same file came
-  back empty too.
+  reason.
 
   We cap the attempts lower than cdfs (16, half at each speed): a truly
   unreadable spot costs seconds per attempt, and the menu is waiting.
@@ -169,10 +166,10 @@ static int disc_read_sectors(unsigned int lba, unsigned int count, void *buf)
   Every read this file makes off a disc starts on a sector boundary,
   and every destination has room for the rounded-up size: g_chunk is
   64 KB, and the volume descriptor buffer is one sector and asks for
-  exactly one. So there is no need for an intermediate buffer, and no
-  reason to hand the drive a shape it has not been seen to accept --
-  the first version read short tails into a 2 KB staging buffer and
-  that was the one call the drive refused on hardware.
+  exactly one. So there is no need for an intermediate buffer, and the
+  drive is only ever asked for whole sectors, the one shape it accepts
+  reliably; a short tail read into a staging buffer is a request it can
+  refuse.
 
   The caller gets back the length it asked for; the sectors past it sit
   in the buffer unused.
@@ -352,11 +349,10 @@ static int hash_boot_exec(int fd, const char *startup, char *out33)
   as `cdrom0:\\NAME;1`, and how neutrino and wLaunchELF read
   SYSTEM.CNF off a disc.
 
-  We tried walking ISO9660 ourselves first, the way the image hasher
-  does, and on a real DVD it pointed at a sector the drive refused
-  (`cd-read-error ... rv=48`, SCECdErREAD, for an extent 1.69M sectors
-  in). The driver knows the disc's layout; our walk only knows what we
-  taught it. So: files first, the raw walk only as a fallback.
+  Walking ISO9660 by raw sectors, the way the image hasher does, can
+  point at an extent the drive refuses (SCECdErREAD) where the driver's
+  own file read succeeds: the driver knows the disc's layout. So: files
+  first, the raw walk only as a fallback.
 */
 static int disc_open(const char *name)
 {

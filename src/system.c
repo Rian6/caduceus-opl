@@ -551,8 +551,7 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
        mode gets from OPL's cdvdman. Here the ROM's cdvdman serves the
        drive, so DEV9 travels as its own module -- the same ps2dev9.irx
        the menu uses. Without it SMAP fails to load and the game runs
-       with no telemetry at all, which is exactly what the first disc
-       launch on hardware did. */
+       with no telemetry at all. */
     if (cdvdman_irx == NULL) {
         irxptr_tab[modcount].info = size_ps2dev9_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_DEV9);
         irxptr_tab[modcount++].ptr = (void *)&ps2dev9_irx;

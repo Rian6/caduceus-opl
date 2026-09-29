@@ -167,11 +167,9 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
         }
 
         if (config->GameMode != ETH_MODE) {
-            /* RA_PROBE (lab, 12.09): a ladder for the hunt after X-Men
-               Origins would not finish loading under the fork while it
-               runs on stock OPL. 1 loads nothing of ours, 2 the stack
-               only, 3 the stack and SMAP, 4 those and raudp but no
-               snapshots from the EE. 0, the default, is the real thing. */
+            /* RA_PROBE, 0 in every real build: 1 loads nothing of ours,
+               2 the stack only, 3 the stack and SMAP, 4 those and raudp
+               but no snapshots from the EE. */
             if (RA_PROBE != 1)
                 LoadOPLModule(OPL_MODULE_ID_SMSTCPIP, 0, 0, NULL);
             if (RA_PROBE != 1 && RA_PROBE != 2)

@@ -220,11 +220,10 @@ void discLaunch(void)
        sendIrxKernelRAM to build the IOPRP that leaves the drive alone,
        and to ship a standalone DEV9 for the network stack.
 
-       IGR stays ON. The first version passed COMPAT_MODE_6 to avoid the
-       IGR shutdown RPC, whose server sits in OPL's cdvdman -- but the
-       per-frame telemetry hook, RA_OnVblank, is called from the IGR
-       VBLANK handler that Install_IGR() sets up, so that switch also
-       silenced the telemetry. padhook.c now skips the RPC itself in
-       this mode instead. */
+       IGR stays on: the per-frame telemetry hook, RA_OnVblank, is
+       called from the VBLANK handler that Install_IGR() sets up, so
+       COMPAT_MODE_6 would silence the telemetry along with the IGR
+       shutdown RPC. padhook.c skips that RPC in this mode instead; its
+       server sits in OPL's cdvdman, which is not loaded. */
     sysLaunchLoaderElf(startup, "DISC_MODE", 0, NULL, 0, NULL, 0, 0);
 }

@@ -90,14 +90,11 @@ static int ra_snap_bytes = 0;
 /* What may be read at all: the game's own memory. Below 0x80000 sits
    the EE kernel and above 32 MB there is no RAM on a retail console.
 
-   This is not only about pointers. A set can carry a plain address
-   outside that window -- X-Men Origins has 0x00000000 among its 41 --
-   and reading it every frame from the interrupt handler hung the game
-   while it was still loading, on USB as much as from a share
-   (12.09.2026, lab/pointers). NFS Underground 2, whose 490 addresses
-   all sit in its own data, never showed a thing. An address we will not
-   read is sent as zero, so the snapshot keeps its shape and the client
-   still gets a value for every entry. */
+   This is not only about pointers: a set can carry a plain address
+   outside that window, and reading one every frame from the interrupt
+   handler can keep a game from finishing its loading. An address that
+   is not read goes into the snapshot as zero, so the snapshot keeps its
+   shape and the client still gets a value for every entry. */
 #define RA_RAM_LOW  0x00080000
 #define RA_RAM_HIGH 0x02000000
 

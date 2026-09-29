@@ -46,7 +46,8 @@ NOT_PACKED ?= 0
 DEBUG ?= 0
 EESIO_DEBUG ?= 0
 INGAME_DEBUG ?= 0
-# RetroAchievements: 1 builds the debug variant (HUD probe in ee_core)
+# RetroAchievements: 1 builds the debug variant, which writes launch
+# notes to RA/launch.txt (src/rawatch.c)
 RA_DEBUG ?= 0
 DECI2_DEBUG ?= 0
 #How the TTY will reach developer: 'UDP', 'PPC_UART'.

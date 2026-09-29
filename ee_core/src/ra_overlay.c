@@ -2,8 +2,10 @@
   RetroAchievements unlock notice: a gold pulse over the running game. The
   PC sends RAU1, raudp DMAs a struct ra_event into the buffer below, the
   VBLANK handler plays it with PMODE and BGCOLOR writes only. Why a flash
-  and not a picture: lab/overlay/README.md in the control repo. Licenced
-  under Academic Free License version 3.0, like the rest of ee_core.
+  and not a picture: the GS blends its two circuits across the whole
+  raster, and VRAM cannot be written under a running game, so there is
+  nowhere to draw. Licenced under Academic Free License version 3.0,
+  like the rest of ee_core.
 */
 
 #include "ee_core.h"
@@ -26,8 +28,8 @@
 #define RA_OVL_GOLD  0x20A0FF
 #define RA_OVL_BLACK 0x000000
 
-/* The pulse the owner picked: 12 frames down to the game at half weight,
-   48 frames back. About a second at 60 Hz. */
+/* The pulse: 12 frames down to the game at half weight, 48 frames back.
+   About a second at 60 Hz. */
 #define RA_OVL_DOWN  12
 #define RA_OVL_UP    48
 #define RA_OVL_FLOOR 0x80
@@ -52,9 +54,8 @@ void *RA_OverlayEventBuffer(void)
     return &ra_ovl_event;
 }
 
-/* No badge buffer in the flash build: raudp sees the zero address and
-   keeps the chunks to itself. The badge road -- delivery proven, the
-   upload's cost not yet worth it -- is parked in the lab. */
+/* No badge buffer in this build: raudp sees the zero address and keeps
+   the chunks to itself. */
 void *RA_OverlayBadgeBuffer(void)
 {
     return NULL;

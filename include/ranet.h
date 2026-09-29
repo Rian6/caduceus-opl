@@ -8,8 +8,8 @@
    the waiting rounds, another negative value when the PC did not answer
    or the transfer broke.
    info (may be NULL) receives the game title, info2 (may be NULL) the
-   achievement counts as the PC reported them, e.g. info "Need for Speed:
-   Underground 2" and info2 "76 achievements: 3 unlocked, 10 unsupported".
+   achievement counts as the PC reported them, e.g. info "Game Title"
+   and info2 "76 achievements: 3 unlocked, 10 unsupported".
    Older PC clients report only the total, so info2 is then just
    "76 achievements". */
 int raAskPC(const char *hash, const char *serial, const char *savepath,

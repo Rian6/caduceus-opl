@@ -96,8 +96,8 @@ static int eecoreInit(int argc, char **argv)
         EnableCheats();
     }
 
-    /* RetroAchievements: copy the watch list while loader memory is
-       still intact; the game overwrites it. Same trick as the cheats. */
+    /* RetroAchievements: take the watch list from where the loader
+       placed it, behind the IOP modules in module storage. */
     RA_SetupWatchList();
     DPRINTF("RA watchlist = %d entries, %d bytes\n", config->raWatchCount, config->raSnapBytes);
 

@@ -1636,8 +1636,7 @@ void guiMainLoop(void)
 
         /* RA: our notices answer an explicit menu action, they are not
            background chatter, so they must not depend on the
-           "Notifications" setting -- which is off by default and has
-           already once made the console look like it did nothing. */
+           "Notifications" setting, which is off by default. */
         guiShowRANotices();
 
         if (gEnableNotifications)

@@ -8,10 +8,10 @@
   about an image; the console keeps it in memory and as a file next to
   the game, the same way OPL keeps cheats in CHT/.
 
-  Why a list of values instead of memory ranges: NFS Underground 2 has
-  482 addresses spread over 192 KB in tight clusters. As contiguous
-  ranges that is 24 ranges and 3152 bytes, three packets per frame. As
-  individual values it is about 1350 bytes, two packets.
+  Why a list of values instead of memory ranges: a set's addresses come
+  in tight clusters spread over a wide span, and ranges covering the
+  clusters carry two to three times the bytes the values themselves
+  take, so a packet more per frame.
 
   Values in the snapshot follow watch list order, so addresses are not
   sent over the wire: the PC client generated the list and knows it.
@@ -53,7 +53,7 @@
    carries at most RA_SNAP_PARTS_PER_FRAME parts a frame: a set that
    needs more is sent every second or third frame (ee_core/src/ra.c),
    and a set that fits three parts is sent every frame, as it always
-   was. The largest set counted so far needs six parts. */
+   was. A set with subsets can need six parts. */
 #define RA_SNAP_PARTS           9
 #define RA_SNAP_PARTS_PER_FRAME 3
 
@@ -115,9 +115,9 @@ struct ra_watch_file
 #define RA_NODE_MAGIC 0x4C4E4152 /* "RANL" in little-endian */
 
 /* Node ceiling. Nodes travel with the list into module storage, 16
-   bytes each there (the node, then two scratch words per frame). The
-   largest set counted so far has 57. The snapshot ceiling binds next,
-   at 8 bytes per node. */
+   bytes each there (the node, then two scratch words per frame). A set
+   with subsets can carry several dozen. The snapshot ceiling binds
+   next, at 8 bytes per node. */
 #define RA_NODE_MAX 128
 
 /* Bytes one node adds to a snapshot: the resolved address and the value. */
