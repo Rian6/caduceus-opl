@@ -156,27 +156,7 @@ static void discCheckWorker(void)
 
     raHashStep("6-asking-pc");
     q = raAskPC(hash, startup, DISC_WL_PATH, info, sizeof(info), info2, sizeof(info2));
-
-    if (q == 0) {
-        raHashStep("7-list-received");
-        guiShowRANotice(info[0] ? info : "Supported by RetroAchievements",
-                        info2[0] ? info2 : NULL);
-    } else if (q == 1) {
-        raHashStep("7-pc-does-not-know-image");
-        guiShowRANotice(info[0] ? info : "RetroAchievements does not know this disc", hash);
-    } else if (q == -7) {
-        raHashStep("7-pc-still-identifying");
-        guiShowRANotice("The PC is still identifying the disc",
-                        "Try again in a few seconds");
-    } else if (q == -2) {
-        raHashStep("7-no-socket-on-console");
-        guiShowRANotice("The console could not open a network socket",
-                        "Restart the console and try again");
-    } else {
-        raHashStep("7-pc-did-not-answer");
-        guiShowRANotice("The PC client did not answer",
-                        "Check that xerabora runs, or try 'RA: test PC connection'");
-    }
+    raShowAskResult(q, "disc", info, info2, hash);
 
 done:
     raHashSetStepLog(NULL);

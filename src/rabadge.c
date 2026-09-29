@@ -19,6 +19,7 @@
 #include "include/util.h"
 #include "include/supportbase.h"
 #include "include/rabadge.h"
+#include "include/rawatch.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -64,14 +65,14 @@ static int watchListExists(const char *prefix, const char *serial)
     if (serial == NULL || serial[0] == '\0')
         return 0;
 
-    snprintf(path, sizeof(path), "%sRA/%s.wl", prefix, serial);
+    raWatchListPath(path, sizeof(path), prefix, serial);
     if (stat(path, &st) == 0 && st.st_size > 0)
         return 1;
 
     /* The same fallback the loader uses: lists prepared on the PC live
        on the share. */
     if (strncmp(prefix, "smb0:", 5) != 0) {
-        snprintf(path, sizeof(path), "smb0:RA/%s.wl", serial);
+        raWatchListPath(path, sizeof(path), "smb0:", serial);
         if (stat(path, &st) == 0 && st.st_size > 0)
             return 1;
     }

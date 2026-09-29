@@ -280,6 +280,19 @@ static int read_root(int fd, unsigned int *root_lba, unsigned int *root_size)
     return 0;
 }
 
+/* 32 lowercase hex digits and the terminator. */
+static void md5_hex(const md5_byte_t *digest, char *out33)
+{
+    static const char hex[] = "0123456789abcdef";
+    int i;
+
+    for (i = 0; i < 16; i++) {
+        out33[i * 2] = hex[(digest[i] >> 4) & 0xF];
+        out33[i * 2 + 1] = hex[digest[i] & 0xF];
+    }
+    out33[32] = '\0';
+}
+
 /* MD5( name || contents of that file ), the way RetroAchievements does
    it. Shared by the image and the disc. */
 static int hash_boot_exec(int fd, const char *startup, char *out33)
@@ -288,7 +301,6 @@ static int hash_boot_exec(int fd, const char *startup, char *out33)
     md5_byte_t digest[16];
     unsigned int root_lba, root_size, elf_lba, elf_size, left;
     long long off;
-    int i;
 
     if (read_root(fd, &root_lba, &root_size) != 0)
         return -2;
@@ -327,13 +339,7 @@ static int hash_boot_exec(int fd, const char *startup, char *out33)
 
     md5_finish(&md5, digest);
 
-    for (i = 0; i < 16; i++) {
-        static const char hex[] = "0123456789abcdef";
-
-        out33[i * 2] = hex[(digest[i] >> 4) & 0xF];
-        out33[i * 2 + 1] = hex[digest[i] & 0xF];
-    }
-    out33[32] = '\0';
+    md5_hex(digest, out33);
 
     step("5-hashed-directly");
     LOG("RA: direct hash %s = %s (%u bytes)\n", startup, out33, elf_size);
@@ -376,7 +382,6 @@ static int hash_stream(int fd, const char *startup, char *out33)
     md5_state_t md5;
     md5_byte_t digest[16];
     unsigned int total = 0;
-    int i;
 
     md5_init(&md5);
     md5_append(&md5, (const md5_byte_t *)startup, (int)strlen(startup));
@@ -402,13 +407,7 @@ static int hash_stream(int fd, const char *startup, char *out33)
 
     md5_finish(&md5, digest);
 
-    for (i = 0; i < 16; i++) {
-        static const char hex[] = "0123456789abcdef";
-
-        out33[i * 2] = hex[(digest[i] >> 4) & 0xF];
-        out33[i * 2 + 1] = hex[digest[i] & 0xF];
-    }
-    out33[32] = '\0';
+    md5_hex(digest, out33);
 
     step_num("5-hashed-from-file", total, 0, 0);
     LOG("RA: hash %s = %s (%u bytes, via cdrom0:)\n", startup, out33, total);

@@ -1036,6 +1036,35 @@ int sbTestPCLinkDeferred(void)
     return 1;
 }
 
+void raShowAskResult(int q, const char *what, const char *info, const char *info2, const char *hash)
+{
+    char line[96];
+
+    if (q == 0) {
+        raHashStep("7-list-received");
+        guiShowRANotice(info[0] ? info : "Supported by RetroAchievements",
+                        info2[0] ? info2 : "Start the game to track achievements");
+    } else if (q == 1) {
+        raHashStep("7-pc-does-not-know-image");
+        snprintf(line, sizeof(line), "RetroAchievements does not know this %s", what);
+        guiShowRANotice(info[0] ? info : line, hash);
+    } else if (q == -7) {
+        raHashStep("7-pc-still-identifying");
+        snprintf(line, sizeof(line), "The PC is still identifying the %s", what);
+        guiShowRANotice(line, "Try again in a few seconds");
+    } else if (q == -1) {
+        /* No UDP socket, so nothing was ever sent: say that, not that
+           the PC never heard us. */
+        raHashStep("7-no-socket-on-console");
+        guiShowRANotice("The console could not open a network socket",
+                        "Restart the console, or check the ETH device in settings");
+    } else {
+        raHashStep("7-pc-did-not-answer");
+        guiShowRANotice("The PC client did not answer",
+                        "Check that xerabora runs, or try 'RA: test PC connection'");
+    }
+}
+
 void sbHashGame(const char *path, const char *name, const char *ext, const char *startup, int format)
 {
     static const char *dirs[] = {"DVD", "CD", NULL};
@@ -1094,29 +1123,7 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
                the game, where the loader picks it up at launch. */
             raHashStep("6-asking-pc");
             q = raAskPC(hash, startup, path, info, sizeof(info), info2, sizeof(info2));
-
-            if (q == 0) {
-                raHashStep("7-list-received");
-                guiShowRANotice(info[0] ? info : "Supported by RetroAchievements",
-                                info2[0] ? info2 : "Start the game to track achievements");
-            } else if (q == 1) {
-                raHashStep("7-pc-does-not-know-image");
-                guiShowRANotice(info[0] ? info : "RetroAchievements does not know this image", hash);
-            } else if (q == -7) {
-                raHashStep("7-pc-still-identifying");
-                guiShowRANotice("The PC is still identifying the image",
-                                "Try again in a few seconds");
-            } else if (q == -1) {
-                /* The console could not open a UDP socket, so nothing was
-                   ever sent -- report that, not a PC that never heard us. */
-                raHashStep("7-no-socket-on-console");
-                guiShowRANotice("The console could not open a network socket",
-                                "Restart the console, or check the ETH device in settings");
-            } else {
-                raHashStep("7-pc-did-not-answer");
-                guiShowRANotice("The PC client did not answer",
-                                "Check that xerabora runs, or try 'RA: test PC connection'");
-            }
+            raShowAskResult(q, "image", info, info2, hash);
 
             raHashSetStepLog(NULL);
             raHashLogClose();

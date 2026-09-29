@@ -4,6 +4,9 @@
 
 #include "modules/network/common/ra_watch.h"
 
+/* "<prefix>RA/<serial>.wl": where a game's list lives on a device. The
+   loader, the badge and the network save all use this one. */
+void raWatchListPath(char *out, int sz, const char *prefix, const char *serial);
 int LoadWatchList(const char *path, const char *startup);
 /* One line in the debug launch log: what happened plus two numbers.
    Independent of the hash log, which is already closed by launch time. */

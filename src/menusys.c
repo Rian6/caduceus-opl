@@ -789,7 +789,7 @@ void menuRenderMenu()
         // render, advance
         fntRenderString(gTheme->fonts[0], 320, y, ALIGN_CENTER, 0, 0, submenuItemGetText(&it->item), (cp == sitem) ? gTheme->selTextColor : gTheme->textColor);
         y += spacing;
-        if (cp == (MENU_ABOUT - 1 + 2)) /* RA: two disc items sit above */
+        if (it->item.id == MENU_ABOUT - 1) /* the gap before About, by item, not by position */
             y += spacing / 2;
     }
 

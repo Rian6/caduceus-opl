@@ -70,6 +70,9 @@ void raHashStep(const char *what);
 void raHashLogOpen(const char *path);
 void raHashLogAdd(const char *name, const char *startup, const char *hash);
 void raHashLogClose(void);
+/* RA: the notice for what raAskPC returned, shared by the image and the
+   disc check. what is "image" or "disc". */
+void raShowAskResult(int q, const char *what, const char *info, const char *info2, const char *hash);
 void sbHashGame(const char *path, const char *name, const char *ext, const char *startup, int format);
 /* Same, but through OPL's I/O thread. From the menu call ONLY this one. */
 /* Returns 1 when queued, 0 when a check is already running. */

@@ -489,7 +489,7 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
 
             snprintf(dir, sizeof(dir), "%sRA", where[w]);
             mkdir(dir, 0777);
-            snprintf(file, sizeof(file), "%sRA/%s.wl", where[w], serial);
+            raWatchListPath(file, sizeof(file), where[w], serial);
 
             f = fopen(file, "wb");
             if (f == NULL) {

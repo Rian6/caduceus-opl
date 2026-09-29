@@ -40,6 +40,11 @@ static int gNodeCount = 0;
    cache yet. */
 static char gWatchStartup[16];
 
+void raWatchListPath(char *out, int sz, const char *prefix, const char *serial)
+{
+    snprintf(out, sz, "%sRA/%s.wl", prefix, serial);
+}
+
 unsigned int *GetWatchList(void)
 {
     return gWatchCount > 0 ? gWatchList : NULL;
@@ -313,7 +318,7 @@ int SetWatchList(const void *data, int len, const char *startup)
    is not an error: this game has no set. */
 int LoadWatchList(const char *path, const char *startup)
 {
-    char file[80];
+    char file[128];
     struct ra_watch_file hdr;
     int fd, got;
 
@@ -328,7 +333,7 @@ int LoadWatchList(const char *path, const char *startup)
 
     ClearWatchList();
 
-    snprintf(file, sizeof(file), "%sRA/%s.wl", path, startup);
+    raWatchListPath(file, sizeof(file), path, startup);
     LOG("RA: looking for watch list %s\n", file);
 
     fd = open(file, O_RDONLY);

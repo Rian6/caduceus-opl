@@ -901,9 +901,14 @@ static void ra_poll_pc(void)
     ra_handle_pc(rx, got);
 }
 
-/* The raw receive road: in play nothing drains the SMAP RX FIFO (it sits
-   full, ARP dies with it), so this thread walks the receive BDs itself, as
-   HandleRxIntr does. It must be the ring's only consumer while a game runs. */
+/* The raw receive road. Once the game runs, the in-game SMAP driver's
+   interrupt path no longer drains the receive FIFO: the frame counter
+   climbs to 64 and stays there, and with it lwIP receive and ARP are
+   dead. So this thread walks the receive descriptors itself, the way
+   HandleRxIntr does: read the frame at the descriptor's pointer, hand a
+   UDP datagram for our port to ra_handle_pc, drop everything else, mark
+   the descriptor empty, decrement the counter. It must be the ring's
+   only consumer while a game runs. */
 /* An unlock notice is a frame of about 60 bytes; anything longer is
    not for us and is dropped unread. */
 static u8 ra_rxfrm[256] __attribute__((aligned(4)));
