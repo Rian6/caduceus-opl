@@ -139,11 +139,23 @@ EE-side buffer and the SIF DMA result). The client logs the line.
 Optional heartbeat, every ten seconds, with what the agent's receive
 side has seen since the game started. The client logs it; no heartbeat
 means the agent's send path is down, zero datagrams while the client is
-sending means nothing reaches the agent.
+sending means nothing reaches the agent. The last three fields belonged
+to the badge experiment below and are sent as zeros.
 
-`RAB1` and `RAK2` (a badge picture pushed to the console) exist in the
-reference agent and client as an experiment, off by default, and are
-not part of the protocol yet.
+## Reset
+
+    PC -> console   RAR1 <reserved>
+
+Asks the agent to leave the game and return to its own menu, the way
+the loader's in-game reset does. Sent to the same address as `RAU1`,
+and answered with the same `RAK1`. The argument is not read; it is
+there because the reference agent takes every message as a tag, a
+space and a value. An agent that cannot reset ignores it. Where the
+console lands afterwards is the loader's setting, not the protocol's.
+
+`RAB1` and `RAK2` (a badge picture pushed to the console) were an
+experiment; the reference agent no longer takes them, and the client
+sends them only when started with `--badge`.
 
 ## What an agent must do
 
@@ -153,7 +165,8 @@ not part of the protocol yet.
 3. Fetch the watch list with `RAG1` and keep it.
 4. Every frame, read the listed addresses and stream them as `RA15`
    snapshots in watch-list order.
-5. Optionally, keep the discovery port open and act on `RAU1`.
+5. Optionally, keep the discovery port open and act on `RAU1` and
+   `RAR1`.
 
 The hash must match what RetroAchievements expects for that console. The
 memory addresses and the hashing scheme are the only console-specific
