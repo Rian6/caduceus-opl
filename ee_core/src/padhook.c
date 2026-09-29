@@ -134,6 +134,15 @@ static void t_loadElf(void)
     Exit(0);
 }
 
+void IGR_RequestReset(void)
+{
+    /* The VBLANK handler below reads combo_type on its next tick and
+       runs the reset from there; this only leaves the request. A reset
+       already under way is not replaced. */
+    if (Pad_Data.combo_type == 0x00)
+        Pad_Data.combo_type = IGR_COMBO_START_SELECT;
+}
+
 // In Game Reset Thread
 static void IGR_Thread(void *arg)
 {

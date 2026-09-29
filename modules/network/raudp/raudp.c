@@ -36,12 +36,13 @@
   stays silent and the query repeats, every second at first and then
   every 30 seconds, so the PC client may start after the game.
 
-  The socket stays open afterwards for the one thing that travels the
-  other way: "RAU1 <id> <points>" from the PC when an achievement
-  unlocks. It is polled without waiting once per telemetry period, and
-  each unlock is handed to ee_core as a small record DMA'd into a buffer
-  there (struct ra_event), where the VBLANK handler picks it up and shows
-  the notice over the game.
+  The socket stays open afterwards for what travels the other way:
+  "RAU1 <id> <points>" from the PC when an achievement unlocks, and
+  "RAR1" when the PC asks the console to leave the game for the loader.
+  It is polled without waiting once per telemetry period, and each
+  message is handed to ee_core as a small record DMA'd into a buffer
+  there (struct ra_event), where the VBLANK handler picks it up: a
+  notice over the game, or the in-game reset.
 
   Licenced under Academic Free License version 3.0, like ee_core.
 */
@@ -821,19 +822,26 @@ static void ra_handle_pc(char *rx, int got)
 
     ra_hb_rx++;
 
-    if (rx[0] != 'R' || rx[1] != 'A' || rx[2] != 'U' || rx[3] != '1' || rx[4] != ' ')
+    if (rx[0] != 'R' || rx[1] != 'A' || rx[3] != '1' || rx[4] != ' ')
         return;
 
-    ra_hb_rau++;
-
-    /* Every notice arrives twice, unicast and broadcast (the console
-       answers no ARP in play). The same achievement within a few seconds is
-       one pulse. */
-    {
+    if (rx[2] == 'R') {
+        /* "RAR1": leave the game for the loader. The second copy of the
+           datagram never matters: the first one ends this module. */
+        ra_event.magic = RA_EVENT_MAGIC;
+        ra_event.seq++;
+        ra_event.kind = RA_EVENT_RESET;
+        ra_event.arg = 0;
+    } else if (rx[2] == 'U') {
+        /* Every notice arrives twice, unicast and broadcast (the console
+           answers no ARP in play). The same achievement within a few
+           seconds is one pulse. */
         static u32 last_id = 0xFFFFFFFF;
         static u32 last_sec = 0;
         iop_sys_clock_t clk;
         u32 sec, usec, id;
+
+        ra_hb_rau++;
 
         id = ra_dec_at(&rx[5], 10);
         GetSystemTime(&clk);
@@ -848,6 +856,8 @@ static void ra_handle_pc(char *rx, int got)
         ra_event.seq++;
         ra_event.kind = RA_EVENT_UNLOCK;
         ra_event.arg = id;
+    } else {
+        return;
     }
 
     if (ra_ee_event != 0) {

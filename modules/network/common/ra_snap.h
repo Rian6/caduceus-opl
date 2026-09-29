@@ -75,6 +75,7 @@ struct ra_snap
 #define RA_EVENT_MAGIC 0x52414531 /* "RAE1" */
 
 #define RA_EVENT_UNLOCK 1 /* an achievement unlocked; arg is its id */
+#define RA_EVENT_RESET  2 /* leave the game for the loader, as the IGR combo does */
 
 struct ra_event
 {

@@ -1,7 +1,8 @@
 /*
   RetroAchievements unlock notice: a gold pulse over the running game. The
   PC sends RAU1, raudp DMAs a struct ra_event into the buffer below, the
-  VBLANK handler plays it with PMODE and BGCOLOR writes only. Why a flash
+  VBLANK handler plays it with PMODE and BGCOLOR writes only. The same
+  buffer carries the PC's reset request (RAR1), handed to padhook. Why a flash
   and not a picture: the GS blends its two circuits across the whole
   raster, and VRAM cannot be written under a running game, so there is
   nowhere to draw. Licenced under Academic Free License version 3.0,
@@ -11,6 +12,7 @@
 #include "ee_core.h"
 #include "coreconfig.h"
 #include "ra_overlay.h"
+#include "padhook.h"
 #include "../../modules/network/common/ra_snap.h"
 
 /* GS privileged registers, mapped by the TLB entry in tlb.c. Write-only,
@@ -72,9 +74,14 @@ void RA_OverlayOnVblank(unsigned int frames)
     int alp, k;
 
     /* A new event restarts the flash, even mid-flash: two unlocks close
-       together read as two pulses, not one long one. */
+       together read as two pulses, not one long one. A reset event goes
+       to the IGR road instead and draws nothing. */
     if (e->magic == RA_EVENT_MAGIC && e->seq != ra_ovl_seen) {
         ra_ovl_seen = e->seq;
+        if (e->kind == RA_EVENT_RESET) {
+            IGR_RequestReset();
+            return;
+        }
         ra_ovl_start = frames;
         ra_ovl_running = 1;
     }
