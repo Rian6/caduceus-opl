@@ -136,22 +136,11 @@ static u32 ra_ee_event = 0;
    for the DMA, and kept whole between sends. */
 static struct ra_event ra_event __attribute__((aligned(16)));
 
-/* Badge buffer in ee_core, third address in the load argument. 0 when
-   ee_core did not give one; badge chunks are then dropped. */
-static u32 ra_ee_badge = 0;
-
-/* The badge assembling in IOP RAM, one per game session: the PC repeats the
-   series against loss, later chunks add nothing. */
-static struct ra_badge ra_badge __attribute__((aligned(16)));
-static u32 ra_badge_mask = 0; /* bit per chunk received */
-static int ra_badge_done = 0;
-
 /* Counters for the heartbeat: what this side saw, said to the
    PC every ten seconds, because a silent link cannot be told apart
    from a dead one by staring at the screen. */
 static u32 ra_hb_rx = 0;  /* datagrams that reached ra_poll_pc */
 static u32 ra_hb_rau = 0; /* unlock notices among them */
-static u32 ra_hb_rab = 0; /* badge chunks accepted */
 
 /* Discovery socket, kept open for the PC's messages. */
 static int ra_sock = -1;
@@ -821,71 +810,6 @@ static u32 ra_dec_at(const char *s, int max)
     return v;
 }
 
-/* A badge chunk: "RAB1 ii tt " (11 bytes) and 512 raw pixels. The sixteenth
-   distinct chunk goes to the EE in one SIF DMA, answered with "RAK2 <mask>
-   <dma>". */
-static void ra_take_badge(const char *rx, int got)
-{
-    u32 idx = ra_dec_at(&rx[5], 2);
-    u32 total = ra_dec_at(&rx[8], 2);
-    char ack[24];
-    int dma = 0, n;
-
-    if (got != 11 + RA_BADGE_CHUNK || total != RA_BADGE_CHUNKS || idx >= RA_BADGE_CHUNKS)
-        return;
-    if (ra_badge_done)
-        return;
-
-    {
-        u8 *dst = &ra_badge.px[idx * RA_BADGE_CHUNK];
-        int i;
-
-        for (i = 0; i < RA_BADGE_CHUNK; i++)
-            dst[i] = (u8)rx[11 + i];
-    }
-    ra_hb_rab++;
-    ra_badge_mask |= (u32)1 << idx;
-
-    if (ra_badge_mask != ((u32)1 << RA_BADGE_CHUNKS) - 1)
-        return;
-
-    ra_badge.magic = RA_BADGE_MAGIC;
-    ra_badge.len = RA_BADGE_BYTES;
-    ra_badge.seq++;
-    ra_badge_done = 1;
-
-    if (ra_ee_badge != 0) {
-        /* Two transfers, pixels first: SIF DMA fills memory upward, and
-           the EE takes the header's magic as "the badge is here". Sent
-           as one transfer the magic would land before the pixels. */
-        SifDmaTransfer_t dmat[2];
-
-        dmat[0].src = ra_badge.px;
-        dmat[0].dest = (void *)(ra_ee_badge + 16);
-        dmat[0].size = RA_BADGE_BYTES;
-        dmat[0].attr = 0;
-        dmat[1].src = &ra_badge;
-        dmat[1].dest = (void *)ra_ee_badge;
-        dmat[1].size = 16;
-        dmat[1].attr = 0;
-        dma = sceSifSetDma(dmat, 2);
-    }
-
-    n = 0;
-    ack[n++] = 'R';
-    ack[n++] = 'A';
-    ack[n++] = 'K';
-    ack[n++] = '2';
-    ack[n++] = ' ';
-    ra_fmt_hex8(&ack[n], ra_ee_badge);
-    n += 8;
-    ack[n++] = ' ';
-    ra_fmt_err((u8 *)&ack[n], dma);
-    n += 4;
-    ack[n] = '\0';
-    ra_ctl_send(ack, n);
-}
-
 /* One message from the PC, whichever road it came in on. */
 static void ra_handle_pc(char *rx, int got)
 {
@@ -896,11 +820,6 @@ static void ra_handle_pc(char *rx, int got)
         return;
 
     ra_hb_rx++;
-
-    if (rx[0] == 'R' && rx[1] == 'A' && rx[2] == 'B' && rx[3] == '1' && rx[4] == ' ') {
-        ra_take_badge(rx, got);
-        return;
-    }
 
     if (rx[0] != 'R' || rx[1] != 'A' || rx[2] != 'U' || rx[3] != '1' || rx[4] != ' ')
         return;
@@ -967,8 +886,7 @@ static void ra_poll_pc(void)
 {
     struct sockaddr_in from;
     socklen_t fromlen = sizeof(from);
-    /* Room for the largest message: a badge chunk of 11 + 512 bytes. */
-    char rx[576];
+    char rx[128]; /* an unlock notice is a few dozen bytes */
     int got;
 
     if (ra_sock < 0)
@@ -986,7 +904,9 @@ static void ra_poll_pc(void)
 /* The raw receive road: in play nothing drains the SMAP RX FIFO (it sits
    full, ARP dies with it), so this thread walks the receive BDs itself, as
    HandleRxIntr does. It must be the ring's only consumer while a game runs. */
-static u8 ra_rxfrm[608] __attribute__((aligned(4)));
+/* An unlock notice is a frame of about 60 bytes; anything longer is
+   not for us and is dropped unread. */
+static u8 ra_rxfrm[256] __attribute__((aligned(4)));
 static int ra_rx_bdi = 0;
 
 static void ra_drain_rx(void)
@@ -1047,9 +967,10 @@ static void ra_drain_rx(void)
     }
 }
 
-/* Every ten seconds: "RAH1 <datagrams> <unlocks> <chunks> <mask> <done>".
+/* Every ten seconds: "RAH1 <datagrams> <unlocks> 000000 00000000 0".
    No heartbeat means the send path is down; zero datagrams means nothing
-   from the PC survives the trip. */
+   from the PC survives the trip. The last three fields belonged to the
+   badge upload and stay as zeros so the client's parser keeps working. */
 static void ra_heartbeat(void)
 {
     char hb[48];
@@ -1066,13 +987,13 @@ static void ra_heartbeat(void)
     ra_fmt((u8 *)&hb[n], ra_hb_rau, 6);
     n += 6;
     hb[n++] = ' ';
-    ra_fmt((u8 *)&hb[n], ra_hb_rab, 6);
+    ra_fmt((u8 *)&hb[n], 0, 6);
     n += 6;
     hb[n++] = ' ';
-    ra_fmt_hex8(&hb[n], ra_badge_mask);
+    ra_fmt_hex8(&hb[n], 0);
     n += 8;
     hb[n++] = ' ';
-    hb[n++] = ra_badge_done ? '1' : '0';
+    hb[n++] = '0';
     hb[n] = '\0';
     ra_ctl_send(hb, n);
 }
@@ -1122,13 +1043,8 @@ int _shutdown(void)
     return 0;
 }
 
-/* Arguments, built by ee_core (iopmgr.c). argv[1] is a comma-separated
-   list, each field optional from the left:
-     snapshot buffer address in IOP RAM, eight hex digits
-     event buffer address in EE RAM, eight hex digits
-     badge buffer address in EE RAM, eight hex digits
-     '1' or '0': may this module read from the network while a game runs
-     the game's serial, up to fifteen characters
+/* Arguments, built by ee_core (iopmgr.c). argv[1] is laid out by the
+   RA_ARG_* offsets in ra_snap.h, each field optional from the left.
    argv[2] is the own IP in dotted form (followed by netmask and gateway,
    which this module does not need). argv[0] is the module name, inserted
    by the IOP loader. */
@@ -1140,22 +1056,20 @@ int _start(int argc, char *argv[])
     if (argc >= 2 && argv[1] != NULL) {
         int len;
 
-        for (len = 0; len < 44 && argv[1][len] != '\0'; len++)
+        for (len = 0; len < RA_ARG_MAX && argv[1][len] != '\0'; len++)
             ;
 
-        if (len >= 8)
-            ra_snap = (volatile struct ra_snap *)ra_hex_at(argv[1], 0, 8);
-        if (len >= 17 && argv[1][8] == ',')
-            ra_ee_event = ra_hex_at(argv[1], 9, 8);
-        if (len >= 26 && argv[1][17] == ',')
-            ra_ee_badge = ra_hex_at(argv[1], 18, 8);
-        if (len >= 28 && argv[1][26] == ',')
-            ra_rx_in_game = argv[1][27] != '0';
-        if (len >= 29 && argv[1][28] == ',') {
+        if (len >= RA_ARG_SNAP + 8)
+            ra_snap = (volatile struct ra_snap *)ra_hex_at(argv[1], RA_ARG_SNAP, 8);
+        if (len >= RA_ARG_EVENT + 8 && argv[1][RA_ARG_EVENT - 1] == ',')
+            ra_ee_event = ra_hex_at(argv[1], RA_ARG_EVENT, 8);
+        if (len >= RA_ARG_RX + 1 && argv[1][RA_ARG_RX - 1] == ',')
+            ra_rx_in_game = argv[1][RA_ARG_RX] != '0';
+        if (len >= RA_ARG_ID + 1 && argv[1][RA_ARG_ID - 1] == ',') {
             int i;
 
-            for (i = 0; i < 15 && argv[1][29 + i] != '\0'; i++)
-                ra_game_id[i] = argv[1][29 + i];
+            for (i = 0; i < RA_ARG_ID_MAX && argv[1][RA_ARG_ID + i] != '\0'; i++)
+                ra_game_id[i] = argv[1][RA_ARG_ID + i];
             ra_game_id[i] = '\0';
         }
     }

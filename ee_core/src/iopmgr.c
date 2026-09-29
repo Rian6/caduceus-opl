@@ -21,12 +21,6 @@
 #include "ra_overlay.h"
 
 extern int _iop_reboot_count;
-/* RetroAchievements: LoadOPLModule() results for the two modules the
-   telemetry depends on. raudp imports SMAPSendPacket from SMAP, so when
-   SMAP fails raudp fails with a link error too; keeping both results
-   tells the two cases apart. */
-int ra_raudp_result = -999;
-int ra_smap_result = -999;
 
 /* Snapshot buffer in IOP RAM. The EE allocates it so it knows the address
    and can DMA straight into it without touching the SIF command table,
@@ -167,13 +161,8 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
         }
 
         if (config->GameMode != ETH_MODE) {
-            /* RA_PROBE, 0 in every real build: 1 loads nothing of ours,
-               2 the stack only, 3 the stack and SMAP, 4 those and raudp
-               but no snapshots from the EE. */
-            if (RA_PROBE != 1)
-                LoadOPLModule(OPL_MODULE_ID_SMSTCPIP, 0, 0, NULL);
-            if (RA_PROBE != 1 && RA_PROBE != 2)
-                ra_smap_result = LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
+            LoadOPLModule(OPL_MODULE_ID_SMSTCPIP, 0, 0, NULL);
+            LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
         }
     }
 #endif
@@ -185,7 +174,7 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
         case ETH_MODE:
 #ifndef __LOAD_DEBUG_MODULES
             LoadOPLModule(OPL_MODULE_ID_SMSTCPIP, 0, 0, NULL);
-            ra_smap_result = LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
+            LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
 #endif
             LoadOPLModule(OPL_MODULE_ID_SMBINIT, 0, 0, NULL);
             break;
@@ -214,52 +203,42 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
        has not started, and its address is passed as a load argument.
        RA_SNAP_TOTAL covers the header plus the values of the largest
        supported watch list. Skipped with no watch list, as above. */
-    if (config->raWatchCount > 0 && RA_PROBE != 1 && RA_PROBE != 2 && RA_PROBE != 3) {
-        char snap_arg[9];
+    if (config->raWatchCount > 0) {
         void *snap = SifAllocIopHeap(RA_SNAP_TOTAL);
 
         if (snap != NULL) {
-            /* argv[1]: IOP snapshot, EE event and EE badge buffers, eight
-               hex digits each; then whether raudp may read from the
-               network in play, then the game's serial. argv[2]: SMAP's
-               ipconfig strings. raudp finds the PC itself. */
-            char args[45 + IPCONFIG_MAX_LEN];
+            /* argv[1] laid out by the RA_ARG_* offsets in ra_snap.h,
+               argv[2] SMAP's ipconfig strings. raudp finds the PC
+               itself. */
+            char args[RA_ARG_MAX + 1 + IPCONFIG_MAX_LEN];
             int k, n;
 
             ra_snap_iop = (unsigned int)snap;
-            ra_hex32(ra_snap_iop, snap_arg);
-            for (k = 0; k < 8; k++)
-                args[k] = snap_arg[k];
-            args[8] = ',';
-            ra_hex32((unsigned int)RA_OverlayEventBuffer(), snap_arg);
-            for (k = 0; k < 8; k++)
-                args[9 + k] = snap_arg[k];
-            args[17] = ',';
-            ra_hex32((unsigned int)RA_OverlayBadgeBuffer(), snap_arg);
-            for (k = 0; k < 8; k++)
-                args[18 + k] = snap_arg[k];
+            ra_hex32(ra_snap_iop, &args[RA_ARG_SNAP]);
+            args[RA_ARG_EVENT - 1] = ',';
+            ra_hex32((unsigned int)RA_OverlayEventBuffer(), &args[RA_ARG_EVENT]);
 
             /* Both roads to the PC take what the game needs when it runs
                from a share: the raw one frees SMAP receive descriptors
                the disc stream arrives in, the lwIP one queues on the
                mailbox the SMB client waits on. A game from a share loads
                for ever with either. Sending is unaffected and stays on. */
-            args[26] = ',';
-            args[27] = config->GameMode == ETH_MODE ? '0' : '1';
+            args[RA_ARG_RX - 1] = ',';
+            args[RA_ARG_RX] = config->GameMode == ETH_MODE ? '0' : '1';
 
-            args[28] = ',';
-            for (n = 0; n < 15 && config->GameID[n] != '\0'; n++)
-                args[29 + n] = config->GameID[n];
-            args[29 + n] = '\0';
-            n += 30;
+            args[RA_ARG_ID - 1] = ',';
+            for (n = 0; n < RA_ARG_ID_MAX && config->GameID[n] != '\0'; n++)
+                args[RA_ARG_ID + n] = config->GameID[n];
+            args[RA_ARG_ID + n] = '\0';
+            n = RA_ARG_ID + n + 1;
 
             for (k = 0; k < g_ipconfig_len && k < IPCONFIG_MAX_LEN; k++)
                 args[n + k] = g_ipconfig[k];
 
-            ra_raudp_result = LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, n + k, args);
+            LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, n + k, args);
         } else {
             ra_snap_iop = 0;
-            ra_raudp_result = LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, 0, NULL);
+            LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, 0, NULL);
         }
     }
 }

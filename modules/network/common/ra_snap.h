@@ -84,21 +84,19 @@ struct ra_event
     unsigned int arg;
 };
 
-/* The badge: 64x64 PSMCT16 pixels pushed as "RAB1 <idx> <total> " + 512 raw
-   bytes per datagram; raudp DMAs the completed struct into a second ee_core
-   buffer. Experimental. */
-#define RA_BADGE_MAGIC  0x52414231 /* "RAB1" */
-#define RA_BADGE_BYTES  8192
-#define RA_BADGE_CHUNK  512
-#define RA_BADGE_CHUNKS (RA_BADGE_BYTES / RA_BADGE_CHUNK)
-
-struct ra_badge
-{
-    unsigned int magic; /* RA_BADGE_MAGIC, written last */
-    unsigned int len;   /* RA_BADGE_BYTES */
-    unsigned int seq;   /* increments per completed badge */
-    unsigned int pad;
-    unsigned char px[RA_BADGE_BYTES];
-};
+/* The load argument ee_core hands raudp as argv[1], comma separated:
+     RA_ARG_SNAP   eight hex digits, the snapshot buffer in IOP RAM
+     RA_ARG_EVENT  eight hex digits, the event buffer in EE RAM
+     RA_ARG_RX     '1' or '0', whether raudp may read from the network
+                   while the game runs
+     RA_ARG_ID     the game's serial, up to RA_ARG_ID_MAX characters
+   argv[2] is SMAP's ipconfig string. Both sides build and parse the
+   argument by these offsets. */
+#define RA_ARG_SNAP   0
+#define RA_ARG_EVENT  9
+#define RA_ARG_RX     18
+#define RA_ARG_ID     20
+#define RA_ARG_ID_MAX 15
+#define RA_ARG_MAX    (RA_ARG_ID + RA_ARG_ID_MAX) /* characters before the terminator */
 
 #endif /* __RA_SNAP_H__ */

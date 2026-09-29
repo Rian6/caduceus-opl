@@ -54,13 +54,6 @@ void *RA_OverlayEventBuffer(void)
     return &ra_ovl_event;
 }
 
-/* No badge buffer in this build: raudp sees the zero address and keeps
-   the chunks to itself. */
-void *RA_OverlayBadgeBuffer(void)
-{
-    return NULL;
-}
-
 /* The GS paints BGCOLOR in the border too, so the colour follows the blend
    curve: full at the deepest point, black at either end. k is 0..256. */
 static unsigned int ra_ovl_scale(unsigned int colour, int k)

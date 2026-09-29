@@ -80,15 +80,6 @@ int isValidIsoName(char *name, int *pNameLen)
     return 0;
 }
 
-static int GetStartupExecName(const char *path, char *filename, int maxlength);
-
-/* RA: external entry to GetStartupExecName, which is static; the image
-   hash in rahash.c needs it. */
-int raGetStartupName(const char *cnfpath, char *out, int max)
-{
-    return GetStartupExecName(cnfpath, out, max);
-}
-
 static int GetStartupExecName(const char *path, char *filename, int maxlength)
 {
     char ps2disc_boot[CNF_PATH_LEN_MAX] = "";

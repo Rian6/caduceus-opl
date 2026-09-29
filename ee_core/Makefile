@@ -29,12 +29,6 @@ EE_CFLAGS = -D_EE -Os -G0 -Wall $(EE_INCS)
 # and ee_core silently keeps stale structure sizes.
 EE_CFLAGS += -MMD -MP
 
-# RetroAchievements debug build. Nothing in ee_core reads the define
-# today; it is passed through for a probe to use.
-ifeq ($(RA_DEBUG),1)
-    EE_CFLAGS += -DRA_DEBUG
-endif
-
 ifeq ($(EESIO_DEBUG),1)
     EE_CFLAGS += -D__EESIO_DEBUG
 endif

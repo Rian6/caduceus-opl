@@ -220,9 +220,7 @@ static void ra_snap_send(void)
        written back, usually well under a frame in a running game.
        Cached reads would see it at once but would pull up to a thousand
        cache lines per frame through the game's 8 KB data cache. */
-    /* RA_PROBE 6: the transfer without the reads, to tell the cost of
-       the reads from the cost of the DMA. */
-    for (i = 0; i < ra_watch_count && RA_PROBE != 6; i++) {
+    for (i = 0; i < ra_watch_count; i++) {
         u32 e = ra_watch[i];
         u32 addr = RA_WATCH_ADDR(e);
         u32 size = RA_WATCH_SIZE(e);
@@ -272,7 +270,7 @@ static void ra_snap_send(void)
        network and this runs inside the game, so every index and size is
        checked again here. */
     off = ra_watch_bytes;
-    for (i = 0; i < ra_node_count && off + RA_NODE_PAIR_BYTES <= ra_snap_bytes && RA_PROBE != 6; i++) {
+    for (i = 0; i < ra_node_count && off + RA_NODE_PAIR_BYTES <= ra_snap_bytes; i++) {
         u32 w = RA_NODE_W(i);
         u32 parent = RA_NODE_PARENT(w);
         u32 size = RA_NODE_SIZE(w);
@@ -332,10 +330,6 @@ static void ra_snap_send(void)
     dmat.size = RA_SNAP_DMA_SIZE(ra_snap_bytes);
     dmat.attr = 0;
 
-    /* RA_PROBE 5: the reads without the transfer. */
-    if (RA_PROBE == 5)
-        return;
-
     ra_snap_dma_id = isceSifSetDma(&dmat, 1);
     if (ra_snap_dma_id == 0)
         ra_snap_fail++;
@@ -357,8 +351,6 @@ void RA_OnVblank(void)
     if (ra_frames <= RA_START_DELAY)
         return;
 
-    /* The probe ladder stops here: levels 1-3 have no raudp to send to
-       anyway, level 4 has one and must stay quiet. */
-    if ((RA_PROBE == 0 || RA_PROBE >= 5) && (ra_frames % ra_snap_every) == 0)
+    if ((ra_frames % ra_snap_every) == 0)
         ra_snap_send();
 }

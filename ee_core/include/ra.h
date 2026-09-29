@@ -4,12 +4,6 @@
 #ifndef RA_H
 #define RA_H
 
-/* Probe ladder, 0 in every real build: how much of our half the game
-   gets. See iopmgr.c. */
-#ifndef RA_PROBE
-#define RA_PROBE 0
-#endif
-
 /* Takes the watch list, its chains and the snapshot buffer from the
    loader config; the loader placed them in module storage. Call once
    during ee_core init. */

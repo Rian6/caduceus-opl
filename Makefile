@@ -221,7 +221,6 @@ endif
 # "make clean" when switching RA_DEBUG on or off.
 ifeq ($(RA_DEBUG),1)
   EE_CFLAGS += -DRA_DEBUG
-  EECORE_EXTRA_FLAGS += RA_DEBUG=1
 endif
 
 EE_CFLAGS += -fsingle-precision-constant -DOPL_VERSION=\"$(OPL_VERSION)\"
