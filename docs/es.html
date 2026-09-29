@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>xeRAbora · compañero de RetroAchievements: qué cazar a continuación, en vivo desde una consola real</title>
-<meta name="description" content="xeRAbora is a RetroAchievements companion app: your library, what to chase next by other players' median times, missable warnings, leaderboards and rank, plus a live view of a real console. PlayStation 2 first, through a patched Open PS2 Loader.">
+<title>xeRAbora · RetroAchievements on a real PlayStation 2</title>
+<meta name="description" content="RetroAchievements on a real PlayStation 2: a patched Open PS2 Loader streams the game's memory to a PC client that unlocks achievements on your profile. ISO or the original disc, no emulator. Also a RetroAchievements client for emulator play.">
 <link rel="canonical" href="https://hacan359.github.io/xerabora/es.html">
 <link rel="alternate" hreflang="en" href="https://hacan359.github.io/xerabora/">
 <link rel="alternate" hreflang="pt-BR" href="https://hacan359.github.io/xerabora/pt-br.html">
@@ -13,11 +13,11 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="xeRAbora">
 <meta property="og:url" content="https://hacan359.github.io/xerabora/">
-<meta property="og:title" content="xeRAbora: a RetroAchievements companion, live from a real PlayStation 2">
+<meta property="og:title" content="xeRAbora: RetroAchievements on a real PlayStation 2">
 <meta property="og:description" content="Your library, what to chase next, missable warnings, leaderboards and rank in one window, and a live view of the console. Unlock on the original PS2 through a patched Open PS2 Loader.">
 <meta property="og:image" content="https://hacan359.github.io/xerabora/banner.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="xeRAbora: a RetroAchievements companion, live from a real PlayStation 2">
+<meta name="twitter:title" content="xeRAbora: RetroAchievements on a real PlayStation 2">
 <meta name="twitter:description" content="Your library, what to chase next, missable warnings, leaderboards and rank in one window, and a live view of the console. Unlock on the original PS2 through a patched Open PS2 Loader.">
 <meta name="twitter:image" content="https://hacan359.github.io/xerabora/banner.png">
 <meta name="color-scheme" content="dark light">
@@ -28,8 +28,8 @@
   "name": "xeRAbora",
   "applicationCategory": "GameApplication",
   "operatingSystem": "PlayStation 2, Windows, Linux, macOS",
-  "description": "RetroAchievements on a real PlayStation 2: a patched Open PS2 Loader and a PC client that unlocks achievements on the original console, from a USB stick or the disc, without an emulator.",
-  "softwareVersion": "0.1.0-alpha.12",
+  "description": "RetroAchievements on a real PlayStation 2: a patched Open PS2 Loader and a PC client that unlocks achievements on the original console, from an ISO image or the disc, without an emulator.",
+  "softwareVersion": "0.1.0-alpha.13",
   "url": "https://hacan359.github.io/xerabora/",
   "downloadUrl": "https://github.com/hacan359/xerabora/releases/latest",
   "codeRepository": "https://github.com/hacan359/xerabora",
@@ -379,19 +379,98 @@
   footer h4 { font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.9rem; }
   footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
   footer p { max-width: 46ch; }
+  /* ---- PS2-first sections ---- */
+  :root { --console: #1A1F2B; --console-edge: #3A4256; --screen: #050912; }
+  .hero { padding: 3rem 0 4.5rem; }
+  .hero .wrap { gap: 2.4rem; }
+  .hero-split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; width: 100%; }
+  @media (max-width: 900px) { .hero-split { grid-template-columns: 1fr; } }
+  .hero-split .hero-copy { text-align: left; }
+  .hero-split .hero-cta, .hero-split .hero-meta { justify-content: flex-start; }
+  .hero-alt { margin-inline: auto; padding-top: 1rem; border-top: 1px dashed var(--line-strong); color: var(--ink-mute); font-size: 0.97rem; max-width: 46ch; }
+  .hero-alt b { color: var(--blue); }
+  .scene svg { display: block; width: 100%; height: auto; }
+  .flash { fill: #E0A526; opacity: 0; }
+  .toast { opacity: 0; }
+  .pkt { offset-path: path("M210 262 C 260 262, 300 262, 360 250"); fill: #E0A526; }
+  @media (prefers-reduced-motion: no-preference) {
+    .flash { animation: flash 6s ease-out infinite; }
+    .toast { animation: toast 6s ease-out infinite; }
+    .pkt { animation: pkt 1.2s linear infinite; }
+    .pkt.b { animation-delay: 0.4s; }
+    .pkt.c { animation-delay: 0.8s; }
+  }
+  @media (prefers-reduced-motion: reduce) { .toast { opacity: 1; } .pkt { display: none; } }
+  @keyframes flash { 0%, 55% { opacity: 0; } 58% { opacity: 0.55; } 70%, 100% { opacity: 0; } }
+  @keyframes toast { 0%, 55% { opacity: 0; } 58%, 90% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes pkt { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+  .cap-m { fill: var(--ink-mute); font: 12px var(--font-mono); }
+
+  .scheme { overflow-x: auto; }
+  .scheme svg { display: block; width: 100%; min-width: 640px; height: auto; }
+  .scheme .t { fill: var(--ink); font: 700 20px var(--font-display); }
+  .scheme .s { fill: var(--ink-soft); font: 14px var(--font-body); }
+  .scheme .al { fill: var(--ink-mute); font: 500 13px var(--font-mono); }
+  .scheme .gl { fill: var(--gold); font: 600 14px var(--font-mono); }
+  .scheme .ar { stroke: var(--ink-mute); stroke-width: 2; fill: none; }
+  .scheme .ag { stroke: var(--gold); stroke-width: 2.4; fill: none; }
+  .scheme .ah { fill: var(--ink-mute); }
+  .scheme .ahg { fill: var(--gold); }
+  .scheme-note { margin-top: 1.2rem; color: var(--ink-soft); }
+
+  .need { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; }
+  @media (max-width: 900px) { .need { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .need { grid-template-columns: 1fr; } }
+  .need > div { background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; display: grid; gap: 0.45rem; align-content: start; }
+  .need p { color: var(--ink-soft); font-size: 0.93rem; }
+
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 800px) { .modes { grid-template-columns: 1fr; } }
+  .mode { border-radius: var(--radius); padding: 1.3rem; display: grid; gap: 0.8rem; align-content: start; }
+  .mode.ps2 { background: var(--gold-soft); border: 1px solid var(--gold); }
+  .mode.emu { background: color-mix(in srgb, var(--blue) 10%, transparent); border: 1px solid var(--blue); }
+  .mode .eyebrow.blue { color: var(--blue); }
+  .mode svg { display: block; width: 100%; height: auto; }
+  .mode p { color: var(--ink-soft); font-size: 0.95rem; }
+  .mode .bx { fill: var(--bg-raised); stroke: var(--line-strong); stroke-width: 1.5; }
+  .mode .bg { fill: var(--gold-soft); stroke: var(--gold); stroke-width: 1.5; }
+  .mode .bb { fill: color-mix(in srgb, var(--blue) 14%, transparent); stroke: var(--blue); stroke-width: 1.5; }
+  .mode .t { fill: var(--ink); font: 600 15px var(--font-display); }
+  .mode .s { fill: var(--ink-soft); font: 12px var(--font-mono); }
+  .mode .g { fill: var(--gold); font: 600 12px var(--font-mono); }
+  .mode .b { fill: var(--blue); font: 600 12px var(--font-mono); }
+  .mode .ag { stroke: var(--gold); stroke-width: 2; }
+  .mode .ab { stroke: var(--blue); stroke-width: 2; }
+  .detail { display: grid; gap: 2.4rem; margin-top: 3rem; }
+  .detail figure { margin: 0; display: grid; gap: 0.7rem; }
+  .detail figcaption { color: var(--ink-mute); font-size: 0.9rem; }
+  .diagram { overflow-x: auto; background: var(--bg-sunken); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  .diagram svg { display: block; width: 100%; height: auto; min-width: 680px; color: var(--ink-soft); }
+  .d-box { fill: var(--bg-raised); stroke: var(--line-strong); stroke-width: 1.5; }
+  .d-gold { fill: var(--gold-soft); stroke: var(--gold); stroke-width: 1.5; }
+  .d-zone { fill: none; stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 5 5; }
+  .d-skip { fill: none; stroke: var(--ink-mute); stroke-width: 1.2; stroke-dasharray: 3 4; }
+  .d-t { fill: var(--ink); font: 600 14px var(--font-display); }
+  .d-s { fill: var(--ink-soft); font: 12px var(--font-mono); }
+  .d-m { fill: var(--ink-mute); font: 11.5px var(--font-mono); }
+  .d-zt { fill: var(--ink-mute); font: 600 11px var(--font-mono); letter-spacing: 0.12em; }
+  .d-gt { fill: var(--gold); font: 600 12px var(--font-mono); }
+  .d-a { stroke: currentColor; stroke-width: 1.6; fill: none; }
+  .d-ag { stroke: var(--gold); stroke-width: 1.8; fill: none; }
+  .d-life { stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 4 5; }
+  td.y { color: var(--gold); }
+  td.n { color: var(--ink-mute); }
 </style>
 </head>
 <body>
-
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="word">xe<img class="ra" src="ra-mark.png" alt="RA">bora</span> <small>v0.1.0-alpha.12</small></a>
+    <a class="brand" href="#top"><span class="word">xe<img class="ra" src="ra-mark.png" alt="RA">bora</span> <small>v0.1.0-alpha.13</small></a>
     <nav class="links" aria-label="Secciones">
       <a href="#how">Cómo funciona</a>
+      <a href="#need">What you need</a>
       <a href="#start">Cómo empezar</a>
-      <a href="#tested">Verificado</a>
-      <a href="#roadmap">Planes</a>
-      <a href="#limits">Límites</a>
+      <a href="#nops2">Without a PS2</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/hacan359/xerabora">GitHub</a>
     </nav>
@@ -405,91 +484,222 @@
 <section class="hero">
   <div class="wrap">
     <div class="hero-art"><canvas id="wordmark" aria-label="xeRAbora"></canvas></div>
-    <div class="hero-copy">
-      <h1>Tu compañero de RetroAchievements, en vivo desde una consola <span>real</span>.</h1>
-      <p class="lede">Una ventana para tu biblioteca, qué cazar a continuación, los logros perdibles que estás a punto de perder, las clasificaciones y tu puesto. Conecta una consola y verás el progreso mientras avanza, el desbloqueo en el instante en que ocurre, y un destello dorado en la tele. PlayStation&nbsp;2 primero, con un Open PS2 Loader modificado.</p>
-      <div class="hero-cta">
-        <a class="btn primary" href="https://github.com/hacan359/xerabora/releases/latest">Descargar alpha.12</a>
-        <a class="btn" href="#start">Cómo empezar</a>
+      <div class="hero-copy">
+        <h1>RetroAchievements on a <span>real</span> PlayStation&nbsp;2.</h1>
+        <p class="lede">A patched Open PS2 Loader sends the game's memory to your PC every frame. xeRAbora checks it against the achievement set, unlocks the achievement on your RetroAchievements profile and flashes the TV gold. No emulator.</p>
+        <div class="hero-cta">
+          <a class="btn primary" href="https://github.com/hacan359/xerabora/releases/latest">Descargar alpha.13</a>
+          <a class="btn" href="#start">Cómo empezar</a>
+        </div>
+        <div class="hero-meta">
+          <span><b>ISO</b> or the original <b>disc</b></span>
+          <span><b>Softcore</b></span>
+          <span><b>Windows</b> / <b>Linux</b> / <b>macOS</b>, un archivo</span>
+        </div>
+        <p class="hero-alt"><b>No PS2 at hand?</b> The same client follows your play on any emulator with RetroAchievements. <a href="#nops2">Without a PS2</a></p>
       </div>
-      <div class="hero-meta">
-        <span>Solo <b>softcore</b></span>
-        <span><b>USB</b> y el <b>disco</b> original</span>
-        <span><b>Windows</b> / <b>Linux</b> / <b>macOS</b>, un archivo</span>
-      </div>
-    </div>
   </div>
 </section>
 
 <section id="how">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">Cómo funciona</span>
-      <h2>La consola juega, el PC mira, la tele destella.</h2>
-      <p>Tu PS2 corre el juego como siempre. Mientras corre, el loader envía al PC una copia de lo que el juego guarda en memoria. El PC lo compara con las reglas de los logros, avisa a RetroAchievements cuando ganas uno, y avisa a la consola, que responde con un destello dorado sobre el juego.</p>
+      <span class="eyebrow gold">Cómo funciona</span>
+      <h2>The PS2 plays, the PC checks, the TV flashes.</h2>
     </div>
-    <div class="pipeline">
-      <div class="node">
-        <span class="where">Tu PS2</span>
-        <h3>Corre el juego</h3>
-        <p>Un Open PS2 Loader modificado arranca el juego igual que siempre, desde una memoria USB o el disco.</p>
-      </div>
-      <div class="node">
-        <span class="where">Tu PS2</span>
-        <h3>Comparte lo que el juego recuerda</h3>
-        <p>Mientras juegas, el loader envía al PC los números que el juego guarda en memoria: puntuación, posición, vida, lo que miren los logros.</p>
-      </div>
-      <div class="node">
-        <span class="where">Tu PC</span>
-        <h3>Comprueba las reglas de los logros</h3>
-        <p>xerabora ejecuta rcheevos, el mismo motor que usan los emuladores, y vigila esos números esperando el momento en que se gana un logro.</p>
-      </div>
-      <div class="node ra">
-        <span class="where">retroachievements.org</span>
-        <h3>Registra el desbloqueo</h3>
-        <p>El desbloqueo cae en tu perfil como cualquier otro. Softcore, en una consola real. La página muestra un aviso, la consola un destello dorado.</p>
-      </div>
+    <div class="scheme">
+      <svg viewBox="0 0 1000 350" role="img" aria-label="The PS2 sends the game's memory to xeRAbora on the PC every frame; xeRAbora sends the unlock to RetroAchievements and a notice back to the console, which flashes the TV gold.">
+        <!-- PS2 + TV -->
+        <g transform="translate(70 20)">
+          <rect x="10" y="0" width="140" height="96" rx="8" fill="#1A1F2B" stroke="#3A4256" stroke-width="2"/>
+          <rect x="20" y="9" width="120" height="74" rx="4" fill="#050912"/>
+          <rect x="20" y="9" width="120" height="74" rx="4" fill="#E0A526" opacity="0.35"/>
+          <rect x="68" y="96" width="24" height="7" fill="#3A4256"/>
+          <rect x="0" y="112" width="160" height="42" rx="4" fill="#1A1F2B" stroke="#3A4256" stroke-width="2"/>
+          <line x1="8" y1="124" x2="152" y2="124" stroke="#3A4256" stroke-width="1.5"/>
+          <line x1="8" y1="134" x2="152" y2="134" stroke="#3A4256" stroke-width="1.5"/>
+          <line x1="8" y1="144" x2="110" y2="144" stroke="#3A4256" stroke-width="1.5"/>
+          <circle cx="136" cy="146" r="3" fill="#5FD38A"/>
+          <circle cx="146" cy="146" r="3" fill="#3D8BFF"/>
+        </g>
+        <text class="t" x="150" y="210" text-anchor="middle">Tu PS2</text>
+        <text class="s" x="150" y="234" text-anchor="middle">OPL-RA runs the game</text>
+
+        <!-- PC -->
+        <g transform="translate(410 44)">
+          <rect x="10" y="0" width="160" height="104" rx="6" fill="#1A1F2B" stroke="#3A4256" stroke-width="2"/>
+          <rect x="18" y="8" width="144" height="88" rx="3" fill="#050912"/>
+          <rect x="18" y="8" width="144" height="14" fill="#E0A526"/>
+          <rect x="26" y="30" width="24" height="24" rx="3" fill="#2A3A5C"/>
+          <rect x="56" y="32" width="90" height="6" rx="2" fill="#AEB8D0"/>
+          <rect x="56" y="44" width="60" height="5" rx="2" fill="#5A6785"/>
+          <rect x="26" y="64" width="128" height="6" rx="3" fill="#1E2A45"/>
+          <rect x="26" y="64" width="80" height="6" rx="3" fill="#E0A526"/>
+          <path d="M-6 104 H186 L178 116 H2 Z" fill="#3A4256"/>
+        </g>
+        <text class="t" x="500" y="210" text-anchor="middle">xeRAbora</text>
+        <text class="s" x="500" y="234" text-anchor="middle">rcheevos checks the rules</text>
+
+        <!-- RA: trophy -->
+        <g transform="translate(850 100)">
+          <circle r="62" fill="#E0A526" opacity="0.14"/>
+          <circle r="62" fill="none" stroke="#E0A526" stroke-width="2"/>
+          <path d="M-24 -30 H24 V-8 C24 10 12 20 0 20 C-12 20 -24 10 -24 -8 Z" fill="#E0A526"/>
+          <path d="M-24 -24 H-36 C-36 -6 -30 2 -20 4" fill="none" stroke="#E0A526" stroke-width="5"/>
+          <path d="M24 -24 H36 C36 -6 30 2 20 4" fill="none" stroke="#E0A526" stroke-width="5"/>
+          <rect x="-5" y="20" width="10" height="12" fill="#E0A526"/>
+          <rect x="-18" y="32" width="36" height="8" rx="2" fill="#E0A526"/>
+        </g>
+        <text class="t" x="850" y="210" text-anchor="middle">RetroAchievements</text>
+        <text class="s" x="850" y="234" text-anchor="middle">the unlock on your profile</text>
+
+        <!-- forward arrows -->
+        <line class="ar" x1="250" y1="110" x2="392" y2="110"/>
+        <polygon class="ah" points="402,110 390,104 390,116"/>
+        <text class="al" x="322" y="96" text-anchor="middle">game memory</text>
+        <text class="al" x="322" y="132" text-anchor="middle">every frame</text>
+
+        <line class="ar" x1="600" y1="110" x2="774" y2="110"/>
+        <polygon class="ah" points="784,110 772,104 772,116"/>
+        <text class="al" x="690" y="96" text-anchor="middle">unlock</text>
+
+        <!-- return -->
+        <path class="ag" d="M500 256 C 500 318, 150 318, 150 262"/>
+        <polygon class="ahg" points="150,252 144,266 156,266"/>
+        <text class="gl" x="325" y="336" text-anchor="middle">gold flash on the TV</text>
+      </svg>
     </div>
-    <p class="pipeline-note">El cliente no sabe nada del PS2 más allá de la memoria que recibe. El hilo entre las dos mitades es un protocolo documentado (<a href="https://github.com/hacan359/xerabora/blob/main/protocol/PROTOCOL.md">PROTOCOL.md</a>): un agente para otra consola lee su memoria, calcula el hash de RetroAchievements y habla el mismo protocolo. El <a href="https://github.com/hacan359/xerabora#how-the-ps2-side-works">README</a> entra en los detalles.</p>
+    <div class="detail">
+      <figure>
+        <span class="eyebrow gold">Once per game, in the OPL menu</span>
+        <div class="diagram">
+          <svg viewBox="0 0 760 400" role="img" aria-label="Sequence before the game starts: the console hashes the image and sends the hash to the PC; the PC asks retroachievements.org for the set, derives the addresses, and returns the watch list to the console.">
+            <defs>
+              <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="currentColor"/></marker>
+              <marker id="ah1g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--gold)"/></marker>
+            </defs>
+            <!-- lane heads -->
+            <rect class="d-gold" x="40" y="16" width="180" height="46" rx="8"/>
+            <text class="d-t" x="130" y="37" text-anchor="middle">PlayStation 2</text>
+            <text class="d-s" x="130" y="53" text-anchor="middle">OPL-RA menu</text>
+            <rect class="d-box" x="290" y="16" width="180" height="46" rx="8"/>
+            <text class="d-t" x="380" y="37" text-anchor="middle">PC</text>
+            <text class="d-s" x="380" y="53" text-anchor="middle">xeRAbora</text>
+            <rect class="d-box" x="540" y="16" width="180" height="46" rx="8"/>
+            <text class="d-t" x="630" y="37" text-anchor="middle">retroachievements.org</text>
+            <text class="d-s" x="630" y="53" text-anchor="middle">server</text>
+            <line class="d-life" x1="130" y1="62" x2="130" y2="386"/>
+            <line class="d-life" x1="380" y1="62" x2="380" y2="386"/>
+            <line class="d-life" x1="630" y1="62" x2="630" y2="386"/>
+
+            <!-- 1 hash -->
+            <rect class="d-box" x="60" y="82" width="140" height="34" rx="6"/>
+            <text class="d-s" x="130" y="104" text-anchor="middle">hash the image</text>
+            <!-- 2 send hash -->
+            <line class="d-a" x1="130" y1="140" x2="376" y2="140" marker-end="url(#ah1)"/>
+            <text class="d-s" x="253" y="132" text-anchor="middle">hash · UDP</text>
+            <!-- 3 ask server -->
+            <line class="d-a" x1="380" y1="182" x2="626" y2="182" marker-end="url(#ah1)"/>
+            <text class="d-s" x="503" y="174" text-anchor="middle">which game is this?</text>
+            <!-- 4 set -->
+            <line class="d-a" x1="630" y1="224" x2="384" y2="224" marker-end="url(#ah1)"/>
+            <text class="d-s" x="507" y="216" text-anchor="middle">achievement set</text>
+            <!-- 5 derive -->
+            <rect class="d-box" x="300" y="246" width="160" height="50" rx="6"/>
+            <text class="d-s" x="380" y="266" text-anchor="middle">derive every address</text>
+            <text class="d-s" x="380" y="284" text-anchor="middle">the set reads</text>
+            <!-- 6 watch list -->
+            <line class="d-ag" x1="380" y1="322" x2="134" y2="322" marker-end="url(#ah1g)"/>
+            <text class="d-gt" x="257" y="314" text-anchor="middle">watch list + counts</text>
+            <!-- 7 notice -->
+            <rect class="d-gold" x="50" y="340" width="160" height="34" rx="6"/>
+            <text class="d-gt" x="130" y="362" text-anchor="middle">notice on the TV</text>
+          </svg>
+        </div>
+        <figcaption>RA: check game support. The PC turns the achievement set into a list of memory addresses for the console.</figcaption>
+      </figure>
+      <figure>
+        <span class="eyebrow gold">Every frame of the game</span>
+        <div class="diagram">
+          <svg viewBox="0 0 1000 380" role="img" aria-label="Data path during play: the EE core reads the watched addresses every frame, passes the snapshot to raudp on the IOP over SIF DMA, raudp sends UDP frames through the network driver, skipping the TCP/IP stack, to xeRAbora on the PC, which runs rcheevos and reports unlocks to retroachievements.org. The unlock notice returns to the console, which flashes the TV through the GS.">
+            <defs>
+              <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="currentColor"/></marker>
+              <marker id="ah2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--gold)"/></marker>
+            </defs>
+            <!-- zones -->
+            <rect class="d-zone" x="12" y="14" width="580" height="352" rx="12"/>
+            <text class="d-zt" x="30" y="36">PLAYSTATION 2</text>
+            <rect class="d-zone" x="624" y="14" width="190" height="352" rx="12"/>
+            <text class="d-zt" x="642" y="36">YOUR PC</text>
+            <text class="d-zt" x="850" y="36">INTERNET</text>
+
+            <!-- skipped stack -->
+            <rect class="d-skip" x="226" y="54" width="340" height="42" rx="8"/>
+            <text class="d-m" x="396" y="80" text-anchor="middle">game's TCP/IP stack (lwIP): not used</text>
+
+            <!-- EE -->
+            <rect class="d-gold" x="34" y="120" width="160" height="84" rx="8"/>
+            <text class="d-t" x="114" y="146" text-anchor="middle">EE · game</text>
+            <text class="d-s" x="114" y="168" text-anchor="middle">ee_core reads the</text>
+            <text class="d-s" x="114" y="184" text-anchor="middle">watch list at VBLANK</text>
+            <!-- IOP -->
+            <rect class="d-box" x="226" y="120" width="160" height="84" rx="8"/>
+            <text class="d-t" x="306" y="146" text-anchor="middle">IOP · raudp</text>
+            <text class="d-s" x="306" y="168" text-anchor="middle">builds UDP frames</text>
+            <text class="d-s" x="306" y="184" text-anchor="middle">by hand</text>
+            <!-- SMAP -->
+            <rect class="d-box" x="416" y="120" width="150" height="84" rx="8"/>
+            <text class="d-t" x="491" y="146" text-anchor="middle">SMAP</text>
+            <text class="d-s" x="491" y="168" text-anchor="middle">network driver</text>
+            <text class="d-s" x="491" y="184" text-anchor="middle">Ethernet</text>
+            <!-- PC -->
+            <rect class="d-box" x="644" y="120" width="150" height="84" rx="8"/>
+            <text class="d-t" x="719" y="146" text-anchor="middle">xeRAbora</text>
+            <text class="d-s" x="719" y="168" text-anchor="middle">rcheevos checks</text>
+            <text class="d-s" x="719" y="184" text-anchor="middle">each snapshot</text>
+            <!-- RA -->
+            <rect class="d-box" x="842" y="120" width="146" height="84" rx="8"/>
+            <text class="d-t" x="915" y="146" text-anchor="middle">RetroAchievements</text>
+            <text class="d-s" x="915" y="168" text-anchor="middle">your profile</text>
+            <text class="d-s" x="915" y="184" text-anchor="middle">softcore</text>
+
+            <!-- forward arrows -->
+            <line class="d-a" x1="194" y1="162" x2="222" y2="162" marker-end="url(#ah2)"/>
+            <text class="d-m" x="210" y="230" text-anchor="middle">SIF DMA</text>
+            <line class="d-a" x1="386" y1="162" x2="412" y2="162" marker-end="url(#ah2)"/>
+            <line class="d-a" x1="566" y1="162" x2="640" y2="162" marker-end="url(#ah2)"/>
+            <text class="d-s" x="604" y="152" text-anchor="middle">UDP</text>
+            <text class="d-m" x="604" y="230" text-anchor="middle">1–9 packets</text>
+            <text class="d-m" x="604" y="246" text-anchor="middle">per frame</text>
+            <line class="d-a" x1="794" y1="162" x2="838" y2="162" marker-end="url(#ah2)"/>
+            <text class="d-s" x="816" y="152" text-anchor="middle">unlock</text>
+
+            <!-- return path -->
+            <polyline class="d-ag" points="719,204 719,300 200,300" marker-end="url(#ah2g)"/>
+            <text class="d-gt" x="460" y="290" text-anchor="middle">unlock notice (RAU1) → raudp → ee_core</text>
+            <!-- GS / TV -->
+            <rect class="d-gold" x="34" y="270" width="160" height="60" rx="8"/>
+            <text class="d-t" x="114" y="295" text-anchor="middle">GS · TV</text>
+            <text class="d-gt" x="114" y="315" text-anchor="middle">gold flash</text>
+          </svg>
+        </div>
+        <figcaption>Grey arrows run every frame, the gold path once per unlock.</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
-<section id="client">
+<section id="need">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow gold">El cliente</span>
-      <h2>Tu RetroAchievements, en una sola ventana.</h2>
-      <p>xeRAbora es un cliente completo. Funciona sin consola y sin sesión: la biblioteca, los logros de cada juego y las clasificaciones vienen de tu clave de la Web API. Conecta la consola y esas mismas pantallas se llenan de números sacados directamente de la memoria del juego.</p>
+      <span class="eyebrow">What you need</span>
+      <h2>A PS2 on your network and a PC next to it.</h2>
     </div>
-    <div class="cols">
-      <div>
-        <h3>EN VIVO</h3>
-        <p>El juego en marcha tal como lo ve la consola: progreso medido, LO SIGUIENTE por el tiempo mediano que tardaron otros jugadores (OCULTAR quita uno al que renunciaste), seguidores de clasificación en vivo, y un panel CONSOLA con el enlace, la tasa de snapshots y las pérdidas.</p>
-      </div>
-      <div>
-        <h3>BIBLIOTECA, JUEGO, TABLAS</h3>
-        <p>Cada juego que has tocado, en cada sistema, con dos barras, softcore y hardcore, y el premio. Un conjunto entero: el orden del autor, la ruta prevista con los perdibles marcados, los tiempos medianos de desbloqueo. Las clasificaciones de un juego con las mejores marcas.</p>
-      </div>
-      <div>
-        <h3>SEGUIR MI PARTIDA</h3>
-        <p>Con la consola apagada, EN VIVO sigue tu cuenta por la Web API: el juego en el que estás en cualquier emulador con RetroAchievements, los desbloqueos en cuanto llegan, LO SIGUIENTE y los avisos de perdibles. La consola toma el relevo en cuanto se conecta.</p>
-      </div>
-      <div>
-        <h3>AJUSTES</h3>
-        <p>Tu cuenta, tu clave de la Web API y el interruptor que abre la página a un móvil en la misma Wi-Fi. Nada más que configurar: el menú de idioma está en la cabecera, SEGUIR MI PARTIDA en EN VIVO, y el SALIR rojo en el pie.</p>
-      </div>
-      <div>
-        <h3>En el móvil</h3>
-        <p>ABRIR A LA RED en AJUSTES sirve la página a tu Wi-Fi. En una pantalla estrecha las pestañas pasan a una barra en la parte inferior. Mientras la consola transmite, la página se vuelve dorada y la carátula gira como un disco; mientras sigue un emulador, se vuelve azul.</p>
-      </div>
-      <div>
-        <h3>Hecho para streaming</h3>
-        <p>La interfaz es una página que el cliente se sirve a sí mismo en localhost, así que OBS la toma como fuente de navegador. <code>--obs</code> escribe etiquetas de texto y un <code>data.json</code> para todo lo demás.</p>
-      </div>
-    </div>
-    <div class="demo">
-      <div class="demo__bar"><span>Pruébalo</span> Esta es la propia página del cliente con una sesión grabada en lugar de la consola. Pulsa las pestañas, abre un juego desde BIBLIOTECA, cambia el idioma en la cabecera, espera el desbloqueo.</div>
-      <iframe src="demo.html#lang=es" title="xeRAbora, demo en vivo de la página del cliente" loading="lazy"></iframe>
+    <div class="need">
+      <div><span class="eyebrow">Console</span><h3>PS2 with a network adapter</h3><p>A fat with the adapter or a slim with the built-in port, running OPL through FMCB, FHDB or similar.</p></div>
+      <div><span class="eyebrow">Games</span><h3>ISO or the disc</h3><p>A <code>.iso</code> image wherever OPL runs it, USB stick or internal HDD over BDM, or the original disc in the drive.</p></div>
+      <div><span class="eyebrow">PC</span><h3>On the same network</h3><p>Windows, Linux or macOS in the same subnet as the console.</p></div>
+      <div><span class="eyebrow">Account</span><h3>RetroAchievements</h3><p>Your login for unlocks and the Web API key from your profile.</p></div>
     </div>
   </div>
 </section>
@@ -510,7 +720,7 @@
           <span class="n"></span>
           <h3>Descarga dos archivos</h3>
           <p>De la <a href="https://github.com/hacan359/xerabora/releases/latest">última versión</a>: <code>OPL-RA.ELF</code> para la consola y <code>xerabora.exe</code> (Windows), <code>xerabora-linux-x86_64</code> (Linux) o <code>xerabora-macos</code> (macOS) para el PC. <code>SHA256SUMS</code> sirve para comprobarlos.</p>
-          <p>Necesitas un PS2 con adaptador de red que ya ejecute Open PS2 Loader (FMCB, FHDB o similar), tus juegos como archivos <code>.iso</code> en una memoria USB o el disco original, y un PC en la misma red local con una cuenta de <a href="https://retroachievements.org">RetroAchievements</a>.</p>
+          <p>You need a PS2 with a network adapter that already runs Open PS2 Loader (FMCB, FHDB or similar), your games as <code>.iso</code> images (USB stick, internal HDD over BDM) or the original disc, and a PC on the same local network with a <a href="https://retroachievements.org">RetroAchievements</a> account.</p>
         </div>
         <div class="step-vis">
           <pre class="files"><b>xerabora, última versión</b>  <span class="c">github.com/hacan359/xerabora/releases</span>
@@ -580,7 +790,7 @@
   Rename
   Delete
 
-<span class="notice">  cliente PC encontrado en 192.168.1.10 xerabora/0.1.0-alpha.12</span>
+<span class="notice">  cliente PC encontrado en 192.168.1.10 xerabora/0.1.0-alpha.13</span>
 <span class="notice">  Respuesta en 3 ms, consola en 192.168.1.142</span></pre>
           </div>
           <div class="app"><div class="app__bar"><span class="brand-mini">xe<span class="r">R</span><span class="a">A</span>bora</span><span class="tab on">EN VIVO</span><span class="tab">BIBLIOTECA</span><span class="tab">JUEGO</span><span class="tab">TABLAS</span><span class="tab">AJUSTES</span><span class="who"><b>Hacan359</b> · <i>10 847 puntos</i></span></div>
@@ -641,7 +851,7 @@
               </div>
             </div>
           </div>
-          <span class="cap">Need for Speed: Underground 2, 0 de 76, y las primeras tarjetas de LO SIGUIENTE aparecen bajo este panel.</span>
+          <span class="cap">The first UP NEXT cards appear below this panel.</span>
         </div>
       </div>
 
@@ -670,117 +880,76 @@
   </div>
 </section>
 
-<section id="tested">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Verificado en hardware</span>
-      <h2>Probamos dos maneras de ejecutarlo. Juega por una de ellas.</h2>
-      <p>Comprobamos esta página en una consola real, con juegos en una memoria USB o el disco original en la unidad. Guarda ahí las imágenes con las que juegas con logros. OPL conoce otras formas de guardar juegos; de una sabemos que aún no funciona, las demás no las hemos probado.</p>
-    </div>
-    <div class="verified">
-      <div class="vcard ok">
-        <span class="eyebrow">Verificado</span>
-        <h3>Memoria USB</h3>
-        <p>Imágenes <code>.iso</code> simples en <code>DVD</code> o <code>CD</code>. Hash, lista vigilada, telemetría y desbloqueos in-game: la sesión del recorrido fue así.</p>
-      </div>
-      <div class="vcard ok">
-        <span class="eyebrow">Verificado</span>
-        <h3>Disco original</h3>
-        <p>Comprueba y arranca desde el menú principal de OPL. Funciona y desbloquea; un juego por ahora. Experimental, mira abajo.</p>
-      </div>
-      <div class="vcard warn">
-        <span class="eyebrow">Todavía no</span>
-        <h3>Recurso SMB, particiones HDL, imágenes UL y ZSO</h3>
-        <p>Un recurso compartido calcula el hash bien, pero un juego con conjunto de logros no arranca desde ahí: se inicia, la consola conecta, y un minuto después deja de cargar. Los juegos sin conjunto arrancan desde un recurso como antes. Un disco duro interno con partición exFAT, que OPL lee por BDM, se comporta como la memoria USB para un probador; los juegos en particiones HDL y las imágenes UL y ZSO no tienen hash.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section id="disc">
   <div class="wrap">
-    <div class="cols">
+    <div>
       <div>
         <span class="eyebrow">Desde el disco original</span>
         <h2 style="margin:0.6rem 0 1rem">Sin imagen ninguna.</h2>
         <p>Mete el disco, pulsa <kbd>START</kbd> para el menú principal de OPL y elige <strong>RA: check disc support</strong>, y luego <strong>RA: launch disc</strong>. La comprobación lee el disco por la propia unidad de la consola y pregunta al PC igual que con una imagen. El arranque inicia el disco bajo los hooks in-game de OPL, así que telemetría y desbloqueos funcionan igual que por USB.</p>
         <p>Renuncias a las tarjetas de memoria virtuales de OPL, a los parches de compatibilidad por juego y a los trucos. Viven en la parte de OPL que emula la unidad, y un disco de verdad no la usa.</p>
       </div>
-      <div class="callout">
-        <span class="eyebrow">Experimental</span>
-        <p>El modo disco solo ha funcionado con Shadow of the Colossus. Un juego que no consigue arrancar puede colgar la consola del todo: pantalla negra, y el botón de reset no hace nada. Apaga y enciende para recuperarla. Transformers: The Game es un caso conocido; por USB funciona bien.</p>
-      </div>
     </div>
   </div>
 </section>
 
-<section id="roadmap">
+<section id="nops2">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow gold">Hacia dónde va esto</span>
-      <h2>Un compañero para donde sea que juegues.</h2>
-      <p>El lado de la consola demostró la idea. El plan es convertir el cliente en eso que dejas abierto al lado de cualquier sesión de RetroAchievements, y darle al agente del PS2 las piezas que aún le faltan.</p>
+      <span class="eyebrow">Without a PS2</span>
+      <h2>The same window for your emulator play.</h2>
+      <p>With the console off, xeRAbora follows your RetroAchievements account: the game you are in, the unlocks as they land, what to chase next, missable warnings, your library and the leaderboards. The difference is who unlocks.</p>
     </div>
-    <div class="cols">
-      <div>
-        <h3>Cadenas de punteros más largas, más formatos de imagen</h3>
-        <p>La consola sigue cadenas de punteros, hasta 128 por juego; un conjunto que necesita más conserva sus lecturas directas. Subir ese límite y calcular el hash de imágenes ZSO son las siguientes piezas del lado de la consola.</p>
+    <div class="modes">
+      <div class="mode ps2">
+        <span class="eyebrow gold">With the PS2 · the page turns gold</span>
+        <svg viewBox="0 0 460 150" role="img" aria-label="With the PS2: the console streams memory to xeRAbora, which unlocks on RetroAchievements.">
+          <rect class="bx" x="6" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="64" y="75" text-anchor="middle">PS2</text>
+          <rect class="bg" x="172" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="230" y="75" text-anchor="middle">xeRAbora</text>
+          <rect class="bx" x="338" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="396" y="75" text-anchor="middle">RA</text>
+          <line class="ag" x1="122" y1="70" x2="162" y2="70"/><polygon points="170,70 160,64 160,76" fill="var(--gold)"/>
+          <text class="s" x="145" y="30" text-anchor="middle">memory</text>
+          <line class="ag" x1="288" y1="70" x2="328" y2="70"/><polygon points="336,70 326,64 326,76" fill="var(--gold)"/>
+          <text class="s" x="311" y="30" text-anchor="middle">unlock</text>
+          <text class="g" x="230" y="128" text-anchor="middle">▲ unlocks here</text>
+        </svg>
+        <p>xeRAbora runs the rules itself, so it shows measured progress ("3 of 10") and leaderboard trackers moving with the game.</p>
       </div>
-      <div>
-        <h3>Guía que no depende de la fuente</h3>
-        <p>LO SIGUIENTE, los avisos de perdibles y el orden de progresión salen de los datos de RetroAchievements, así que funcionan para cualquier juego que hayas empezado. La meta es un compañero que te guíe por un conjunto, juegues en la consola, en un PC o en un emulador, para que no te pierdas nada camino de la maestría.</p>
-      </div>
-      <div>
-        <h3>Más agentes, un protocolo</h3>
-        <p>El protocolo es pequeño y está documentado. Un agente para otra consola, o para un emulador que quiera la misma ventana, es un fin de semana de trabajo, y el cliente hace el resto.</p>
-      </div>
-      <div>
-        <h3>Desbloqueos más sonoros</h3>
-        <p>El destello dorado es el primer aviso en la tele. Vibración del mando a la vez, un distintivo en pantalla, un aviso de maestría en la página y presencia en Discord están en la lista.</p>
-      </div>
-      <div>
-        <h3>Para streams</h3>
-        <p>Un diseño de overlay compacto para OBS, contadores en vivo a partir de los propios valores del juego, y los seguidores de clasificación junto al vídeo.</p>
-      </div>
-      <div>
-        <h3>Hardcore</h3>
-        <p>RetroAchievements decide quién califica. La pregunta está con el equipo de RA; hasta entonces, softcore, con los seguidores en marcha y ninguna marca enviada.</p>
+      <div class="mode emu">
+        <span class="eyebrow blue">With an emulator · the page turns blue</span>
+        <svg viewBox="0 0 460 150" role="img" aria-label="With an emulator: the emulator unlocks on RetroAchievements; xeRAbora reads the account through the Web API.">
+          <rect class="bb" x="6" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="64" y="75" text-anchor="middle">Emulator</text>
+          <rect class="bx" x="172" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="230" y="75" text-anchor="middle">RA</text>
+          <rect class="bx" x="338" y="40" width="116" height="60" rx="8"/>
+          <text class="t" x="396" y="75" text-anchor="middle">xeRAbora</text>
+          <line class="ab" x1="122" y1="70" x2="162" y2="70"/><polygon points="170,70 160,64 160,76" fill="var(--blue)"/>
+          <text class="s" x="145" y="30" text-anchor="middle">unlock</text>
+          <line class="ab" x1="288" y1="70" x2="328" y2="70"/><polygon points="336,70 326,64 326,76" fill="var(--blue)"/>
+          <text class="s" x="311" y="30" text-anchor="middle">Web API</text>
+          <text class="b" x="64" y="128" text-anchor="middle">▲ unlocks here</text>
+        </svg>
+        <p>The emulator unlocks on its own; xeRAbora reads your account every 20 seconds.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<section id="limits">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Límites conocidos</span>
-      <h2>Léelo antes de probar.</h2>
+    <div class="table-wrap" style="margin-top:1.6rem">
+      <table>
+        <thead><tr><th></th><th>With the PS2</th><th>With an emulator</th></tr></thead>
+        <tbody>
+          <tr><td>Who unlocks</td><td class="y">xeRAbora</td><td>the emulator</td></tr>
+          <tr><td>Measured progress, "3 of 10"</td><td class="y">every frame</td><td class="n">not in the Web API</td></tr>
+          <tr><td>Leaderboard trackers</td><td class="y">live</td><td class="n">no</td></tr>
+          <tr><td>Library, GAME, BOARDS, UP NEXT, missables</td><td>yes</td><td>yes</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="cols">
-      <div>
-        <h3>Solo softcore</h3>
-        <p>OPL puede escribir en la memoria del juego con su motor de trucos, así que el cliente no reclama hardcore. El equipo de RA decide si un cliente en hardware real puede calificar; no podemos concedérnoslo nosotros.</p>
-      </div>
-      <div>
-        <h3>128 cadenas de punteros</h3>
-        <p>La consola sigue cadenas de punteros, hasta 128 por juego. Un conjunto que necesita más descarta las cadenas que pasan del límite, y el PC cuenta lo que no pudo compilar. Beyond Good &amp; Evil, el peor caso medido, tiene 31 de 115 fuera de alcance; la mayoría de los conjuntos de PS2 no pierden ninguno.</p>
-      </div>
-      <div>
-        <h3>Misma subred</h3>
-        <p>La consola aprende la dirección MAC del PC por la respuesta de descubrimiento. Oye a un PC detrás de un router pero no puede contestarle. Un PC en contenedor solo funciona con red del host.</p>
-      </div>
-      <div>
-        <h3>ISO simple o el disco</h3>
-        <p>La comprobación de la imagen lee archivos <code>.iso</code> llamados <code>Title.iso</code> o al estilo de OPL Manager (<code>SLUS_123.45.Title.iso</code>) en <code>DVD</code> o <code>CD</code> de una memoria USB o un recurso compartido, y el disco en la unidad. UL/USBExtreme, ZSO y las particiones HDL no tienen hash; una partición exFAT en el disco duro interno cuenta como una memoria USB. Juega desde la memoria o el disco: un juego con conjunto no arranca desde un recurso compartido.</p>
-      </div>
-      <div>
-        <h3>Los hooks necesitan libpad</h3>
-        <p>La telemetría empieza cuando el juego abre su mando por libpad, que es como se enganchan los hooks in-game de OPL. Un juego con código de entrada poco común puede no enviar nunca, y entonces el PC no muestra ningún snapshot.</p>
-      </div>
-      <div>
-        <h3>Una alpha</h3>
-        <p>Un experimento casero, ejecutado desde una memoria USB en dos consolas. Úsalo bajo tu responsabilidad.</p>
-      </div>
+    <div class="demo">
+      <div class="demo__bar"><span>Pruébalo</span> Esta es la propia página del cliente con una sesión grabada en lugar de la consola. Pulsa las pestañas, abre un juego desde BIBLIOTECA, cambia el idioma en la cabecera, espera el desbloqueo.</div>
+      <iframe src="demo.html#lang=es" title="xeRAbora, demo en vivo de la página del cliente" loading="lazy"></iframe>
     </div>
   </div>
 </section>
@@ -802,11 +971,7 @@
       </details>
       <details>
         <summary>¿Qué juegos funcionan?</summary>
-        <p>Cualquier juego de PS2 con conjunto de logros. Los conjuntos de cualquier tamaño cargan, y las cadenas de punteros se siguen hasta 128 por juego. La comprobación en el menú del juego te da las cuentas antes de jugar: total, desbloqueados, y cuántos aún no pueden desbloquearse en hardware real.</p>
-      </details>
-      <details>
-        <summary>¿Necesito un recurso de red o un disco duro interno?</summary>
-        <p>Ninguno de los dos. Una memoria USB con tus imágenes, o el disco, es la configuración probada. Un recurso compartido vale para el loader y las listas vigiladas, pero un juego con conjunto de logros no arranca desde ahí; los juegos sin conjunto sí. Un disco duro interno con partición exFAT que OPL lee por BDM funciona como la memoria USB para un probador; el loader no puede calcular el hash de particiones HDL.</p>
+        <p>Any PS2 game with an achievement set. The check in the game's menu tells you the counts for your game before you play: total, unlocked, and how many cannot unlock on real hardware yet.</p>
       </details>
       <details>
         <summary>El desbloqueo salió en la página pero la tele no destelló.</summary>
