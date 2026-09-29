@@ -499,6 +499,21 @@ void console_learn(sock_t sock, const struct sockaddr_in *from)
              inet_ntoa(from->sin_addr), ntohs(from->sin_port));
 }
 
+int console_send_reset(void)
+{
+    static const char msg[] = "RAR1";
+
+    if (!g_console_known || g_console_sock == SOCK_INVALID) {
+        log_warn("no console address yet, nothing to reset");
+        return 0;
+    }
+
+    send_reply(g_console_sock, msg, sizeof(msg) - 1, sizeof(msg), &g_console);
+    send_reply(g_console_sock, msg, sizeof(msg) - 1, sizeof(msg), &g_console_bcast);
+    log_info("reset sent to the console");
+    return 1;
+}
+
 int console_notify_unlock(unsigned id, unsigned points)
 {
     char msg[64];

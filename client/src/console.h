@@ -43,6 +43,9 @@ int console_ident_collect(char *hash, size_t hash_size, int *ok, char *reason, s
    the game. Goes to the address discovery recorded; returns 0 when no
    console has been discovered yet. */
 int console_notify_unlock(unsigned id, unsigned points);
+/* Asks the console to leave the game for the loader menu, the way the
+   in-game reset combo does. 1 when sent, 0 with no console address. */
+int console_send_reset(void);
 int console_send_badge_chunk(const unsigned char *px, int idx);
 
 /* Any packet from the console names its address: a client started while

@@ -1626,6 +1626,16 @@ function Lost() {
                  { gaps: fast.gaps.value, dupes: fast.dupes.value, torn: fast.torn.value }));
 }
 
+/* Sends the console back to the loader menu: the in-game reset, from
+   the PC instead of the six-button combo. Local only, like QUIT. */
+async function resetConsole() {
+  if (!confirm(t('Close the game and return the console to the loader menu?'))) return;
+  try {
+    const r = await postForm('/reset', {});
+    if (r && r.ok === false) alert(t('The console has not been seen yet.'));
+  } catch (err) { alert(t('The client did not answer.')); }
+}
+
 /* CONSOLE panel: link, serial, counters, watch list, session clock. */
 function ConsolePanel({ s }) {
   const c = s.console;
@@ -1651,6 +1661,7 @@ function ConsolePanel({ s }) {
       <${Cell} k=${t('SESSION')} v=${sessionText} />
     </div>
     ${s.game.hash && html`<div class="hash">${t('hash {hash}', { hash: s.game.hash })}</div>`}
+    ${!REMOTE && c.connected && html`<div class="subsets"><${Btn} danger sm onClick=${resetConsole}>${t('RESET CONSOLE')}<//></div>`}
   <//>`;
 }
 

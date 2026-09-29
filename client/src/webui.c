@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "console.h"
 #include "follow.h"
 #include "log.h"
 #include "ra.h"
@@ -1097,6 +1098,14 @@ static int serve_settings(sock_t c, const char *req, const char *body, rc_client
         g.dirty = 1;
         log_info(on[0] == '1' ? "following turned on from the page" : "following turned off from the page");
         n = snprintf(out, sizeof(out), "{\"ok\":true}");
+        respond(c, "application/json; charset=utf-8", out, n);
+        return 1;
+    }
+
+    if (strncmp(req, "POST /reset", 11) == 0) {
+        int sent = console_send_reset();
+
+        n = snprintf(out, sizeof(out), "{\"ok\":%s}", sent ? "true" : "false");
         respond(c, "application/json; charset=utf-8", out, n);
         return 1;
     }
