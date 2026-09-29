@@ -112,6 +112,32 @@ static int direct_index(const rc_memref_t *m)
     return -1;
 }
 
+/* PS2 sets often write a pointer step as `I:0xX... & 0x01FFFFFF`,
+   cutting the kseg bits off the pointer, and rcheevos keeps that as an
+   AND memref over the read. The console masks every chain address with
+   0x1FFFFFFF and never reads past 32 MB, so for any address the game can
+   hold both sides land on the same place: the mask can be stepped over,
+   as long as it keeps every bit of the 32 MB range. A shorter mask
+   would change the address and is left alone. */
+#define RA_PS2_RAM_MASK 0x01FFFFFFu
+
+static const rc_memref_t *unwrap_mask(const rc_memref_t *m)
+{
+    while (m != NULL && m->value.memref_type == RC_MEMREF_TYPE_MODIFIED_MEMREF) {
+        const rc_modified_memref_t *mm = (const rc_modified_memref_t *)m;
+
+        if (mm->modifier_type != RC_OPERATOR_AND || mm->modifier.type != RC_OPERAND_CONST)
+            break;
+        if ((mm->modifier.value.num & RA_PS2_RAM_MASK) != RA_PS2_RAM_MASK)
+            break;
+        if (!rc_operand_is_memref(&mm->parent) || mm->parent.type != RC_OPERAND_ADDRESS)
+            break;
+        m = mm->parent.value.memref;
+    }
+
+    return m;
+}
+
 /* Compiles one pointer chain into a node, its parent first, and returns
    the node index. -1 means the console cannot be asked to follow it.
 
@@ -143,7 +169,7 @@ static int compile_node(const rc_memref_t *m)
     if (!rc_operand_is_memref(&mm->parent) || mm->parent.type != RC_OPERAND_ADDRESS)
         return -1;
 
-    pm = mm->parent.value.memref;
+    pm = unwrap_mask(mm->parent.value.memref);
     if (pm != NULL && pm->value.memref_type == RC_MEMREF_TYPE_MODIFIED_MEMREF) {
         parent = compile_node(pm);
         from_node = 1;
@@ -284,7 +310,8 @@ static void count_indirect(rc_client_t *client)
 /* ---- Survey: the set's needs with no ceiling ----------------------- */
 
 /* A chain the console could follow, ceilings aside: constant offsets
-   all the way up and a plain pointer read at every level. */
+   all the way up and a plain pointer read, masked or not, at every
+   level. */
 static int chain_compilable(const rc_memref_t *m)
 {
     const rc_modified_memref_t *mm;
@@ -300,7 +327,7 @@ static int chain_compilable(const rc_memref_t *m)
     if (!rc_operand_is_memref(&mm->parent) || mm->parent.type != RC_OPERAND_ADDRESS)
         return 0;
 
-    return chain_compilable(mm->parent.value.memref);
+    return chain_compilable(unwrap_mask(mm->parent.value.memref));
 }
 
 /* Memrefs that locked achievements and leaderboards read, as a flat
