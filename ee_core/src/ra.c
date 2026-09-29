@@ -222,30 +222,39 @@ static void ra_snap_send(void)
        cache lines per frame through the game's 8 KB data cache. */
     /* RA_PROBE 6: the transfer without the reads, to tell the cost of
        the reads from the cost of the DMA. */
-    for (i = 0; i < ra_watch_count && off < ra_watch_bytes && RA_PROBE != 6; i++) {
+    for (i = 0; i < ra_watch_count && RA_PROBE != 6; i++) {
         u32 e = ra_watch[i];
         u32 addr = RA_WATCH_ADDR(e);
         u32 size = RA_WATCH_SIZE(e);
+        u32 j;
+
+        /* The entry sizes are meant to add up to ra_watch_bytes; a list
+           where they do not must not write past the values. */
+        if (off + size > (u32)ra_watch_bytes)
+            break;
 
         if (addr < RA_RAM_LOW || addr + size > RA_RAM_HIGH) {
-            u32 j;
-
             for (j = 0; j < size; j++)
                 vals[off++] = 0;
-        } else if (size == 4) {
+        } else if (size == 4 && (addr & 3) == 0) {
             u32 v = *(volatile u32 *)UNCACHED_SEG(addr);
 
             vals[off++] = (u8)v;
             vals[off++] = (u8)(v >> 8);
             vals[off++] = (u8)(v >> 16);
             vals[off++] = (u8)(v >> 24);
-        } else if (size == 2) {
+        } else if (size == 2 && (addr & 1) == 0) {
             u16 v = *(volatile u16 *)UNCACHED_SEG(addr);
 
             vals[off++] = (u8)v;
             vals[off++] = (u8)(v >> 8);
         } else {
-            vals[off++] = *(volatile u8 *)UNCACHED_SEG(addr);
+            /* One byte, or a wider value at an address its width does
+               not divide: a word or halfword load there raises an
+               address error, and this runs inside an interrupt handler.
+               Achievement sets carry such addresses. */
+            for (j = 0; j < size; j++)
+                vals[off++] = *(volatile u8 *)UNCACHED_SEG(addr + j);
         }
     }
 
