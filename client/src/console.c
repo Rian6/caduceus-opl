@@ -501,7 +501,10 @@ void console_learn(sock_t sock, const struct sockaddr_in *from)
 
 int console_send_reset(void)
 {
-    static const char msg[] = "RAR1";
+    /* The console takes a message as "<tag> <argument>" and drops one
+       shorter than five bytes, so the tag travels with an argument it
+       does not read. */
+    static const char msg[] = "RAR1 0";
 
     if (!g_console_known || g_console_sock == SOCK_INVALID) {
         log_warn("no console address yet, nothing to reset");
