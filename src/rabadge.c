@@ -132,8 +132,8 @@ int raBadgeHas(item_list_t *support, int idx)
 
 const char *raBadgeText(item_list_t *support, int idx)
 {
-    struct ra_badge_slot *slot = NULL;
-    char *text;
+    const struct ra_badge_slot *slot = NULL;
+    const char *text;
     int i;
 
     for (i = 0; i < RA_BADGE_SLOTS; i++)

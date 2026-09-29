@@ -377,7 +377,7 @@ static u16 ra_ip_checksum(const u8 *hdr, int len)
     return (u16)(~sum);
 }
 
-static u32 ra_usec_delta(iop_sys_clock_t *from, iop_sys_clock_t *to)
+static u32 ra_usec_delta(const iop_sys_clock_t *from, const iop_sys_clock_t *to)
 {
     iop_sys_clock_t d;
     u32 sec = 0, usec = 0;
@@ -591,7 +591,6 @@ static void ra_send_one(void)
     USE_SMAP_REGS;
     iop_sys_clock_t t0, t1;
     u32 nb = 0, parts = 1, part, sq = 0;
-    int ret;
 
     ra_rxq = SMAP_REG8(SMAP_R_RXFIFO_FRAME_CNT);
 
@@ -661,6 +660,7 @@ static void ra_send_one(void)
     for (part = 0; part < parts; part++) {
         u32 off = part * ra_chunk;
         u32 len = nb > off ? nb - off : 0;
+        int ret;
 
         if (len > ra_chunk)
             len = ra_chunk;
@@ -933,7 +933,6 @@ static void ra_drain_rx(void)
     for (budget = 0; budget < 16; budget++) {
         volatile smap_bd_t *bd;
         u16 cs, len, ptr;
-        int words, i, up;
 
         if (SMAP_REG8(SMAP_R_RXFIFO_FRAME_CNT) == 0)
             return;
@@ -953,6 +952,7 @@ static void ra_drain_rx(void)
 
         if (!(cs & SMAP_BD_RX_ERROR) && len >= 60 && len <= (u16)sizeof(ra_rxfrm)) {
             u32 *w = (u32 *)ra_rxfrm;
+            int words, i, up;
 
             SMAP_REG16(SMAP_R_RXFIFO_RD_PTR) = ptr;
             words = ((int)len + 3) / 4;

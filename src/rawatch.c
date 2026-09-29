@@ -322,10 +322,13 @@ int LoadWatchList(const char *path, const char *startup)
     struct ra_watch_file hdr;
     int fd, got;
 
+    if (path == NULL || startup == NULL)
+        return -1;
+
     /* This game's list is already in memory: the network brought it in
        the menu, and it is fresher than any file. Leave the file alone;
        on USB it may not have reached the medium yet. */
-    if (gWatchCount > 0 && startup != NULL &&
+    if (gWatchCount > 0 &&
         strncmp(gWatchStartup, startup, sizeof(gWatchStartup) - 1) == 0) {
         LOG("RA: list for %s already in memory, %d entries\n", startup, gWatchCount);
         return gWatchCount;

@@ -275,7 +275,6 @@ static void ra_snap_send(void)
         u32 parent = RA_NODE_PARENT(w);
         u32 size = RA_NODE_SIZE(w);
         u32 base, addr, v = 0;
-        int j;
 
         if (size != 1 && size != 2 && size != 4) {
             size = 0;
@@ -300,7 +299,9 @@ static void ra_snap_send(void)
         if (size == 0 || addr < RA_RAM_LOW || addr + size > RA_RAM_HIGH) {
             addr = 0;
         } else {
-            for (j = 0; j < (int)size; j++)
+            u32 j;
+
+            for (j = 0; j < size; j++)
                 v |= (u32)(*(volatile u8 *)UNCACHED_SEG(addr + j)) << (8 * j);
         }
 

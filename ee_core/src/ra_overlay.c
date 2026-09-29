@@ -69,7 +69,7 @@ static unsigned int ra_ovl_scale(unsigned int colour, int k)
 
 void RA_OverlayOnVblank(unsigned int frames)
 {
-    volatile struct ra_event *e = (volatile struct ra_event *)UNCACHED_SEG(&ra_ovl_event);
+    const volatile struct ra_event *e = (const volatile struct ra_event *)UNCACHED_SEG(&ra_ovl_event);
     unsigned int phase;
     int alp, k;
 

@@ -135,7 +135,7 @@ static int ask(int sock, struct sockaddr_in *to, const char *req, char *out, int
     for (t = 0; t < RA_TRY; t++) {
         struct sockaddr_in from;
         socklen_t fromlen = sizeof(from);
-        int got, w;
+        int w;
 
         /* Drop replies to earlier retransmits: a late one would pass for
            the answer to this request. */
@@ -147,7 +147,7 @@ static int ask(int sock, struct sockaddr_in *to, const char *req, char *out, int
         /* The reply may take a moment, so poll several times before
            resending. */
         for (w = 0; w < 10; w++) {
-            got = recvfrom(sock, out, asklen, RA_MSG_DONTWAIT, (struct sockaddr *)&from, &fromlen);
+            int got = recvfrom(sock, out, asklen, RA_MSG_DONTWAIT, (struct sockaddr *)&from, &fromlen);
 
             if (got > 0) {
                 out[got] = '\0';

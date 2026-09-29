@@ -127,7 +127,7 @@ static void step_num(const char *what, unsigned int a, unsigned int b, int c)
 static int disc_read_sectors(unsigned int lba, unsigned int count, void *buf)
 {
     sceCdRMode mode;
-    int attempt, rv, err = SCECdErNO;
+    int attempt, err = SCECdErNO;
 
     mode.trycount = 32;
     mode.datapattern = SCECdSecS2048;
@@ -138,8 +138,7 @@ static int disc_read_sectors(unsigned int lba, unsigned int count, void *buf)
 
         sceCdDiskReady(0);
 
-        rv = sceCdRead(lba, count, buf, &mode);
-        if (!rv) {
+        if (!sceCdRead(lba, count, buf, &mode)) {
             /* Refused before it started: drive not ready or a command
                still pending. Worth another go after DiskReady. */
             err = -1;
@@ -467,14 +466,14 @@ static int parse_boot2(char *cnf, char *out, int max)
    the same hash, and none of the image-file trouble. */
 int raHashDisc(const char *startup, char *out33)
 {
-    int fd, ret;
+    int fd;
 
     out33[0] = '\0';
     step("1-reading-disc");
 
     fd = disc_open(startup);
     if (fd >= 0) {
-        ret = hash_stream(fd, startup, out33);
+        int ret = hash_stream(fd, startup, out33);
         close(fd);
 
         if (ret == 0)
