@@ -11,19 +11,16 @@ opl/**/*.stripped.elf
 opl/**/*.d
 opl/lng/*.lng
 opl/ee_core/ee_core.elf
-
-# Client build output
-client/build/
-client/xerabora
-client/xerabora.exe
-*.o
+opl/xmb-build.log
 
 # Local secrets
 *.token
+CADUCEUS.KEY
 
 # Build outputs copied to the repo root by local builds
 /*.ELF
 
-# raylib for the window build: fetched and built by tools/build-raylib.sh
-third_party/raylib-src/
-third_party/raylib-build/
+# Local emulator profile, BIOS copies, captures and launch diagnostics
+/pcsx2-test/
+/pcsx2-help*.txt
+/pcsx2-run.log
