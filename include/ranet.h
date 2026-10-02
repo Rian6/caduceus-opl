@@ -1,6 +1,8 @@
 /* RetroAchievements: talking to the PC client from the OPL menu. See src/ranet.c */
 #ifndef __RANET_H__
 #define __RANET_H__
+int raAskCaduceus(const char *hash, char *title, int titlesz, char *detail, int detailsz, int *session_ready);
+int raCaduceusPage(const char *request, unsigned int serial, char *out, int size);
 
 /* Hashes are known; ask the PC for the watch list and store it next to
    the game. Returns 0 when the list was received, 1 when RetroAchievements

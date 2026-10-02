@@ -240,16 +240,16 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
     if (!mod->support->enabled)
         menuAddHint(&mod->menuItem, _STR_START_DEVICE, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
     else {
-        menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
+        menuAddHint(&mod->menuItem, mod->support->mode == APP_MODE ? _STR_RUN : _STR_INFO, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
 
-        if (gTheme->infoElems.first)
-            menuAddHint(&mod->menuItem, _STR_INFO, SQUARE_ICON);
+        if (mod->support->mode != APP_MODE || gTheme->infoElems.first)
+            menuAddHint(&mod->menuItem, _STR_INFO, TRIANGLE_ICON);
 
         if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
-            menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
+            menuAddHint(&mod->menuItem, _STR_OPTIONS, SQUARE_ICON);
 
-        menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
     }
+    menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
 
     // refresh Cache
     if (themeChanged) {
@@ -263,13 +263,46 @@ static void itemInitSupport(item_list_t *support)
 {
     support->itemInit(support);
     moduleUpdateMenuInternal((opl_io_module_t *)support->owner, 0, 0);
-    // Manual refreshing can only be done if either auto refresh is disabled or auto refresh is disabled for the item.
-    if (!gAutoRefresh || (support->updateDelay == MENU_UPD_DELAY_NOUPDATE))
+    // Initial scan follows any module loads queued by itemInit.
+    ioPutRequest(IO_MENU_UPDATE_DEFFERED, &support->mode);
+}
+
+static volatile int categoryPending[APP_MODE + 1];
+
+static void categoryEnterWorker(void *data)
+{
+    item_list_t *support = data;
+    if (!support->enabled) {
+        if (support->mode <= BDM_MODE4) {
+            for (int i = BDM_MODE; i <= BDM_MODE4; i++) {
+                item_list_t *device = list_support[i].support;
+                if (device && !device->enabled)
+                    itemInitSupport(device);
+            }
+        } else {
+            itemInitSupport(support);
+        }
+    } else {
         ioPutRequest(IO_MENU_UPDATE_DEFFERED, &support->mode);
+    }
+    categoryPending[support->mode] = 0;
+}
+
+void moduleEnterCategory(item_list_t *support)
+{
+    if (!support || sbGameCheckBusy() || categoryPending[support->mode])
+        return;
+    categoryPending[support->mode] = 1;
+    if (ioPutRequest(IO_CATEGORY_ENTER, support) < 0)
+        categoryPending[support->mode] = 0;
 }
 
 static void itemExecSelect(struct menu_item *curMenu)
 {
+    if (sbGameCheckBusy()) {
+        guiShowRANotice("Aguarde a verificacao da ISO terminar antes de iniciar.", NULL);
+        return;
+    }
     item_list_t *support = curMenu->userdata;
     sfxPlay(SFX_CONFIRM);
 
@@ -299,8 +332,19 @@ static void itemExecSelect(struct menu_item *curMenu)
 static void itemExecRefresh(struct menu_item *curMenu)
 {
     item_list_t *support = curMenu->userdata;
+    if (sbGameCheckBusy()) {
+        guiShowRANotice("Aguarde a consulta RA terminar antes de atualizar a rede.", NULL);
+        return;
+    }
+
+    if (support && !support->enabled) {
+        moduleEnterCategory(support);
+        return;
+    }
 
     if (support && support->enabled) {
+        if (support->mode == ETH_MODE)
+            ethRefresh();
         ioPutRequest(IO_MENU_UPDATE_DEFFERED, &support->mode);
         sfxPlay(SFX_CONFIRM);
     }
@@ -318,14 +362,23 @@ static void itemExecCircle(struct menu_item *curMenu)
         itemExecSelect(curMenu);
 }
 
-static void itemExecSquare(struct menu_item *curMenu)
+static void itemExecDetails(struct menu_item *curMenu)
 {
-    if (curMenu->current && gTheme->infoElems.first)
-        guiSwitchScreen(GUI_SCREEN_INFO);
+    item_list_t *support = curMenu->userdata;
+    if (curMenu->current && support) {
+        if (support->mode == APP_MODE)
+            guiSwitchScreen(GUI_SCREEN_INFO);
+        else
+            menuOpenGameCard();
+    }
 }
 
-static void itemExecTriangle(struct menu_item *curMenu)
+static void itemExecOptions(struct menu_item *curMenu)
 {
+    if (sbGameCheckBusy()) {
+        guiShowRANotice("Verificacao em andamento.", "As opcoes ficam disponiveis ao terminar.");
+        return;
+    }
     if (!curMenu->current)
         return;
 
@@ -366,8 +419,8 @@ static void initMenuForListSupport(opl_io_module_t *mod)
 
     mod->menuItem.refresh = &itemExecRefresh;
     mod->menuItem.execCross = &itemExecCross;
-    mod->menuItem.execTriangle = &itemExecTriangle;
-    mod->menuItem.execSquare = &itemExecSquare;
+    mod->menuItem.execTriangle = &itemExecDetails;
+    mod->menuItem.execSquare = &itemExecOptions;
     mod->menuItem.execCircle = &itemExecCircle;
 
     mod->menuItem.hints = NULL;
@@ -437,6 +490,7 @@ static void initAllSupport(int force_reinit)
     initSupport(ethGetObject(0), ETH_MODE, force_reinit || (gNetworkStartup >= ERROR_ETH_SMB_CONN));
     initSupport(hddGetObject(0), HDD_MODE, force_reinit);
     initSupport(appGetObject(0), APP_MODE, force_reinit);
+    menuInstallAchievementsCategory();
 }
 
 static void deinitAllSupport(int exception, int modeSelected)
@@ -927,6 +981,14 @@ static void _loadConfig()
             configGetColor(configOPL, CONFIG_OPL_TEXTCOLOR, gDefaultTextColor);
             configGetColor(configOPL, CONFIG_OPL_UI_TEXTCOLOR, gDefaultUITextColor);
             configGetColor(configOPL, CONFIG_OPL_SEL_TEXTCOLOR, gDefaultSelTextColor);
+            // Migrate the previous built-in blue palette; retain custom colors.
+            if (gDefaultBgColor[0] == 0x28 && gDefaultBgColor[1] == 0xc5 && gDefaultBgColor[2] == 0xf9)
+                setDefaultColors();
+            if (gDefaultBgColor[0] == 0x11 && gDefaultBgColor[1] == 0x13 && gDefaultBgColor[2] == 0x11) {
+                gDefaultBgColor[0] = 0x25;
+                gDefaultBgColor[1] = 0x33;
+                gDefaultBgColor[2] = 0x2b;
+            }
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, &gEnableArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
@@ -975,6 +1037,14 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_HDD_MODE, &gHDDStartMode);
             configGetInt(configOPL, CONFIG_OPL_ETH_MODE, &gETHStartMode);
             configGetInt(configOPL, CONFIG_OPL_APP_MODE, &gAPPStartMode);
+            // Keep every library category accessible in the XMB, including old
+            // profiles saved when these devices were hidden by default.
+            if (gBDMStartMode == START_MODE_DISABLED)
+                gBDMStartMode = START_MODE_MANUAL;
+            if (gHDDStartMode == START_MODE_DISABLED)
+                gHDDStartMode = START_MODE_MANUAL;
+            if (gAPPStartMode == START_MODE_DISABLED)
+                gAPPStartMode = START_MODE_MANUAL;
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
@@ -1008,6 +1078,9 @@ static void _loadConfig()
             configGetInt(configNet, CONFIG_NET_SMB_PORT, &gPCPort);
 
             configGetStrCopy(configNet, CONFIG_NET_SMB_SHARE, gPCShareName, sizeof(gPCShareName));
+            // Migrate the lowercase default used by earlier Caduceus builds.
+            if (strcmp(gPCShareName, "ps2") == 0)
+                strcpy(gPCShareName, "PS2");
             configGetStrCopy(configNet, CONFIG_NET_SMB_USER, gPCUserName, sizeof(gPCUserName));
             configGetStrCopy(configNet, CONFIG_NET_SMB_PASSW, gPCPassword, sizeof(gPCPassword));
 
@@ -1692,21 +1765,18 @@ void deinit(int exception, int modeSelected)
 
 void setDefaultColors(void)
 {
-    gDefaultBgColor[0] = 0x28;
-    gDefaultBgColor[1] = 0xC5;
-    gDefaultBgColor[2] = 0xF9;
-
-    gDefaultTextColor[0] = 0xFF;
-    gDefaultTextColor[1] = 0xFF;
-    gDefaultTextColor[2] = 0xFF;
-
-    gDefaultSelTextColor[0] = 0x00;
-    gDefaultSelTextColor[1] = 0xAE;
-    gDefaultSelTextColor[2] = 0xFF;
-
-    gDefaultUITextColor[0] = 0x58;
-    gDefaultUITextColor[1] = 0x68;
-    gDefaultUITextColor[2] = 0xB4;
+    gDefaultBgColor[0] = 0x25;
+    gDefaultBgColor[1] = 0x33;
+    gDefaultBgColor[2] = 0x2b;
+    gDefaultTextColor[0] = 0xee;
+    gDefaultTextColor[1] = 0xf1;
+    gDefaultTextColor[2] = 0xe8;
+    gDefaultSelTextColor[0] = 0xd4;
+    gDefaultSelTextColor[1] = 0xef;
+    gDefaultSelTextColor[2] = 0x8a;
+    gDefaultUITextColor[0] = 0x8b;
+    gDefaultUITextColor[1] = 0x92;
+    gDefaultUITextColor[2] = 0x84;
 }
 
 static void setDefaults(void)
@@ -1727,7 +1797,7 @@ static void setDefaults(void)
 
     ps2_ip_use_dhcp = 1;
     gETHOpMode = ETH_OP_MODE_AUTO;
-    gPCShareAddressIsNetBIOS = 1;
+    gPCShareAddressIsNetBIOS = 0;
     gPCShareNBAddress[0] = '\0';
     ps2_ip[0] = 192;
     ps2_ip[1] = 168;
@@ -1743,21 +1813,21 @@ static void setDefaults(void)
     ps2_gateway[3] = 1;
     pc_ip[0] = 192;
     pc_ip[1] = 168;
-    pc_ip[2] = 0;
-    pc_ip[3] = 2;
+    pc_ip[2] = 1;
+    pc_ip[3] = 81;
     ps2_dns[0] = 192;
     ps2_dns[1] = 168;
     ps2_dns[2] = 0;
     ps2_dns[3] = 1;
-    gPCPort = 445;
-    gPCShareName[0] = '\0';
+    gPCPort = 1024;
+    strcpy(gPCShareName, "PS2");
     gPCUserName[0] = '\0';
     gPCPassword[0] = '\0';
     gNetworkStartup = ERROR_ETH_NOT_STARTED;
     gHDDSpindown = 20;
     gScrollSpeed = 1;
     gExitPath[0] = '\0';
-    gDefaultDevice = APP_MODE;
+    gDefaultDevice = ETH_MODE;
     gAutosort = 1;
     gAutoRefresh = 0;
     gEnableDebug = 0;
@@ -1770,7 +1840,7 @@ static void setDefaults(void)
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
     gEnableNotifications = 0;
-    gEnableArt = 0;
+    gEnableArt = 1;
     gWideScreen = 0;
     gEnableSFX = 0;
     gEnableBootSND = 0;
@@ -1782,10 +1852,10 @@ static void setDefaults(void)
     gXSensitivity = 1;
     gYSensitivity = 1;
 
-    gBDMStartMode = START_MODE_DISABLED;
-    gHDDStartMode = START_MODE_DISABLED;
-    gETHStartMode = START_MODE_DISABLED;
-    gAPPStartMode = START_MODE_DISABLED;
+    gBDMStartMode = START_MODE_MANUAL;
+    gHDDStartMode = START_MODE_MANUAL;
+    gETHStartMode = START_MODE_AUTO;
+    gAPPStartMode = START_MODE_MANUAL;
 
     gEnableILK = 0;
     gEnableMX4SIO = 0;
@@ -1832,6 +1902,7 @@ static void init(void)
 
     // handler for deffered menu updates
     ioRegisterHandler(IO_MENU_UPDATE_DEFFERED, &menuDeferredUpdate);
+    ioRegisterHandler(IO_CATEGORY_ENTER, &categoryEnterWorker);
     cacheInit();
 
     gSelectButton = (InitConsoleRegionData() == CONSOLE_REGION_JAPAN) ? KEY_CIRCLE : KEY_CROSS;

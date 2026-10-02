@@ -22,6 +22,7 @@
 #include "include/cheatman.h"
 #include "include/sound.h"
 #include "include/guigame.h"
+#include "include/caduceus.h"
 
 #include <limits.h>
 #include <stdlib.h>
@@ -87,26 +88,16 @@ static gui_screen_handler_t screenHandlers[] = {{&menuHandleInputMain, &menuRend
                                                 {&menuHandleInputMenu, &menuRenderMenu, 1},
                                                 {&menuHandleInputInfo, &menuRenderInfo, 1},
                                                 {&menuHandleInputGameMenu, &menuRenderGameMenu, 1},
-                                                {&menuHandleInputAppMenu, &menuRenderAppMenu, 1}};
+                                                {&menuHandleInputAppMenu, &menuRenderAppMenu, 1},
+                                                {&menuHandleInputGameCard, &menuRenderGameCard, 1},
+                                                {&menuHandleInputAchievements, &menuRenderAchievements, 1}};
 
 // default screen handler (menu screen)
 static gui_screen_handler_t *screenHandler = &screenHandlers[GUI_SCREEN_MENU];
 
 // screen transition handling
 static gui_screen_handler_t *screenHandlerTarget = NULL;
-static int transIndex;
 
-// Helper perlin noise data
-#define PLASMA_H              32
-#define PLASMA_W              32
-#define PLASMA_ROWS_PER_FRAME 6
-#define FADE_SIZE             256
-
-static GSTEXTURE gBackgroundTex;
-static int pperm[512];
-static float fadetbl[FADE_SIZE + 1];
-
-static VU_VECTOR pgrad3[12] = {{1, 1, 0, 1}, {-1, 1, 0, 1}, {1, -1, 0, 1}, {-1, -1, 0, 1}, {1, 0, 1, 1}, {-1, 0, 1, 1}, {1, 0, -1, 1}, {-1, 0, -1, 1}, {0, 1, 1, 1}, {0, -1, 1, 1}, {0, 1, -1, 1}, {0, -1, -1, 1}};
 
 void guiReloadScreenExtents()
 {
@@ -136,35 +127,12 @@ void guiInit(void)
 
     guiReloadScreenExtents();
 
-    // background texture - for perlin
-    gBackgroundTex.Width = PLASMA_W;
-    gBackgroundTex.Height = PLASMA_H;
-    gBackgroundTex.Mem = memalign(128, PLASMA_W * PLASMA_H * 4);
-    gBackgroundTex.PSM = GS_PSM_CT32;
-    gBackgroundTex.Filter = GS_FILTER_LINEAR;
-    gBackgroundTex.Vram = 0;
-    gBackgroundTex.VramClut = 0;
-    gBackgroundTex.Clut = NULL;
-    gBackgroundTex.ClutStorageMode = GS_CLUT_STORAGE_CSM1;
 
-    // Precalculate the values for the perlin noise plasma
-    int i;
-    for (i = 0; i < 256; ++i) {
-        pperm[i] = rand() % 256;
-        pperm[i + 256] = pperm[i];
-    }
 
-    for (i = 0; i <= FADE_SIZE; ++i) {
-        float t = (float)(i) / FADE_SIZE;
-
-        fadetbl[i] = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
-    }
 }
 
 void guiEnd()
 {
-    if (gBackgroundTex.Mem)
-        free(gBackgroundTex.Mem);
 
     DeleteSema(gSemaId);
     DeleteSema(gGUILockSemaId);
@@ -258,8 +226,8 @@ static void guiRenderNotifications(char *string, int y)
 
     x = screenWidth - rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], string)) - 10;
 
-    rmDrawRect(x - 10, y, screenWidth - x, MENU_ITEM_HEIGHT + 10, gColDarker);
-    fntRenderString(gTheme->fonts[0], x - 5, y + 5, ALIGN_NONE, 0, 0, string, gTheme->textColor);
+    rmDrawRect(x - 10, y, screenWidth - x, MENU_ITEM_HEIGHT + 10, CAD_OVERLAY);
+    fntRenderString(gTheme->fonts[0], x - 5, y + 5, ALIGN_NONE, 0, 0, string, CAD_TEXT);
 }
 
 /* RetroAchievements notices, raised from the I/O thread (image check
@@ -653,8 +621,8 @@ static int guiUIUpdater(int modified)
                 diaSetItemType(diaUIConfig, UICFG_SELCOL, UI_COLOUR);
                 diaSetColor(diaUIConfig, UICFG_BGCOL, gTheme->bgColor);
                 diaSetU64Color(diaUIConfig, UICFG_UICOL, gTheme->uiTextColor);
-                diaSetU64Color(diaUIConfig, UICFG_TXTCOL, gTheme->textColor);
-                diaSetU64Color(diaUIConfig, UICFG_SELCOL, gTheme->selTextColor);
+                diaSetU64Color(diaUIConfig, UICFG_TXTCOL, CAD_TEXT);
+                diaSetU64Color(diaUIConfig, UICFG_SELCOL, CAD_ACCENT);
             } else {
                 // When another theme is highlighted in the list, its colours are not known. Don't show any colours.
                 diaSetItemType(diaUIConfig, UICFG_BGCOL, UI_SPACER);
@@ -1153,216 +1121,59 @@ static void guiDrawBusy(int alpha)
 
 static void guiRenderGreeting(int alpha)
 {
-    u64 mycolor = GS_SETREG_RGBA(0x1C, 0x1C, 0x1C, alpha);
+    u64 mycolor = GS_SETREG_RGBA(0xb8, 0xb8, 0xb8, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
     GSTEXTURE *logo = thmGetTexture(LOGO_PICTURE);
     if (logo) {
         mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
-        rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor);
+        // Use the same Caduceus splash artwork as the desktop server. Keep
+        // its aspect ratio and fit within the virtual display on PAL/NTSC.
+        int width = screenWidth;
+        int height = width * logo->Height / logo->Width;
+        if (height > gTheme->usedHeight) {
+            height = gTheme->usedHeight;
+            width = height * logo->Width / logo->Height;
+        }
+        rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, width, height, SCALING_RATIO, mycolor);
     }
 }
 
-static float mix(float a, float b, float t)
-{
-    return a + (b - a) * t;
-}
-
-static float fade(float t)
-{
-    return fadetbl[(int)(t * FADE_SIZE)];
-}
-
-// The same as mix, but with 8 (2*4) values mixed at once
-static void VU0MixVec(VU_VECTOR *a, VU_VECTOR *b, float mix, VU_VECTOR *res)
-{
-    asm volatile(
-#if __GNUC__ > 3
-        "lqc2           $vf1, (%[a])\n"        // load the first vector
-        "lqc2           $vf2, (%[b])\n"        // load the second vector
-        "qmtc2          %[mix], $vf3\n"        // move the mix value from reg to VU
-        "vaddw.x        $vf5, $vf0, $vf0\n"    // vf5.x = 1
-        "vsub.x         $vf4x, $vf5x, $vf3x\n" // subtract 1 - vf3,x, store the result in vf4.x
-        "vmulax.xyzw    $ACC, $vf1, $vf3x\n"   // multiply vf1 by vf3.x, store the result in ACC
-        "vmaddx.xyzw    $vf1, $vf2, $vf4x\n"   // multiply vf2 by vf4.x add ACC, store the result in vf1
-        "sqc2           $vf1, (%[res])\n"      // transfer the result in acc to the ee
-#else
-        "lqc2           vf1, (%[a])\n"      // load the first vector
-        "lqc2           vf2, (%[b])\n"      // load the second vector
-        "qmtc2          %[mix], vf3\n"      // move the mix value from reg to VU
-        "vaddw.x        vf5, vf00, vf00\n"  // vf5.x = 1
-        "vsub.x         vf4x, vf5x, vf3x\n" // subtract 1 - vf3,x, store the result in vf4.x
-        "vmulax.xyzw    ACC, vf1, vf3x\n"   // multiply vf1 by vf3.x, store the result in ACC
-        "vmaddx.xyzw    vf1, vf2, vf4x\n"   // multiply vf2 by vf4.x add ACC, store the result in vf1
-        "sqc2           vf1, (%[res])\n"    // transfer the result in acc to the ee
-#endif
-        : [res] "+r"(res), "=m"(*res)
-        : [a] "r"(a), [b] "r"(b), [mix] "r"(mix), "m"(*a), "m"(*b));
-}
-
-static float guiCalcPerlin(float x, float y, float z)
-{
-    // Taken from: http://people.opera.com/patrickl/experiments/canvas/plasma/perlin-noise-classical.js
-    // By Sean McCullough
-
-    // Find unit grid cell containing point
-    int X = floorf(x);
-    int Y = floorf(y);
-    int Z = floorf(z);
-
-    // Get relative xyz coordinates of point within that cell
-    x = x - X;
-    y = y - Y;
-    z = z - Z;
-
-    // Wrap the integer cells at 255 (smaller integer period can be introduced here)
-    X = X & 255;
-    Y = Y & 255;
-    Z = Z & 255;
-
-    // Calculate a set of eight hashed gradient indices
-    int gi000 = pperm[X + pperm[Y + pperm[Z]]] % 12;
-    int gi001 = pperm[X + pperm[Y + pperm[Z + 1]]] % 12;
-    int gi010 = pperm[X + pperm[Y + 1 + pperm[Z]]] % 12;
-    int gi011 = pperm[X + pperm[Y + 1 + pperm[Z + 1]]] % 12;
-    int gi100 = pperm[X + 1 + pperm[Y + pperm[Z]]] % 12;
-    int gi101 = pperm[X + 1 + pperm[Y + pperm[Z + 1]]] % 12;
-    int gi110 = pperm[X + 1 + pperm[Y + 1 + pperm[Z]]] % 12;
-    int gi111 = pperm[X + 1 + pperm[Y + 1 + pperm[Z + 1]]] % 12;
-
-    // The gradients of each corner are now:
-    // g000 = grad3[gi000];
-    // g001 = grad3[gi001];
-    // g010 = grad3[gi010];
-    // g011 = grad3[gi011];
-    // g100 = grad3[gi100];
-    // g101 = grad3[gi101];
-    // g110 = grad3[gi110];
-    // g111 = grad3[gi111];
-    // Calculate noise contributions from each of the eight corners
-    VU_VECTOR vec;
-    vec.x = x;
-    vec.y = y;
-    vec.z = z;
-    vec.w = 1;
-
-    VU_VECTOR a, b;
-
-    // float n000
-    a.x = Vu0DotProduct(&pgrad3[gi000], &vec);
-
-    vec.y -= 1;
-
-    // float n010
-    a.z = Vu0DotProduct(&pgrad3[gi010], &vec);
-
-    vec.x -= 1;
-
-    // float n110
-    b.z = Vu0DotProduct(&pgrad3[gi110], &vec);
-
-    vec.y += 1;
-
-    // float n100
-    b.x = Vu0DotProduct(&pgrad3[gi100], &vec);
-
-    vec.z -= 1;
-
-    // float n101
-    b.y = Vu0DotProduct(&pgrad3[gi101], &vec);
-
-    vec.y -= 1;
-
-    // float n111
-    b.w = Vu0DotProduct(&pgrad3[gi111], &vec);
-
-    vec.x += 1;
-
-    // float n011
-    a.w = Vu0DotProduct(&pgrad3[gi011], &vec);
-
-    vec.y += 1;
-
-    // float n001
-    a.y = Vu0DotProduct(&pgrad3[gi001], &vec);
-
-    // Compute the fade curve value for each of x, y, z
-    float u = fade(x);
-    float v = fade(y);
-    float w = fade(z);
-
-    // TODO: Low priority... This could be done on VU0 (xyzw for the first 4 mixes)
-    // The result in sw
-    // Interpolate along x the contributions from each of the corners
-    VU_VECTOR rv;
-    VU0MixVec(&b, &a, u, &rv);
-
-    // TODO: The VU0MixVec could as well mix the results (as follows) - might improve performance...
-    // Interpolate the four results along y
-    float nxy0 = mix(rv.x, rv.z, v);
-    float nxy1 = mix(rv.y, rv.w, v);
-    // Interpolate the two last results along z
-    float nxyz = mix(nxy0, nxy1, w);
-
-    return nxyz;
-}
-
-static float dir = 0.02;
-static float perz = -100;
-static int pery = 0;
-static unsigned char curbgColor[3] = {0, 0, 0};
-
-static int cdirection(unsigned char a, unsigned char b)
-{
-    if (a == b)
-        return 0;
-    else if (a > b)
-        return -1;
-    else
-        return 1;
-}
-
+/* Draw the background using opaque GS primitives: no dynamic texture DMA or
+   stale CPU cache can discard the configured colour on a real console. */
 void guiDrawBGPlasma()
 {
-    int x, y;
-
-    // transition the colors
-    curbgColor[0] += cdirection(curbgColor[0], gTheme->bgColor[0]);
-    curbgColor[1] += cdirection(curbgColor[1], gTheme->bgColor[1]);
-    curbgColor[2] += cdirection(curbgColor[2], gTheme->bgColor[2]);
-
-    // it's PLASMA_ROWS_PER_FRAME rows a frame to stop being a resource hog
-    if (pery >= PLASMA_H) {
-        pery = 0;
-        perz += dir;
-
-        if (perz > 100.0f || perz < -100.0f)
-            dir = -dir;
+    static unsigned int phase = 0;
+    int x, y, ribbon;
+    // The GS rounds sprite edges after PAL/NTSC scaling. Paint a base and
+    // overlap adjacent strips so fractional boundaries cannot expose black.
+    rmDrawRect(0, 0, screenWidth, screenHeight,
+               GS_SETREG_RGBA(gTheme->bgColor[0], gTheme->bgColor[1], gTheme->bgColor[2], 0x80));
+    for (y = 0; y < screenHeight; y += 8) {
+        int shade = 100 - 15 * y / screenHeight;
+        int r = gTheme->bgColor[0] * shade / 100;
+        int g = gTheme->bgColor[1] * shade / 100;
+        int b = gTheme->bgColor[2] * shade / 100;
+        int height = screenHeight - y < 10 ? screenHeight - y : 10;
+        rmDrawRect(0, y, screenWidth, height, GS_SETREG_RGBA(r, g, b, 0x80));
     }
-
-    u32 *buf = gBackgroundTex.Mem + PLASMA_W * pery;
-    int ymax = pery + PLASMA_ROWS_PER_FRAME;
-
-    if (ymax > PLASMA_H)
-        ymax = PLASMA_H;
-
-    for (y = pery; y < ymax; y++) {
-        for (x = 0; x < PLASMA_W; x++) {
-            u32 fper = guiCalcPerlin((float)(2 * x) / PLASMA_W, (float)(2 * y) / PLASMA_H, perz) * 0x80 + 0x80;
-
-            *buf = GS_SETREG_RGBA(
-                (u32)(fper * curbgColor[0]) >> 8,
-                (u32)(fper * curbgColor[1]) >> 8,
-                (u32)(fper * curbgColor[2]) >> 8,
-                0x80);
-
-            ++buf;
+    /* Triangle phase avoids trig work on the EE; a quadratic arc forms each ribbon. */
+    int drift = (phase++ / 8) % 160;
+    if (drift > 80) drift = 160 - drift;
+    for (ribbon = 0; ribbon < 3; ribbon++) {
+        for (x = 0; x < 640; x += 10) {
+            int a = x - 200 - drift;
+            int b = x + 10 - 200 - drift;
+            int y1 = 350 + ribbon * 13 - a * a / 1800;
+            int y2 = 350 + ribbon * 13 - b * b / 1800;
+            int band;
+            for (band = -3; band <= 3; band++) {
+                int alpha = 32 - 7 * abs(band);
+                rmDrawLine(x, y1 + band, x + 10, y2 + band,
+                           GS_SETREG_RGBA(139, 146, 132, alpha / 2));
+            }
         }
     }
-
-    pery = ymax;
-    rmInvalidateTexture(&gBackgroundTex);
-    rmDrawPixmap(&gBackgroundTex, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
 }
 
 int guiDrawIconAndText(int iconId, int textId, int font, int x, int y, u64 color)
@@ -1440,13 +1251,16 @@ void guiDrawSubMenuHints(void)
 {
     int subMenuHints[2] = {_STR_SELECT, _STR_GAMES_LIST};
     int subMenuIcons[2] = {CIRCLE_ICON, CROSS_ICON};
-
+    u64 text = CAD_TEXT;
+    u64 muted = CAD_MUTED;
     int x = guiAlignSubMenuHints(2, subMenuHints, subMenuIcons, gTheme->fonts[0], 12, 2);
-    int y = gTheme->usedHeight - 32;
+    int y = gTheme->usedHeight - 38;
 
-    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[0] : subMenuIcons[1], subMenuHints[0], gTheme->fonts[0], x, y, gTheme->textColor);
+
+
+    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[0] : subMenuIcons[1], subMenuHints[0], gTheme->fonts[0], x, y, text);
     x += 12;
-    guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[1] : subMenuIcons[0], subMenuHints[1], gTheme->fonts[0], x, y, gTheme->textColor);
+    guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[1] : subMenuIcons[0], subMenuHints[1], gTheme->fonts[0], x, y, muted);
 }
 
 static int endIntro = 0; // Break intro loop and start 'Last Played Auto Start' countdown
@@ -1539,37 +1353,13 @@ static void guiReadPads()
 // screen handlers. Fade transition code written by Maximus32
 static void guiShow()
 {
-    // is there a transmission effect going on or are
-    // we in a normal rendering state?
+    // Commit on the render boundary: input callbacks never change halfway through a frame.
+    // The XMB rail animates its own position over a continuously rendered background.
     if (screenHandlerTarget) {
-        u8 alpha;
-        const u8 transition_frames = 26;
-        if (transIndex < (transition_frames / 2)) {
-            // Fade-out old screen
-            // index: 0..7
-            // alpha: 1..8 * transition_step
-            screenHandler->renderScreen();
-            alpha = fade((float)(transIndex + 1) / (transition_frames / 2)) * 0x80;
-        } else {
-            // Fade-in new screen
-            // index: 8..15
-            // alpha: 8..1 * transition_step
-            screenHandlerTarget->renderScreen();
-            alpha = fade((float)(transition_frames - transIndex) / (transition_frames / 2)) * 0x80;
-        }
-
-        // Overlay the actual "fade"
-        rmDrawRect(0, 0, screenWidth, screenHeight, GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha));
-
-        // Advance the effect
-        transIndex++;
-        if (transIndex >= transition_frames) {
-            screenHandler = screenHandlerTarget;
-            screenHandlerTarget = NULL;
-        }
-    } else
-        // render with the set screen handler
-        screenHandler->renderScreen();
+        screenHandler = screenHandlerTarget;
+        screenHandlerTarget = NULL;
+    }
+    screenHandler->renderScreen();
 }
 
 void guiIntroLoop(void)
@@ -1670,8 +1460,9 @@ void guiSwitchScreen(int target)
     if (screenHandlerTarget != NULL) {
         return;
     }
+    if (&screenHandlers[target] == screenHandler)
+        return;
     sfxPlay(SFX_TRANSITION);
-    transIndex = 0;
     screenHandlerTarget = &screenHandlers[target];
 }
 
@@ -1724,15 +1515,15 @@ int guiMsgBox(const char *text, int addAccept, struct UIItem *ui)
         else
             guiShow();
 
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
         rmDrawLine(50, 75, screenWidth - 50, 75, gColWhite);
         rmDrawLine(50, 410, screenWidth - 50, 410, gColWhite);
 
-        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, text, gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, text, CAD_TEXT);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, CAD_ACCENT);
         if (addAccept)
-            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, CAD_ACCENT);
 
         guiEndFrame();
     }
@@ -1775,9 +1566,9 @@ void guiRenderTextScreen(const char *message)
 
     guiShow();
 
-    rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+    rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, message, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, message, CAD_TEXT);
 
     guiDrawOverlays();
 
@@ -1790,12 +1581,12 @@ void guiWarning(const char *text, int count)
 
     guiShow();
 
-    rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+    rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
     rmDrawLine(50, 75, screenWidth - 50, 75, gColWhite);
     rmDrawLine(50, 410, screenWidth - 50, 410, gColWhite);
 
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, screenWidth, screenHeight, text, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, screenWidth, screenHeight, text, CAD_TEXT);
 
     guiEndFrame();
 
@@ -1826,14 +1617,14 @@ int guiConfirmVideoMode(void)
 
         guiShow();
 
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
         rmDrawLine(50, 75, screenWidth - 50, 75, gColWhite);
         rmDrawLine(50, 410, screenWidth - 50, 410, gColWhite);
 
-        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_CFM_VMODE_CHG), gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_CFM_VMODE_CHG), CAD_TEXT);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, CAD_ACCENT);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, CAD_ACCENT);
 
         guiEndFrame();
     }
@@ -1871,17 +1662,17 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
 
         guiShow();
 
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
         rmDrawLine(50, 75, screenWidth - 50, 75, gColWhite);
         rmDrawLine(50, 410, screenWidth - 50, 410, gColWhite);
 
-        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_GAME_SETTINGS_PROMPT), gTheme->textColor);
+        fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_GAME_SETTINGS_PROMPT), CAD_TEXT);
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
-        guiDrawIconAndText(TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, CAD_ACCENT);
+        guiDrawIconAndText(SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, CAD_ACCENT);
+        guiDrawIconAndText(TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, CAD_ACCENT);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, CAD_ACCENT);
 
         guiEndFrame();
     }
@@ -1945,11 +1736,11 @@ void guiManageCheats(void)
 
         guiShow();
 
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
         rmDrawLine(50, 75, screenWidth - 50, 75, gColWhite);
         rmDrawLine(50, 410, screenWidth - 50, 410, gColWhite);
 
-        fntRenderString(gTheme->fonts[0], screenWidth >> 1, 60, ALIGN_CENTER, 0, 0, _l(_STR_CHEAT_SELECTION), gTheme->textColor);
+        fntRenderString(gTheme->fonts[0], screenWidth >> 1, 60, ALIGN_CENTER, 0, 0, _l(_STR_CHEAT_SELECTION), CAD_TEXT);
 
         int renderedCheats = 0;
         for (int i = offset; renderedCheats < visibleCheats && i < cheatCount; i++) {
@@ -1964,18 +1755,18 @@ void guiManageCheats(void)
             int boxHeight = 17;
 
             if (enabled) {
-                rmDrawRect(boxX, boxY + 3, boxWidth, boxHeight, gTheme->textColor);
-                rmDrawRect(boxX + 2, boxY + 5, boxWidth - 4, boxHeight - 4, gTheme->selTextColor);
+                rmDrawRect(boxX, boxY + 3, boxWidth, boxHeight, CAD_TEXT);
+                rmDrawRect(boxX + 2, boxY + 5, boxWidth - 4, boxHeight - 4, CAD_ACCENT);
             }
 
-            u32 textColour = (i == selectedCheat) ? gTheme->selTextColor : gTheme->textColor;
+            u32 textColour = (i == selectedCheat) ? CAD_ACCENT : CAD_TEXT;
             fntRenderString(gTheme->fonts[0], boxX + 35, boxY + 3, ALIGN_LEFT, 0, 0, gCheats[i].name, textColour);
 
             renderedCheats++;
         }
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
-        guiDrawIconAndText(START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, CAD_ACCENT);
+        guiDrawIconAndText(START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, CAD_ACCENT);
 
         guiEndFrame();
     }

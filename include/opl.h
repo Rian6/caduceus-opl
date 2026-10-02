@@ -52,6 +52,7 @@
 #define IO_MENU_UPDATE_DEFFERED   2
 #define IO_CACHE_LOAD_ART         3 // io call to handle the loading of covers
 #define IO_COMPAT_UPDATE_DEFFERED 4
+#define IO_CATEGORY_ENTER         5
 
 // Codes have been planned to fit the design of the GUI functions within gui.c.
 #define OPL_COMPAT_UPDATE_STAT_WIP        0
@@ -76,6 +77,7 @@ int saveConfig(int types, int showUI);
 void applyConfig(int themeID, int langID, int skipDeviceRefresh);
 void menuDeferredUpdate(void *data);
 void moduleUpdateMenu(int mode, int themeChanged, int langChanged);
+void moduleEnterCategory(item_list_t *support);
 void handleLwnbdSrv();
 void deinit(int exception, int modeSelected);
 

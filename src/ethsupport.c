@@ -26,6 +26,9 @@ static time_t ethModifiedCDPrev;
 static time_t ethModifiedDVDPrev;
 static int ethGameCount = 0;
 static unsigned char ethModulesLoaded = 0;
+static unsigned char ethModulesReady = 0;
+static unsigned char smbModulesReady = 0;
+static int ethRefreshPending = 0;
 static base_game_info_t *ethGames = NULL;
 
 static struct ip4_addr lastIP;
@@ -142,19 +145,17 @@ static void ethSMBConnect(void)
 
 static int ethSMBDisconnect(void)
 {
-    int ret;
+    int closeResult, logoffResult;
 
     // closing share
-    ret = fileXioDevctl(ethBase, SMB_DEVCTL_CLOSESHARE, NULL, 0, NULL, 0);
-    if (ret < 0)
-        return -1;
+    closeResult = fileXioDevctl(ethBase, SMB_DEVCTL_CLOSESHARE, NULL, 0, NULL, 0);
 
     // logoff/close tcp connection from SMB server:
-    ret = fileXioDevctl(ethBase, SMB_DEVCTL_LOGOFF, NULL, 0, NULL, 0);
-    if (ret < 0)
+    // A broken share must not prevent disposal of its stale TCP session.
+    logoffResult = fileXioDevctl(ethBase, SMB_DEVCTL_LOGOFF, NULL, 0, NULL, 0);
+    if (logoffResult < 0)
         return -2;
-
-    return 0;
+    return closeResult < 0 ? -1 : 0;
 }
 
 static void EthStatusCheckCb(s32 alarm_id, u16 time, void *common)
@@ -298,6 +299,7 @@ static int ethLoadModules(void)
                     HttpInit();
 
                     LOG("ETHSUPPORT Modules loaded\n");
+                    ethModulesReady = 1;
                     return 0;
                 }
             }
@@ -307,6 +309,10 @@ static int ethLoadModules(void)
         return -1;
     }
 
+    if (!ethModulesReady) {
+        gNetworkStartup = ERROR_ETH_MODULE_NETIF_FAILURE;
+        return -1;
+    }
     return 0;
 }
 
@@ -320,6 +326,8 @@ void ethDeinitModules(void)
         nbnsDeinit();
         NetManDeinit();
         ethModulesLoaded = 0;
+        ethModulesReady = 0;
+        smbModulesReady = 0;
         gNetworkStartup = ERROR_ETH_NOT_STARTED;
 
         if (ethInitSemaID >= 0) {
@@ -404,6 +412,7 @@ static void smbLoadModules(void)
             LOG("[NBNS]:\n");
             sysLoadModuleBuffer(&nbns_irx, size_nbns_irx, 0, NULL);
             nbnsInit();
+            smbModulesReady = 1;
 
             LOG("SMBSUPPORT Modules loaded\n");
             ethInitSMB();
@@ -412,6 +421,40 @@ static void smbLoadModules(void)
     }
 
     ethDisplayErrorStatus();
+}
+
+static void ethReconnect(void)
+{
+    if (ethInitSema() >= 0) {
+        if (smbModulesReady) {
+            smbEcho_in_t echo;
+            memset(&echo, 0, sizeof(echo));
+            strcpy(echo.echo, "OPL REFRESH");
+            echo.len = strlen(echo.echo);
+            // A healthy session only needs a rescan. Avoid interrupting open ART/BGM files.
+            if (gNetworkStartup != 0 ||
+                fileXioDevctl(ethBase, SMB_DEVCTL_ECHO, &echo, sizeof(echo), NULL, 0) < 0) {
+                ethSMBDisconnect();
+                ethInitSMB();
+            }
+        } else {
+            smbLoadModules();
+        }
+    }
+    // Force a rescan even when directory timestamps and ul.cfg size are unchanged.
+    ethULSizePrev = -2;
+    ethModifiedCDPrev = 0;
+    ethModifiedDVDPrev = 0;
+    ethRefreshPending = 0;
+}
+
+void ethRefresh(void)
+{
+    if (!ethGameList.enabled || ethRefreshPending)
+        return;
+    ethRefreshPending = 1;
+    // Keep networking off the GUI thread, and prevent launches during reconnect.
+    guiHandleDeferedIO(&ethRefreshPending, _l(_STR_REFRESH), IO_CUSTOM_SIMPLEACTION, &ethReconnect);
 }
 
 void ethInit(item_list_t *itemList)
@@ -486,8 +529,11 @@ static int ethNeedsUpdate(item_list_t *itemList)
 static int ethUpdateGameList(item_list_t *itemList)
 {
     if (gPCShareName[0]) {
-        if (gNetworkStartup != 0)
+        if (gNetworkStartup != 0) {
+            ethGameCount = 0;
+            ethULSizePrev = -1;
             return 0;
+        }
 
         if ((sbReadList(&ethGames, ethPrefix, &ethULSizePrev, &ethGameCount)) < 0) {
             gNetworkStartup = ERROR_ETH_SMB_LISTGAMES;

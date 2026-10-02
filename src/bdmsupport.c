@@ -195,7 +195,7 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         }
 
         // If the device page is visible but the device support is not enabled, hide the device page.
-        if (deviceEnabled == 0)
+        if (deviceEnabled == 0 && !(itemList->mode == BDM_MODE && pDeviceData->bdmPrefix[0] == '\0'))
             pOwner->menuItem.visible = 0;
     }
 
@@ -255,6 +255,13 @@ static int bdmNeedsUpdate(item_list_t *itemList)
 static int bdmUpdateGameList(item_list_t *itemList)
 {
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
+
+    if (!pDeviceData->bdmPrefix[0]) {
+        free(pDeviceData->bdmGames);
+        pDeviceData->bdmGames = NULL;
+        pDeviceData->bdmGameCount = 0;
+        return 0;
+    }
 
     sbReadList(&pDeviceData->bdmGames, pDeviceData->bdmPrefix, &pDeviceData->bdmULSizePrev, &pDeviceData->bdmGameCount);
     return pDeviceData->bdmGameCount;
@@ -739,6 +746,8 @@ void bdmInitDevicesData()
             }
 
             LOG("bdmInitDevicesData: setting device %d %s\n", i, (pOwner->menuItem.visible != 0 ? "visible" : "invisible"));
+            if (i == BDM_MODE && gBDMStartMode != START_MODE_DISABLED)
+                pOwner->menuItem.visible = 1;
         }
     }
 }
@@ -844,13 +853,16 @@ int bdmUpdateDeviceData(item_list_t *itemList)
         // Close the device handle.
         fileXioDclose(dir);
         return 1;
-    } else if (dir < 0 && visible == 1) {
+    } else if (dir < 0 && pDeviceData->bdmPrefix[0]) {
         // Device has been removed, make the menu item invisible. We can't really cleanup resources (like the game list) just yet
         // as we don't know if the data is being used asynchronously.
         if (itemList->owner != NULL) {
             LOG("bdmUpdateDeviceData: setting device %d invisible\n", itemList->mode);
-            ((opl_io_module_t *)itemList->owner)->menuItem.visible = 0;
+            ((opl_io_module_t *)itemList->owner)->menuItem.visible = itemList->mode == BDM_MODE;
         }
+
+        pDeviceData->bdmPrefix[0] = '\0';
+        pDeviceData->bdmDeviceType = BDM_TYPE_UNKNOWN;
 
         LOG("Mass device: %d (%d) disconnected\n", itemList->mode, pDeviceData->massDeviceIndex);
         return -1;

@@ -912,12 +912,16 @@ static int smb_LogOn(smbLogOn_in_t *logon)
         return -SMB_DEVCTL_LOGON_ERR_CONN;
 
     r = smb_NegotiateProtocol(&capabilities);
-    if (r < 0)
+    if (r < 0) {
+        smb_Disconnect();
         return -SMB_DEVCTL_LOGON_ERR_PROT;
+    }
 
     r = smb_SessionSetupAndX(logon->User, logon->Password, logon->PasswordType, capabilities);
-    if (r < 0)
+    if (r < 0) {
+        smb_Disconnect();
         return -SMB_DEVCTL_LOGON_ERR_LOGON;
+    }
 
     UID = r;
 
@@ -931,10 +935,9 @@ static int smb_LogOn(smbLogOn_in_t *logon)
 //--------------------------------------------------------------
 static int smb_LogOff(void)
 {
-    int r;
+    int r = -ENOTCONN;
 
-    if (UID == -1)
-        return -ENOTCONN;
+    keepalive_lock();
 
     if (TID != -1) {
         smb_closeAll();
@@ -942,17 +945,15 @@ static int smb_LogOff(void)
         TID = -1;
     }
 
-    r = smb_LogOffAndX(UID);
-    if (r < 0)
-        return r;
+    if (UID != -1)
+        r = smb_LogOffAndX(UID);
 
     UID = -1;
 
-    keepalive_lock();
-
+    // Always release the transport, including a disconnected server or failed login.
     smb_Disconnect();
 
-    return 0;
+    return r < 0 ? r : 0;
 }
 
 //--------------------------------------------------------------
@@ -1050,12 +1051,9 @@ static int smb_CloseShare(void)
     smb_closeAll();
 
     r = smb_TreeDisconnect(UID, TID);
-    if (r < 0)
-        return r;
-
     TID = -1;
 
-    return 0;
+    return r < 0 ? r : 0;
 }
 
 //--------------------------------------------------------------

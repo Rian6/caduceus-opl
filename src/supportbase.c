@@ -5,6 +5,7 @@
 #include "include/system.h"
 #include "include/supportbase.h"
 #include "include/rawatch.h"
+#include "include/achievements.h"
 #include "include/rahash.h"
 #include "include/ranet.h"
 #include "include/ioman.h"
@@ -946,8 +947,19 @@ void sbCreateFolders(const char *path, int createDiscImgFolders)
    device is searched first, then the share: the list is produced on the
    PC, and keeping it on the share beats rewriting the USB stick every
    time. */
+static int ra_launch_enabled = 1;
+
+void sbSetRALaunchEnabled(int enabled)
+{
+    ra_launch_enabled = enabled;
+}
+
 int sbLoadWatchList(const char *path, const char *file)
 {
+    if (!ra_launch_enabled) {
+        ClearWatchList();
+        return 0;
+    }
     int n = LoadWatchList(path, file);
 
     raLaunchNote("wl-from-device", n, 0);
@@ -979,7 +991,7 @@ int sbLoadWatchList(const char *path, const char *file)
    the menu handler hangs the console on USB, while the share happens to
    survive it. */
 static char ra_hash_path[64];
-static char ra_hash_name[128];
+static char ra_hash_name[ISO_GAME_NAME_MAX + 1];
 static char ra_hash_ext[16];
 static char ra_hash_startup[16];
 static int ra_hash_format = -1; /* GAME_FORMAT_USBLD is 0: never default to it */
@@ -990,12 +1002,38 @@ static void sbHashGameDeferredWorker(void);
    while the worker runs would change them under it. One check at a
    time; the caller tells the user. */
 static volatile int ra_hash_busy = 0;
+static volatile int ra_link_busy = 0;
+static sb_ra_check_result_t ra_check_result;
+
+int sbGameCheckBusy(void)
+{
+    return ra_hash_busy || achievementsBusy() || ra_link_busy;
+}
+
+int sbGetGameCheck(const char *path, const char *name, const char *ext, const char *startup, int format,
+                   sb_ra_check_result_t *result)
+{
+    memset(result, 0, sizeof(*result));
+    if (!path || !name || !ext || !startup ||
+        strcmp(path, ra_hash_path) || strcmp(name, ra_hash_name) ||
+        strcmp(ext, ra_hash_ext) || strcmp(startup, ra_hash_startup) || format != ra_hash_format)
+        return 0;
+    if (ra_hash_busy) {
+        result->state = SB_RA_CHECKING;
+    } else {
+        __asm__ volatile("" ::: "memory");
+        *result = ra_check_result;
+    }
+    return 1;
+}
 
 int sbHashGameDeferred(const char *path, const char *name, const char *ext, const char *startup, int format)
 {
-    if (ra_hash_busy)
+    if (sbGameCheckBusy())
         return 0;
     ra_hash_busy = 1;
+    memset(&ra_check_result, 0, sizeof(ra_check_result));
+    ra_check_result.state = SB_RA_CHECKING;
 
     snprintf(ra_hash_path, sizeof(ra_hash_path), "%s", path ? path : "");
     snprintf(ra_hash_name, sizeof(ra_hash_name), "%s", name ? name : "");
@@ -1010,13 +1048,12 @@ int sbHashGameDeferred(const char *path, const char *name, const char *ext, cons
 static void sbHashGameDeferredWorker(void)
 {
     sbHashGame(ra_hash_path, ra_hash_name, ra_hash_ext, ra_hash_startup, ra_hash_format);
+    __asm__ volatile("" ::: "memory");
     ra_hash_busy = 0;
 }
 
 /* One test at a time, like the image check: a second press while the
    first still polls would queue a second three-second wait. */
-static volatile int ra_link_busy = 0;
-
 static void sbTestPCLinkWorker(void)
 {
     char line1[96], line2[96];
@@ -1028,7 +1065,7 @@ static void sbTestPCLinkWorker(void)
 
 int sbTestPCLinkDeferred(void)
 {
-    if (ra_link_busy)
+    if (sbGameCheckBusy())
         return 0;
     ra_link_busy = 1;
 
@@ -1080,6 +1117,8 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
     /* Split UL games are not image files; nothing to open. Say so
        instead of reporting a missing file. */
     if (format == GAME_FORMAT_USBLD) {
+        ra_check_result.state = SB_RA_FORMAT_UNSUPPORTED;
+        snprintf(ra_check_result.detail, sizeof(ra_check_result.detail), "Use uma ISO em DVD/ ou CD/ para verificar.");
         raHashStep("1-ul-format-not-supported");
         raHashLogAdd(name, startup, "UL: not an image, not supported yet");
         guiShowRANotice("UL/USBExtreme games cannot be checked yet",
@@ -1122,8 +1161,18 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
                should be read every frame. The list is stored next to
                the game, where the loader picks it up at launch. */
             raHashStep("6-asking-pc");
-            q = raAskPC(hash, startup, path, info, sizeof(info), info2, sizeof(info2));
-            raShowAskResult(q, "image", info, info2, hash);
+            q = raAskCaduceus(hash, info, sizeof(info), info2, sizeof(info2), &ra_check_result.session_ready);
+            ra_check_result.state = q == 0 ? SB_RA_SUPPORTED : q == 1 ? SB_RA_UNSUPPORTED : SB_RA_ERROR;
+            snprintf(ra_check_result.hash, sizeof(ra_check_result.hash), "%s", hash);
+            snprintf(ra_check_result.title, sizeof(ra_check_result.title), "%s", info);
+            snprintf(ra_check_result.detail, sizeof(ra_check_result.detail), "%s",
+                     q == 0 ? info2 : q == 1 ? info :
+                     q == -1 ? "Rede indisponivel. Jogue sem conquistas." :
+                     q == -2 ? "Caduceus sem resposta. Jogue sem conquistas." :
+                     q == -7 ? "Catalogo indisponivel. Jogue sem conquistas." :
+                     "Servidor incompativel. Jogue sem conquistas.");
+            /* The card displays the catalog result. This does not download
+               a telemetry watch list or imply in-game achievement support. */
 
             raHashSetStepLog(NULL);
             raHashLogClose();
@@ -1146,6 +1195,8 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
     raHashSetStepLog(NULL);
     raHashLogClose();
     guiShowRANotice("The image could not be hashed", last_err);
+    ra_check_result.state = SB_RA_ERROR;
+    snprintf(ra_check_result.detail, sizeof(ra_check_result.detail), "%s", last_err);
 }
 
 int sbLoadCheats(const char *path, const char *file)

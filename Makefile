@@ -74,7 +74,7 @@ ifneq ($(GIT_TAG),latest)
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o hdd.o dialogs.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o achievements.o OSDHistory.o system.o lang.o lang_internal.o config.o hdd.o dialogs.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o zso.o lz4.o \
 		appsupport.o discsupport.o gui.o guigame.o vmc_groups.o textures.o opl.o atlas.o nbns.o httpclient.o gsm.o cheatman.o rawatch.o rahash.o md5.o ranet.o rabadge.o sound.o ps2cnf.o
 
@@ -682,7 +682,8 @@ $(EE_ASM_DIR)ps2ips.c: modules/network/ps2ips-ra/ps2ips.irx | $(EE_ASM_DIR)
 # RA: our smbman, so that an image a previous run left open on the server
 # can still be read. See modules/network/smbman-ra/smb.c.
 modules/network/smbman-ra/smbman.irx: $(wildcard modules/network/smbman-ra/*.c) $(wildcard modules/network/smbman-ra/*.h) modules/network/smbman-ra/imports.lst modules/network/smbman-ra/Makefile
-	$(MAKE) -C modules/network/smbman-ra rebuild
+	$(MAKE) -C modules/network/smbman-ra clean
+	$(MAKE) -C modules/network/smbman-ra all
 
 $(EE_ASM_DIR)smbman.c: modules/network/smbman-ra/smbman.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx

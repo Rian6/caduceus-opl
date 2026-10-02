@@ -563,7 +563,7 @@ int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId)
         snprintf(filePath, sizeof(filePath), "%s.%s", path, "png");
 
     int fd = open(filePath, O_RDONLY);
-    if (fd > 0) {
+    if (fd >= 0) {
         // File found, load it
         close(fd);
         return (texLoad(texture, filePath) >= 0) ? 0 : ERR_BAD_FILE;

@@ -58,6 +58,8 @@ extern int guiFrameId;
 #define GUI_SCREEN_INFO      2
 #define GUI_SCREEN_GAME_MENU 3
 #define GUI_SCREEN_APP_MENU  4
+#define GUI_SCREEN_GAME_CARD 5
+#define GUI_SCREEN_ACHIEVEMENTS 6
 
 void guiSwitchScreen(int target);
 

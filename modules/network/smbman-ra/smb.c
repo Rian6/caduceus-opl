@@ -1606,15 +1606,10 @@ int smb_Connect(char *SMBServerIP, int SMBServerPort)
 //-------------------------------------------------------------------------
 int smb_Disconnect(void)
 {
-    char dummy;
-
     if (main_socket != -1) {
-        // Ensure that all data has been received by the other side before closing.
-        shutdown(main_socket, SHUT_WR);
-        // Wait for the remote end to close the socket, which shall happen after all sent data has been received.
-        while (recv(main_socket, &dummy, sizeof(dummy), 0) > 0)
-            ;
-
+        // The peer may have disappeared. Never wait for its FIN during recovery.
+        // SMB file operations already wait for their replies before reaching here.
+        shutdown(main_socket, SHUT_RDWR);
         lwip_close(main_socket);
         main_socket = -1;
     }

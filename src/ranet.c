@@ -139,7 +139,7 @@ static int ask(int sock, struct sockaddr_in *to, const char *req, char *out, int
 
         /* Drop replies to earlier retransmits: a late one would pass for
            the answer to this request. */
-        while (recvfrom(sock, out, asklen, RA_MSG_DONTWAIT, (struct sockaddr *)&from, &fromlen) > 0)
+        for (w = 0; w < 16 && recvfrom(sock, out, asklen, RA_MSG_DONTWAIT, (struct sockaddr *)&from, &fromlen) > 0; w++)
             fromlen = sizeof(from);
 
         sendto(sock, req, strlen(req), 0, (struct sockaddr *)to, sizeof(*to));
@@ -205,6 +205,18 @@ static int open_pc_socket(char *myaddr, int sz, u8 ip[4])
         }
     }
 
+    /* A resident socket stack does not imply a working link or DHCP lease.
+       Only query NetMan after the network modules are present. */
+    memset(ip, 0, 4);
+    if (!ethGetNetIFLinkStatus() || ethGetNetConfig(ip, mask, gw) < 0 ||
+        !(ip[0] | ip[1] | ip[2] | ip[3]) ||
+        (ps2_ip_use_dhcp && ethGetDHCPStatus() <= 0)) {
+        if (ethLoadInitModules() != 0) {
+            disconnect(sock);
+            return -1;
+        }
+    }
+
     /* Which descriptor we got, for the log. errno on a socket() failure
        is not a diagnosis here: libcglue's __ps2ipcSocketHelper reports
        ENFILE (23) for ANY failure of the IOP-side socket(). The real
@@ -231,6 +243,8 @@ static int open_pc_socket(char *myaddr, int sz, u8 ip[4])
     if (bind(sock, (struct sockaddr *)&me, sizeof(me)) < 0) {
         LOG("RA: bind failed\n");
         raHashStep("6x-bind-failed");
+        disconnect(sock);
+        return -1;
     }
 
     ethGetNetConfig(ip, mask, gw);
@@ -293,6 +307,88 @@ static void broadcast_target(struct sockaddr_in *to)
     to->sin_addr.s_addr = htonl(INADDR_BROADCAST);
 }
 
+/* Caduceus catalog lookup only: separate from the legacy watch-list protocol. */
+int raAskCaduceus(const char *hash, char *title, int titlesz, char *detail, int detailsz, int *session_ready)
+{
+    struct sockaddr_in to;
+    char myaddr[32], req[48], expected[48];
+    u8 ip[4];
+    int sock, got, count = 0, offset = 0;
+    title[0] = detail[0] = '\0';
+    *session_ready = 0;
+    sock = open_pc_socket(myaddr, sizeof(myaddr), ip);
+    if (sock < 0)
+        return -1;
+    broadcast_target(&to);
+    to.sin_port = htons(18197);
+    snprintf(req, sizeof(req), "CADQ2 %s", hash);
+    got = ask(sock, &to, req, g_rx, sizeof(g_rx));
+    if (got <= 0 && (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])) {
+        to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) |
+                                  ((u32)pc_ip[2] << 8) | pc_ip[3]);
+        got = ask(sock, &to, req, g_rx, sizeof(g_rx));
+    }
+    disconnect(sock);
+    if (got <= 0)
+        return -2;
+    snprintf(expected, sizeof(expected), "CADR2 %s ", hash);
+    if (strncmp(g_rx, expected, strlen(expected)))
+        return -3;
+    const char *answer = g_rx + strlen(expected);
+    if (!strncmp(answer, "READY ", 6)) {
+        *session_ready = 1;
+        answer += 6;
+    } else if (!strncmp(answer, "OFFLINE ", 8)) {
+        answer += 8;
+    } else {
+        return -3;
+    }
+    if (!strncmp(answer, "UNKNOWN", 7))
+        return -7;
+    if (!strncmp(answer, "NO", 2)) {
+        snprintf(title, titlesz, "Hash sem conquistas no catalogo Caduceus.");
+        return 1;
+    }
+    if (sscanf(answer, "OK %d %n", &count, &offset) != 1 || !offset || count <= 0)
+        return -3;
+    snprintf(title, titlesz, "%s", answer + offset);
+    snprintf(detail, detailsz, *session_ready ? "%d conquistas. Sessao RA conectada." :
+             "%d conquistas. RA desconectado: jogar sem conquistas.", count);
+    return 0;
+}
+
+int raCaduceusPage(const char *request, unsigned int serial, char *out, int size)
+{
+    struct sockaddr_in to;
+    char address[32], expected[32];
+    u8 ip[4];
+    int sock = open_pc_socket(address, sizeof(address), ip);
+    if (sock < 0) return -1;
+    broadcast_target(&to);
+    to.sin_port = htons(18198);
+    /* Prefer the configured Caduceus/SMB host for account data. */
+    if (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])
+        to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) | ((u32)pc_ip[2] << 8) | pc_ip[3]);
+    snprintf(expected, sizeof(expected), "CADB1 %u ", serial);
+    int status = -2;
+    clock_t deadline = clock() + 25 * CLOCKS_PER_SEC;
+    for (int attempt = 0; attempt < 80 && clock() < deadline; attempt++) {
+        int got = ask(sock, &to, request, g_rx, sizeof(g_rx));
+        if (got <= 0) break;
+        if (!strncmp(g_rx, expected, strlen(expected))) {
+            const char *body = g_rx + strlen(expected);
+            if (strcmp(body, "WAIT")) {
+                snprintf(out, size, "%s", body);
+                status = 0;
+                break;
+            }
+        }
+        DelayThread(250000);
+    }
+    disconnect(sock);
+    return status;
+}
+
 int raAskPC(const char *hash, const char *serial, const char *savepath,
             char *info, int infosz, char *info2, int info2sz)
 {
@@ -318,6 +414,13 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
     LOG("RA: asking the PC about %s\n", hash);
 
     got = ask(sock, &to, req, g_rx, sizeof(g_rx));
+    /* Some virtual adapters do not forward broadcast. The configured SMB
+       host is a useful fallback, but may be different from the RA host. */
+    if (got <= 0 && (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])) {
+        to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) |
+                                  ((u32)pc_ip[2] << 8) | pc_ip[3]);
+        got = ask(sock, &to, req, g_rx, sizeof(g_rx));
+    }
     if (got <= 0) {
         LOG("RA: no reply from the PC\n");
         disconnect(sock);

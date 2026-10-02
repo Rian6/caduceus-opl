@@ -57,6 +57,7 @@ int sbProbeISO9660_64(const char *path, base_game_info_t *game, u32 layer1_offse
 
 int sbLoadCheats(const char *path, const char *file);
 int sbLoadWatchList(const char *path, const char *file);
+void sbSetRALaunchEnabled(int enabled);
 
 /* RetroAchievements: ask the PC client to answer, from the I/O thread;
    the result is shown as a notice. Returns 1 when queued, 0 when a test
@@ -77,5 +78,22 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
 /* Same, but through OPL's I/O thread. From the menu call ONLY this one. */
 /* Returns 1 when queued, 0 when a check is already running. */
 int sbHashGameDeferred(const char *path, const char *name, const char *ext, const char *startup, int format);
+int sbGameCheckBusy(void);
+
+enum sb_ra_check_state {
+    SB_RA_UNCHECKED = 0, SB_RA_CHECKING, SB_RA_SUPPORTED,
+    SB_RA_UNSUPPORTED, SB_RA_ERROR, SB_RA_FORMAT_UNSUPPORTED
+};
+typedef struct {
+    int state;
+    int session_ready;
+    char hash[33];
+    char title[96];
+    char detail[96];
+} sb_ra_check_result_t;
+/* GUI-only snapshot of the most recent image check, matched to the complete image identity.
+   No filesystem or network operations; a running worker only exposes CHECKING. */
+int sbGetGameCheck(const char *path, const char *name, const char *ext, const char *startup, int format,
+                   sb_ra_check_result_t *result);
 
 #endif

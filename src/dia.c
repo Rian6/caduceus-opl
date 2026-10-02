@@ -14,6 +14,7 @@
 #include "include/themes.h"
 #include "include/util.h"
 #include "include/sound.h"
+#include "include/caduceus.h"
 
 // UI spacing of the dialogues (pixels between consecutive items)
 #define UI_SPACING_H      10
@@ -29,6 +30,13 @@
 // scroll speed (delay in ms!) when setting int value
 #define DIA_INT_SET_SPEED 100
 
+#define CAD_UI_BG       CAD_OVERLAY
+#define CAD_UI_PANEL    CAD_PANEL
+#define CAD_UI_SELECTED GS_SETREG_RGBA(0x30, 0x3c, 0x24, 0x80)
+#define CAD_UI_ACCENT   CAD_ACCENT
+#define CAD_UI_TEXT     CAD_TEXT
+#define CAD_UI_MUTED    CAD_MUTED
+
 static int screenWidth;
 static int screenHeight;
 
@@ -40,12 +48,12 @@ static int screenHeight;
 
 static void diaDrawBoundingBox(int x, int y, int w, int h, int focus)
 {
-    u64 color = focus ? gTheme->selTextColor : gTheme->textColor;
-
-    color |= GS_SETREG_RGBA(0, 0, 0, 0xFF);
-    color &= gColFocus;
-
-    rmDrawRect(x - 5, y, w + 10, h + 10, color);
+    if (x >= screenWidth - 40)
+        return;
+    w = min(w, screenWidth - x - 40);
+    rmDrawRect(x - 5, y, w + 10, h + 10, focus ? CAD_UI_SELECTED : CAD_UI_PANEL);
+    if (focus)
+        rmDrawRect(x - 5, y, 3, h + 10, CAD_UI_ACCENT);
 }
 
 int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
@@ -89,17 +97,17 @@ int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
 
         rmStartFrame();
         guiDrawBGPlasma();
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
         // Title
         if (title != NULL) {
-            fntRenderString(gTheme->fonts[0], 25, 20, ALIGN_NONE, 0, 0, title, gTheme->textColor);
+            fntRenderString(gTheme->fonts[0], 25, 20, ALIGN_NONE, 0, 0, title, CAD_TEXT);
             // separating line
             rmDrawLine(25, 38, 615, 38, gColWhite);
         }
 
         // Text
-        fntRenderString(gTheme->fonts[0], 50, 120, ALIGN_NONE, 0, 0, hide_text ? mask_buffer : text, gTheme->textColor);
+        fntRenderString(gTheme->fonts[0], 50, 120, ALIGN_NONE, 0, 0, hide_text ? mask_buffer : text, CAD_TEXT);
 
         // separating line for simpler orientation
         rmDrawLine(25, 138, 615, 138, gColWhite);
@@ -109,9 +117,10 @@ int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
                 c[0] = keyb[i + j * KEYB_WIDTH];
 
                 x = 50 + i * 31;
-                w = fntRenderString(gTheme->fonts[0], x, 170 + 3 * UI_SPACING_H * j, ALIGN_NONE, 0, 0, c, gTheme->uiTextColor) - x;
+                w = rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], c));
                 if ((i + j * KEYB_WIDTH) == selchar)
                     diaDrawBoundingBox(x, 170 + 3 * UI_SPACING_H * j, w, UI_SPACING_H, 0);
+                fntRenderString(gTheme->fonts[0], x, 170 + 3 * UI_SPACING_H * j, ALIGN_NONE, 0, 0, c, CAD_UI_TEXT);
             }
         }
 
@@ -124,12 +133,13 @@ int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
             }
 
             x = 477;
-            w = fntRenderString(gTheme->fonts[0], x, 170 + 3 * UI_SPACING_H * i, ALIGN_NONE, 0, 0, commands[i], gTheme->uiTextColor) - x;
+            w = rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], commands[i]));
             if (i == selcommand)
                 diaDrawBoundingBox(x, 170 + 3 * UI_SPACING_H * i, w, UI_SPACING_H, 0);
+            fntRenderString(gTheme->fonts[0], x, 170 + 3 * UI_SPACING_H * i, ALIGN_NONE, 0, 0, commands[i], CAD_UI_TEXT);
         }
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_CANCEL, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_CANCEL, gTheme->fonts[0], 500, 417, CAD_ACCENT);
 
         rmEndFrame();
 
@@ -283,7 +293,7 @@ static int diaShowColSel(unsigned char *r, unsigned char *g, unsigned char *b)
 
         rmStartFrame();
         guiDrawBGPlasma();
-        rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
+        rmDrawRect(0, 0, screenWidth, screenHeight, CAD_OVERLAY);
 
         // "Color selection"
         fntRenderString(gTheme->fonts[0], 50, 50, ALIGN_NONE, 0, 0, _l(_STR_COLOR_SELECTION), GS_SETREG_RGBA(0x60, 0x60, 0x60, 0x80));
@@ -318,8 +328,8 @@ static int diaShowColSel(unsigned char *r, unsigned char *g, unsigned char *b)
         rmDrawRect(x, y, 70, 70, GS_SETREG_RGBA(0x60, 0x60, 0x60, 0x80));
         rmDrawRect(x + 5, y + 5, 60, 60, dcol);
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_OK, gTheme->fonts[0], 420, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_CANCEL, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_OK, gTheme->fonts[0], 420, 417, CAD_ACCENT);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_CANCEL, gTheme->fonts[0], 500, 417, CAD_ACCENT);
 
         rmEndFrame();
 
@@ -401,13 +411,21 @@ static void diaDrawHint(int text_id)
     y = gTheme->usedHeight - 62;
 
     // render hint on the lower side of the screen.
-    rmDrawRect(x, y, screenWidth - x, MENU_ITEM_HEIGHT + 10, gColDarker);
-    fntRenderString(gTheme->fonts[0], x + 5, y + 5, ALIGN_NONE, 0, 0, text, gTheme->textColor);
+    x = max(x, 32);
+    fntRenderString(gTheme->fonts[0], x, y + 5, ALIGN_NONE, screenWidth - x - 24, 24, text, CAD_UI_MUTED);
 }
 
 /// renders an ui item (either selected or not)
 /// sets width and height of the render into the parameters
-static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int haveFocus, int *w, int *h)
+/* Measure with the same font as the draw pass, including non-ASCII labels. */
+static int diaItemText(int x, int y, const char *text, u64 color, int draw)
+{
+    if (draw && x < screenWidth - 40)
+        fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, screenWidth - x - 40, 24, text, color);
+    return x + rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], text));
+}
+
+static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int haveFocus, int *w, int *h, int draw)
 {
     // Don't draw controllable items that are not visible.
     if (!item->visible && item->type >= UI_LABEL)
@@ -418,10 +436,20 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
     // all texts are rendered up from the given point!
     u64 txtcol;
 
-    if (diaIsControllable(item))
-        txtcol = gTheme->uiTextColor;
+    if (selected)
+        txtcol = CAD_UI_TEXT;
+    else if (diaIsControllable(item))
+        txtcol = CAD_UI_TEXT;
     else
-        txtcol = gTheme->textColor;
+        txtcol = CAD_UI_MUTED;
+
+    // Measure first, paint the opaque selection, then paint its text. Drawing
+    // this box after the switch hides the selected value on the real GS.
+    if (selected && draw) {
+        int boxWidth = 0, boxHeight = 0;
+        diaRenderItem(x, y, item, selected, haveFocus, &boxWidth, &boxHeight, 0);
+        diaDrawBoundingBox(x, y, boxWidth, boxHeight, haveFocus);
+    }
 
     // let's see what do we have here?
     switch (item->type) {
@@ -433,9 +461,9 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             // width is text length in pixels...
             const char *txt = diaGetLocalisedText(item->label.text, item->label.stringId);
             if (txt && strlen(txt))
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, txt, txtcol) - x;
+                *w = diaItemText(x, y, txt, txtcol, draw) - x;
             else
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, _l(_STR_NOT_SET), txtcol) - x;
+                *w = diaItemText(x, y, _l(_STR_NOT_SET), txtcol, draw) - x;
 
             break;
         }
@@ -448,7 +476,7 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             // to ODD lines
             ypos &= ~1;
 
-            rmDrawLine(x, ypos, x + UI_BREAK_LEN, ypos, gColWhite);
+            if (draw) rmDrawLine(x, ypos, screenWidth - 48, ypos, CAD_UI_ACCENT);
             break;
         }
 
@@ -471,7 +499,7 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
 
         case UI_OK: {
             const char *txt = _l(_STR_OK);
-            *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, txt, txtcol) - x;
+            *w = diaItemText(x, y, txt, txtcol, draw) - x;
             break;
         }
 
@@ -479,15 +507,15 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             char tmp[10];
 
             snprintf(tmp, sizeof(tmp), "%d", item->intvalue.current);
-            *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, tmp, txtcol) - x;
+            *w = diaItemText(x, y, tmp, txtcol, draw) - x;
             break;
         }
 
         case UI_STRING: {
             if (strlen(item->stringvalue.text))
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, item->stringvalue.text, txtcol) - x;
+                *w = diaItemText(x, y, item->stringvalue.text, txtcol, draw) - x;
             else
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, _l(_STR_NOT_SET), txtcol) - x;
+                *w = diaItemText(x, y, _l(_STR_NOT_SET), txtcol, draw) - x;
             break;
         }
 
@@ -502,15 +530,15 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
                     stars[i] = '*';
 
                 stars[i] = '\0';
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, stars, txtcol) - x;
+                *w = diaItemText(x, y, stars, txtcol, draw) - x;
             } else
-                *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, _l(_STR_NOT_SET), txtcol) - x;
+                *w = diaItemText(x, y, _l(_STR_NOT_SET), txtcol, draw) - x;
             break;
         }
 
         case UI_BOOL: {
             const char *txtval = _l((item->intvalue.current) ? _STR_ON : _STR_OFF);
-            *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, txtval, txtcol) - x;
+            *w = diaItemText(x, y, txtval, txtcol, draw) - x;
             break;
         }
 
@@ -520,7 +548,7 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             if (!tv)
                 tv = _l(_STR_NO_ITEMS);
 
-            *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, tv, txtcol) - x;
+            *w = diaItemText(x, y, tv, txtcol, draw) - x;
             break;
         }
 
@@ -531,16 +559,13 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             // Align to the right
             x -= *w;
 
-            rmDrawRect(x, y + 3, *w, *h, txtcol);
+            if (draw) rmDrawRect(x, y + 3, *w, *h, txtcol);
             u64 dcol = GS_SETREG_RGBA(item->colourvalue.r, item->colourvalue.g, item->colourvalue.b, 0x80);
-            rmDrawRect(x + 2, y + 5, *w - 4, *h - 4, dcol);
+            if (draw) rmDrawRect(x + 2, y + 5, *w - 4, *h - 4, dcol);
 
             break;
         }
     }
-
-    if (selected)
-        diaDrawBoundingBox(x, y, *w, *h, haveFocus);
 
     if (item->fixedWidth != 0) {
         int newSize;
@@ -566,44 +591,58 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
 /// renders whole ui screen (for given dialog setup)
 void diaRenderUI(struct UIItem *ui, short inMenu, struct UIItem *cur, int haveFocus)
 {
+    const char *title = NULL;
+    int rowY;
+
+    rmGetScreenExtents(&screenWidth, &screenHeight);
     guiDrawBGPlasma();
+    rmDrawRect(0, 0, screenWidth, screenHeight, CAD_UI_BG);
+    rmDrawLine(24, 59, screenWidth - 24, 59, CAD_UI_ACCENT);
 
-    int x0 = 20;
-    int y0 = 20;
+    if (ui->type == UI_LABEL)
+        title = diaGetLocalisedText(ui->label.text, ui->label.stringId);
+    fntRenderString(gTheme->fonts[0], 40, 22, ALIGN_LEFT, 0, 0, "CADUCEUS", CAD_UI_TEXT);
+    if (title && title[0])
+        fntRenderString(gTheme->fonts[0], 190, 22, ALIGN_LEFT, screenWidth - 220, 24, title, CAD_UI_TEXT);
 
-    // render all items
-    struct UIItem *rc = ui;
-    int x = x0, y = y0, hmax = 0;
-
-    while (rc->type != UI_TERMINATOR) {
-        int w = 0, h = 0;
-
-        if (diaShouldBreakLine(rc)) {
-            x = x0;
-
-            if (hmax > 0)
-                y += hmax + UI_SPACING_H;
-
-            hmax = 0;
+    const int x0 = 48, top = 80, bottom = screenHeight - 100;
+    int focusY = top, offset = 0;
+    int pass;
+    /* First measure the complete form; then scroll and draw only visible rows.
+       This preserves compound controls (IP addresses, enums, VMC fields). */
+    for (pass = 0; pass < 2; pass++) {
+        struct UIItem *rc = ui;
+        int x = x0, y = top, hmax = 0;
+        if (pass && focusY > bottom - 24)
+            offset = focusY - (bottom - 24);
+        while (rc->type != UI_TERMINATOR) {
+            int w = 0, h = 0;
+            if (diaShouldBreakLine(rc)) {
+                x = x0;
+                if (hmax > 0) y += hmax + UI_SPACING_H;
+                hmax = 0;
+            }
+            rowY = y - offset;
+            int visible = pass && rowY >= top && rowY <= bottom - 24;
+            if (rc == cur) {
+                if (!pass) focusY = y;
+                if (visible) {
+                    // Labels on this row may already have been drawn. Never
+                    // cover them with a late full-row selection rectangle.
+                    rmDrawRect(x0 - 8, rowY - 2, 3, 22, CAD_UI_ACCENT);
+                    rmDrawLine(x0 - 8, rowY + 20, screenWidth - x0 + 8, rowY + 20, CAD_UI_ACCENT);
+                }
+            }
+            diaRenderItem(x, rowY, rc, rc == cur, haveFocus, &w, &h, visible);
+            if (w > 0) x += w + UI_SPACING_V;
+            hmax = h > hmax ? h : hmax;
+            if (diaShouldBreakLineAfter(rc)) {
+                x = x0;
+                if (hmax > 0) y += hmax + UI_SPACING_H;
+                hmax = 0;
+            }
+            rc++;
         }
-
-        diaRenderItem(x, y, rc, rc == cur, haveFocus, &w, &h);
-
-        if (w > 0)
-            x += w + UI_SPACING_V;
-
-        hmax = (h > hmax) ? h : hmax;
-
-        if (diaShouldBreakLineAfter(rc)) {
-            x = x0;
-
-            if (hmax > 0)
-                y += hmax + UI_SPACING_H;
-
-            hmax = 0;
-        }
-
-        rc++;
     }
 
     if ((cur != NULL) && (!haveFocus) && (cur->hintId != -1)) {
@@ -615,9 +654,9 @@ void diaRenderUI(struct UIItem *ui, short inMenu, struct UIItem *cur, int haveFo
     int uiY = gTheme->usedHeight - 32;
     int uiX = guiAlignSubMenuHints(2, uiHints, uiIcons, gTheme->fonts[0], 12, 2);
 
-    uiX = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? uiIcons[0] : uiIcons[1], uiHints[0], gTheme->fonts[0], uiX, uiY, gTheme->textColor);
+    uiX = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? uiIcons[0] : uiIcons[1], uiHints[0], gTheme->fonts[0], uiX, uiY, CAD_TEXT);
     uiX += 12;
-    uiX = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? uiIcons[1] : uiIcons[0], uiHints[1], gTheme->fonts[0], uiX, uiY, gTheme->textColor);
+    uiX = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? uiIcons[1] : uiIcons[0], uiHints[1], gTheme->fonts[0], uiX, uiY, CAD_TEXT);
 }
 
 /// sets the ui item value to the default again
