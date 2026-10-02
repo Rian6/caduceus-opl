@@ -1,4 +1,4 @@
-# Caduceus OPL XMB
+# Caduceus OPL
 
 Uma versão do **Open PS2 Loader para PlayStation 2** com interface inspirada no XMB, navegação por categorias e integração com o [Caduceus](https://github.com/Rian6/caduceus).
 
