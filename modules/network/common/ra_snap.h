@@ -77,12 +77,22 @@ struct ra_snap
 #define RA_EVENT_UNLOCK 1 /* an achievement unlocked; arg is its id */
 #define RA_EVENT_RESET  2 /* leave the game for the loader, as the IGR combo does */
 
+/* Fixed cache-line isolated event with bounded ASCII title: the low byte is RA_EVENT_* and unlock
+   points travel in the upper 24 bits. Old senders that leave them zero are
+   still valid. */
+#define RA_EVENT_KIND_MASK   0xFFu
+#define RA_EVENT_POINTS(k)   ((unsigned int)(k) >> 8)
+#define RA_EVENT_MAKE_UNLOCK(points) (RA_EVENT_UNLOCK | ((unsigned int)(points) << 8))
+
 struct ra_event
 {
     unsigned int magic; /* RA_EVENT_MAGIC */
     unsigned int seq;   /* increments per event; 0 means none yet */
     unsigned int kind;  /* RA_EVENT_* */
     unsigned int arg;
+    char title[64];
+    unsigned int reserved[11];
+    unsigned int commit; /* last DMA word: must match seq */
 };
 
 /* The load argument ee_core hands raudp as argv[1], comma separated:
@@ -91,6 +101,7 @@ struct ra_event
      RA_ARG_RX     '1' or '0', whether raudp may read from the network
                    while the game runs
      RA_ARG_ID     the game's serial, up to RA_ARG_ID_MAX characters
+     RA_ARG_HOST   configured Caduceus IPv4, up to 15 characters
    argv[2] is SMAP's ipconfig string. Both sides build and parse the
    argument by these offsets. */
 #define RA_ARG_SNAP   0
@@ -98,6 +109,8 @@ struct ra_event
 #define RA_ARG_RX     18
 #define RA_ARG_ID     20
 #define RA_ARG_ID_MAX 15
-#define RA_ARG_MAX    (RA_ARG_ID + RA_ARG_ID_MAX) /* characters before the terminator */
+#define RA_ARG_HOST   36
+#define RA_ARG_HOST_MAX 15
+#define RA_ARG_MAX    (RA_ARG_HOST + RA_ARG_HOST_MAX) /* characters before the terminator */
 
 #endif /* __RA_SNAP_H__ */

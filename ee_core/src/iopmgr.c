@@ -201,10 +201,22 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
        SMAPSendPacket from the SMAP driver. The snapshot buffer is
        allocated in the IOP heap here, while the heap is up and the game
        has not started, and its address is passed as a load argument.
-       RA_SNAP_TOTAL covers the header plus the values of the largest
-       supported watch list. Skipped with no watch list, as above. */
+       Allocate only this game's payload, not the maximum supported set.
+       Telemetry allocation/module failure must not stall the game's load. */
+    /* Card packet memory is loader-reserved module storage. Set it even when
+       the static test has no watch list and therefore loads no raudp module. */
+    RA_OverlaySetPacketBuffer(config->raOverlayBuf);
+
     if (config->raWatchCount > 0) {
-        void *snap = SifAllocIopHeap(RA_SNAP_TOTAL);
+        int bytes = config->raSnapBytes;
+        void *snap = NULL;
+        ra_snap_iop = 0;
+        if (config->raNodeCount >= 0 && config->raNodeCount <= RA_NODE_MAX &&
+            bytes > 0 && bytes <= RA_SNAP_MAX_BYTES) {
+            bytes += config->raNodeCount * RA_NODE_PAIR_BYTES;
+            if (bytes <= RA_SNAP_MAX_BYTES)
+                snap = SifAllocIopHeap(RA_SNAP_TOTAL_FOR(bytes));
+        }
 
         if (snap != NULL) {
             /* argv[1] laid out by the RA_ARG_* offsets in ra_snap.h,
@@ -229,16 +241,22 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
             args[RA_ARG_ID - 1] = ',';
             for (n = 0; n < RA_ARG_ID_MAX && config->GameID[n] != '\0'; n++)
                 args[RA_ARG_ID + n] = config->GameID[n];
-            args[RA_ARG_ID + n] = '\0';
-            n = RA_ARG_ID + n + 1;
+            while (n < RA_ARG_ID_MAX)
+                args[RA_ARG_ID + n++] = ' ';
+
+            args[RA_ARG_HOST - 1] = ',';
+            for (n = 0; n < RA_ARG_HOST_MAX && config->raServerIP[n] != '\0'; n++)
+                args[RA_ARG_HOST + n] = config->raServerIP[n];
+            args[RA_ARG_HOST + n] = '\0';
+            n = RA_ARG_HOST + n + 1;
 
             for (k = 0; k < g_ipconfig_len && k < IPCONFIG_MAX_LEN; k++)
                 args[n + k] = g_ipconfig[k];
 
-            LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, n + k, args);
-        } else {
-            ra_snap_iop = 0;
-            LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, 0, NULL);
+            if (LoadOPLModule(OPL_MODULE_ID_RAUDP, 0, n + k, args) < 1) {
+                ra_snap_iop = 0;
+                SifFreeIopHeap(snap);
+            }
         }
     }
 }

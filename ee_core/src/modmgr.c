@@ -161,7 +161,7 @@ int LoadOPLModule(int id, int mode, int arg_len, const char *args)
                     DBGCOL(0x00FFDC, MODMGR, "IRX loading error (from MODLOAD)");
                     delay(3);
                 }
-                if (result == -400) {
+                if (result == -400 && id != OPL_MODULE_ID_RAUDP) {
                     DBGCOL_BLNK(1, 0x0000FF, true, MODMGR, "MODLOAD: out of IOP Memory"); // yellow blinking
                     while (1)
                         ;

@@ -33,5 +33,6 @@ void *PlaceWatchBlock(void *at);
 u32 *GetWatchBlockList(void);
 struct ra_node *GetWatchBlockNodes(void);
 void *GetWatchBlockSnap(void);
+void *GetWatchBlockOverlay(void);
 
 #endif

@@ -15,6 +15,8 @@
 #include "cheat_api.h"
 #include "padhook.h"
 #include "ra.h"
+#include "ra_overlay.h"
+#include "ra_overlay.h"
 #include "coreconfig.h"
 
 int isInit = 0;
@@ -116,6 +118,13 @@ static int eecoreInit(int argc, char **argv)
             config->GsmConfig.FIELD_fix);
         EnableGSM();
     }
+#if RA_ENABLE_EXPERIMENTAL_CARD
+    else if (config->raOverlayBuf != NULL) {
+        /* The RA card cannot read PMODE/DISPFB back from a retail GS. Track
+           the game's writes instead; this mode never modifies them. */
+        EnableGSTracker();
+    }
+#endif
 
     set_ipconfig();
 

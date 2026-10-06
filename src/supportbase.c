@@ -1102,6 +1102,15 @@ void raShowAskResult(int q, const char *what, const char *info, const char *info
     }
 }
 
+/* Catalog/account readiness is not a memory watch list. Run this on the
+   existing image-check IO worker, before allowing an achievement launch. */
+static int sbPrepareRATelemetry(const char *hash, const char *serial, const char *path, int ready)
+{
+    ClearWatchList();
+    if (!ready) return 0;
+    return raAskPC(hash, serial, path, NULL, 0, NULL, 0) == 0 && GetWatchCount() > 0;
+}
+
 void sbHashGame(const char *path, const char *name, const char *ext, const char *startup, int format)
 {
     static const char *dirs[] = {"DVD", "CD", NULL};
@@ -1171,8 +1180,13 @@ void sbHashGame(const char *path, const char *name, const char *ext, const char 
                      q == -2 ? "Caduceus sem resposta. Jogue sem conquistas." :
                      q == -7 ? "Catalogo indisponivel. Jogue sem conquistas." :
                      "Servidor incompativel. Jogue sem conquistas.");
-            /* The card displays the catalog result. This does not download
-               a telemetry watch list or imply in-game achievement support. */
+            if (q == 0) {
+                int account_ready = ra_check_result.session_ready;
+                ra_check_result.session_ready = sbPrepareRATelemetry(hash, startup, path, account_ready);
+                if (account_ready && !ra_check_result.session_ready)
+                    snprintf(ra_check_result.detail, sizeof(ra_check_result.detail),
+                             "Lista RA indisponivel. SELECT para tentar novamente.");
+            }
 
             raHashSetStepLog(NULL);
             raHashLogClose();

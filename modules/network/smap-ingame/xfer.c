@@ -134,6 +134,30 @@ static inline void CopyFromFIFO(volatile u8 *smap_regbase, void *buffer, unsigne
         : "at", "v0", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7");
 }
 
+/* Copy only achievement datagrams while the normal driver owns RX.
+   No extra socket/mailbox round trip and no SMB descriptors are stolen. */
+static unsigned char ra_notice[128];
+static volatile unsigned int ra_notice_size;
+int SMAPReadNotice(void *out, unsigned int capacity)
+{
+    int state, n;
+    CpuSuspendIntr(&state);
+    n=ra_notice_size;
+    if (n && (unsigned int)n<=capacity) { memcpy(out,ra_notice,n); ra_notice_size=0; }
+    else n=0;
+    CpuResumeIntr(state);
+    return n;
+}
+static void ra_tap_notice(const unsigned char *p, unsigned int n)
+{
+    unsigned int bytes;
+    if (n<47 || p[12]!=8 || p[13]!=0 || p[14]!=0x45 || p[23]!=17 ||
+        p[36]!=(18195>>8) || p[37]!=(18195&255)) return;
+    bytes=((unsigned int)p[38]<<8)|p[39];
+    if (bytes<13 || bytes>136 || 34+bytes>n || p[42]!='R' || p[43]!='A') return;
+    if (!ra_notice_size) { memcpy(ra_notice,p+42,bytes-8); ra_notice_size=bytes-8; }
+}
+
 int HandleRxIntr(struct SmapDriverData *SmapDrivPrivData)
 {
     USE_SMAP_RX_BD;
@@ -161,6 +185,8 @@ int HandleRxIntr(struct SmapDriverData *SmapDrivPrivData)
             } else {
                 if ((pbuf = pbuf_alloc(PBUF_RAW, LengthRounded, PBUF_POOL)) != NULL) {
                     CopyFromFIFO(SmapDrivPrivData->smap_regbase, pbuf->payload, length, pointer);
+
+                    ra_tap_notice(pbuf->payload, length);
 
                     // Inform ps2ip that we've received data.
                     SMapLowLevelInput(pbuf);

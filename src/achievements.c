@@ -83,11 +83,17 @@ static void loadPage(void)
     result.state = ACH_ERROR;
     char key[65];
     int fd = open("smb0:ART/CADUCEUS.KEY", O_RDONLY);
-    int length = fd >= 0 ? read(fd, key, 64) : -1;
+    int length = fd >= 0 ? read(fd, key, sizeof(key) - 1) : -1;
     if (fd >= 0) close(fd);
-    if (length != 64) { result.state = ACH_OFFLINE; goto done; }
-    key[64] = 0;
-    if (strspn(key, "0123456789abcdef") != 64) { result.state = ACH_OFFLINE; goto done; }
+    if (length < 0) { result.state = ACH_OFFLINE; goto done; }
+    key[length] = 0;
+    while (length > 0 && (key[length - 1] == '\r' || key[length - 1] == '\n' ||
+                          key[length - 1] == ' ' || key[length - 1] == '\t'))
+        key[--length] = 0;
+    if (length != 64 || strspn(key, "0123456789abcdef") != 64) {
+        result.state = ACH_OFFLINE;
+        goto done;
+    }
     strncat(request, " ", sizeof(request) - strlen(request) - 1);
     strncat(request, key, sizeof(request) - strlen(request) - 1);
     memset(key, 0, sizeof(key));

@@ -26,6 +26,7 @@
 #include "include/rawatch.h"
 #include "modules/network/common/ra_watch.h"
 #include "modules/network/common/ra_snap.h"
+#include "modules/network/common/ra_features.h"
 
 static unsigned int gWatchList[RA_WATCH_MAX];
 static int gWatchCount = 0;
@@ -162,6 +163,11 @@ static void TakeNodes(const struct ra_node *nodes, unsigned int count)
 static u32 *gBlockList = NULL;
 static struct ra_node *gBlockNodes = NULL;
 static void *gBlockSnap = NULL;
+static void *gBlockOverlay = NULL;
+
+/* IMAGE transfer header and card pixels, matching ra_overlay.c. Kept here instead
+   of ee_core .bss so the 77 KB ram84 region does not grow. */
+#define RA_OVERLAY_PACKET_BYTES (((6 * 16 + RA_CARD_WIDTH * RA_CARD_HEIGHT * 4) + 63) & ~63)
 
 static void *align64(const void *p)
 {
@@ -177,8 +183,9 @@ void *PlaceWatchBlock(void *at)
     gBlockList = NULL;
     gBlockNodes = NULL;
     gBlockSnap = NULL;
+    gBlockOverlay = NULL;
 
-    if (gWatchCount <= 0)
+    if (gWatchCount <= 0 && !RA_STATIC_CARD_TEST)
         return at;
 
     words = (u32 *)align64(at);
@@ -195,8 +202,21 @@ void *PlaceWatchBlock(void *at)
     snap = (u8 *)align64(&words[nwords]);
     gBlockSnap = snap;
     snap += RA_SNAP_TOTAL_FOR(gWatchBytes + gNodeCount * RA_NODE_PAIR_BYTES);
+    snap = (u8 *)align64(snap);
+#if RA_ENABLE_EXPERIMENTAL_CARD
+    /* Do not extend the loader's low-memory reservation into game RAM.
+       Titles with relocated storage must also remain below physical RAM end.
+       Telemetry still works when there is no room for the optional card. */
+    if ((u32)snap + RA_OVERLAY_PACKET_BYTES >
+        ((u32)at < 0x00100000 ? 0x00100000 : 0x02000000)) {
+        raLaunchNote("overlay-no-room", RA_OVERLAY_PACKET_BYTES, (int)(u32)snap);
+        return snap;
+    }
+    gBlockOverlay = snap;
+    snap += RA_OVERLAY_PACKET_BYTES;
+#endif
 
-    LOG("RA: list block at %p, %d words, snapshot at %p, ends %p\n", words, nwords, gBlockSnap, snap);
+    LOG("RA: list block at %p, %d words, snapshot at %p, overlay at %p, ends %p\n", words, nwords, gBlockSnap, gBlockOverlay, snap);
     raLaunchNote("list-block", (int)((u8 *)snap - (u8 *)words), (int)(u32)words);
 
     return align64(snap);
@@ -215,6 +235,12 @@ struct ra_node *GetWatchBlockNodes(void)
 void *GetWatchBlockSnap(void)
 {
     return gBlockSnap;
+}
+
+
+void *GetWatchBlockOverlay(void)
+{
+    return gBlockOverlay;
 }
 
 void ClearWatchList(void)

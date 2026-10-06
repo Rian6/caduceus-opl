@@ -16,4 +16,8 @@ void Enable_GSBreakpoint(void);
 void Disable_GSBreakpoint(void);
 void EnableGSM(void);
 void DisableGSM(void);
+/* Passive GS register tracker used by the RA overlay when GSM itself is off.
+   It reuses GSM's write breakpoint but never changes the game's GS values. */
+void EnableGSTracker(void);
+void DisableGSTracker(void);
 void setdve_576P(void);

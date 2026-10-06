@@ -977,6 +977,7 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     config->raNodeList = GetWatchBlockNodes();
     config->raNodeCount = GetNodeCount();
     config->raSnapBuf = GetWatchBlockSnap();
+    config->raOverlayBuf = GetWatchBlockOverlay();
 
     /* The last point where the list is still ours: from here it goes
        into ee_core with no feedback. A zero here means the game runs
@@ -987,6 +988,7 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     sprintf(config->g_ps2_ip, "%u.%u.%u.%u", local_ip_address[0], local_ip_address[1], local_ip_address[2], local_ip_address[3]);
     sprintf(config->g_ps2_netmask, "%u.%u.%u.%u", local_netmask[0], local_netmask[1], local_netmask[2], local_netmask[3]);
     sprintf(config->g_ps2_gateway, "%u.%u.%u.%u", local_gateway[0], local_gateway[1], local_gateway[2], local_gateway[3]);
+    snprintf(config->raServerIP, sizeof(config->raServerIP), "%d.%d.%d.%d", pc_ip[0], pc_ip[1], pc_ip[2], pc_ip[3]);
 
     // GSM now.
     config->EnableGSMOp = GetGSMEnabled();

@@ -4,6 +4,7 @@
 #include <irx.h>
 
 #include <loadcore.h>
+#include <intrman.h>
 #include <thsemap.h>
 
 /* Please keep these in alphabetical order!  */

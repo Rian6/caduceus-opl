@@ -43,6 +43,10 @@ struct EECoreConfig_t
     char g_ps2_ip[16];
     char g_ps2_netmask[16];
     char g_ps2_gateway[16];
+    /* Caduceus/RA host configured in OPL (normally the SMB server).
+       Passed to the in-game RA module so discovery also works on networks
+       that filter UDP broadcast. Empty/0.0.0.0 keeps broadcast-only mode. */
+    char raServerIP[16];
     unsigned char g_ps2_ETHOpMode;
 
     u32 *gCheatList; // Store hooks/codes addr+val pairs
@@ -61,6 +65,9 @@ struct EECoreConfig_t
     int raNodeCount;
     /* The snapshot buffer, 64-byte aligned, in the same block. */
     void *raSnapBuf;
+    /* Optional experimental GIF workspace; NULL in the recovery build. Lives
+       behind module storage, never in ee_core .bss. */
+    void *raOverlayBuf;
 
     void *eeloadCopy;
     void *initUserMemory;

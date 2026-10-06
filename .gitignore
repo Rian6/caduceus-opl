@@ -54,3 +54,13 @@ lng/lang_*.lng
 src/lang_internal.c
 include/lang_autogen.h
 tmp/
+
+# Local build logs and credentials
+xmb-build.log
+.env
+.env.*
+!.env.example
+*.enc
+CADUCEUS.KEY
+*.iso
+*.zso

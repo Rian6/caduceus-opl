@@ -223,6 +223,13 @@ ifeq ($(RA_DEBUG),1)
   EE_CFLAGS += -DRA_DEBUG
 endif
 
+ifeq ($(RA_STATIC_CARD_TEST),1)
+  EE_CFLAGS += -DRA_STATIC_CARD_TEST=1
+endif
+ifeq ($(RA_ACHIEVEMENT_CARD),1)
+  EE_CFLAGS += -DRA_ENABLE_EXPERIMENTAL_CARD=1
+endif
+
 EE_CFLAGS += -fsingle-precision-constant -DOPL_VERSION=\"$(OPL_VERSION)\"
 
 # There are a few places where the config key/value are truncated, so disable these warnings

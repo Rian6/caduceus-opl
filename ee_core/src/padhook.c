@@ -36,6 +36,8 @@
 #include "cd_igr_rpc.h"
 #include "coreconfig.h"
 #include "ra.h"
+#include "ra_overlay.h"
+#include "ra_overlay.h"
 
 /* scePadPortOpen & scePad2CreateSocket prototypes */
 static int (*scePadPortOpen)(int port, int slot, void *addr);
@@ -216,6 +218,12 @@ static void IGR_Thread(void *arg)
             DPRINTF("Stopping GSM...\n");
             DisableGSM();
         }
+#if RA_ENABLE_EXPERIMENTAL_CARD
+        else if (config->raOverlayBuf != NULL) {
+            /* RA installed the same GS exception handler in passive mode. */
+            DisableGSTracker();
+        }
+#endif
 
         if (config->gCheatList) {
             if (EnableDebug)

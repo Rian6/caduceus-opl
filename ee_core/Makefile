@@ -29,6 +29,13 @@ EE_CFLAGS = -D_EE -Os -G0 -Wall $(EE_INCS)
 # and ee_core silently keeps stale structure sizes.
 EE_CFLAGS += -MMD -MP
 
+ifeq ($(RA_STATIC_CARD_TEST),1)
+    EE_CFLAGS += -DRA_STATIC_CARD_TEST=1
+endif
+ifeq ($(RA_ACHIEVEMENT_CARD),1)
+    EE_CFLAGS += -DRA_ENABLE_EXPERIMENTAL_CARD=1
+endif
+
 ifeq ($(EESIO_DEBUG),1)
     EE_CFLAGS += -D__EESIO_DEBUG
 endif

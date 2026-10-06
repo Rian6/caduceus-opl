@@ -362,31 +362,86 @@ int raCaduceusPage(const char *request, unsigned int serial, char *out, int size
     struct sockaddr_in to;
     char address[32], expected[32];
     u8 ip[4];
-    int sock = open_pc_socket(address, sizeof(address), ip);
-    if (sock < 0) return -1;
-    broadcast_target(&to);
-    to.sin_port = htons(18198);
-    /* Prefer the configured Caduceus/SMB host for account data. */
-    if (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])
-        to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) | ((u32)pc_ip[2] << 8) | pc_ip[3]);
+    int sock, pass;
+
+    sock = open_pc_socket(address, sizeof(address), ip);
+    if (sock < 0)
+        return -1;
+
     snprintf(expected, sizeof(expected), "CADB1 %u ", serial);
-    int status = -2;
-    clock_t deadline = clock() + 25 * CLOCKS_PER_SEC;
-    for (int attempt = 0; attempt < 80 && clock() < deadline; attempt++) {
-        int got = ask(sock, &to, request, g_rx, sizeof(g_rx));
-        if (got <= 0) break;
-        if (!strncmp(g_rx, expected, strlen(expected))) {
-            const char *body = g_rx + strlen(expected);
-            if (strcmp(body, "WAIT")) {
+
+    /*
+     * Caduceus achievements are served on UDP 18198.
+     *
+     * Do not assume that the SMB host is always the achievements host.
+     * Try the configured PC first when available (fast path), then retry
+     * with broadcast.  This also fixes installations where pc_ip is stale,
+     * DHCP changed the PC address, or OPLServer/SMB and Caduceus are not
+     * reached through exactly the same address.
+     *
+     * The server deliberately answers WAIT while it is fetching account
+     * data.  Once we have received WAIT from a target, keep polling that
+     * same target instead of falling through to another host.
+     */
+    for (pass = 0; pass < 2; pass++) {
+        int attempt;
+        int heard_server = 0;
+
+        memset(&to, 0, sizeof(to));
+        to.sin_family = AF_INET;
+        to.sin_port = htons(18198);
+
+        if (pass == 0 && (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])) {
+            to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) |
+                                      ((u32)pc_ip[1] << 16) |
+                                      ((u32)pc_ip[2] << 8) |
+                                      (u32)pc_ip[3]);
+        } else {
+            /* If there is no configured host, do broadcast immediately. */
+            if (pass == 0 && !(pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3]))
+                pass = 1;
+            to.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+        }
+
+        for (attempt = 0; attempt < 40; attempt++) {
+            int got = ask(sock, &to, request, g_rx, sizeof(g_rx));
+
+            if (got <= 0) {
+                /*
+                 * No packet from this target. If it was the configured host,
+                 * let the outer loop try discovery by broadcast.
+                 */
+                if (!heard_server)
+                    break;
+                DelayThread(250000);
+                continue;
+            }
+
+            if (strncmp(g_rx, expected, strlen(expected)) != 0)
+                continue;
+
+            heard_server = 1;
+
+            {
+                const char *body = g_rx + strlen(expected);
+
+                if (!strcmp(body, "WAIT")) {
+                    DelayThread(250000);
+                    continue;
+                }
+
                 snprintf(out, size, "%s", body);
-                status = 0;
-                break;
+                disconnect(sock);
+                return 0;
             }
         }
-        DelayThread(250000);
+
+        /* A server that answered WAIT is the right server. Give the second
+           discovery pass a chance only if it subsequently disappeared. */
     }
+
     disconnect(sock);
-    return status;
+    return -2;
 }
 
 int raAskPC(const char *hash, const char *serial, const char *savepath,
@@ -409,6 +464,9 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
         return -1;
 
     broadcast_target(&to);
+    if (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])
+        to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) |
+                                  ((u32)pc_ip[2] << 8) | pc_ip[3]);
 
     snprintf(req, sizeof(req), "RAQ1 %s %s%s", hash, serial, myaddr);
     LOG("RA: asking the PC about %s\n", hash);
@@ -419,6 +477,10 @@ int raAskPC(const char *hash, const char *serial, const char *savepath,
     if (got <= 0 && (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3])) {
         to.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) |
                                   ((u32)pc_ip[2] << 8) | pc_ip[3]);
+        got = ask(sock, &to, req, g_rx, sizeof(g_rx));
+    }
+    if (got <= 0 && to.sin_addr.s_addr != htonl(INADDR_BROADCAST)) {
+        broadcast_target(&to);
         got = ask(sock, &to, req, g_rx, sizeof(g_rx));
     }
     if (got <= 0) {
@@ -658,6 +720,14 @@ int raNetTestLink(char *line1, int sz1, char *line2, int sz2)
         int w;
 
         sendto(sock, req, strlen(req), 0, (struct sockaddr *)&to, sizeof(to));
+        /* Broadcast is convenient on a flat LAN, but many APs/bridges drop
+           it. Send the same probe directly to the configured Caduceus host. */
+        if (pc_ip[0] | pc_ip[1] | pc_ip[2] | pc_ip[3]) {
+            struct sockaddr_in direct = to;
+            direct.sin_addr.s_addr = htonl(((u32)pc_ip[0] << 24) | ((u32)pc_ip[1] << 16) |
+                                           ((u32)pc_ip[2] << 8) | pc_ip[3]);
+            sendto(sock, req, strlen(req), 0, (struct sockaddr *)&direct, sizeof(direct));
+        }
 
         for (w = 0; w < 10 && !found; w++) {
             memset(rx, 0, sizeof(rx));
