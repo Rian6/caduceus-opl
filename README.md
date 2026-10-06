@@ -120,6 +120,9 @@ Consulte a documentação para os detalhes de desenvolvimento:
 - [Protocolos de comunicação](docs/protocol/PROTOCOL.md)
 - [Testes](tests/README.md)
 
+## Ajude a manter o projeto
+PIX: ab3d2638-1bf7-4b16-b061-df7684195577
+
 ## Créditos e licença
 
 Baseado no Open PS2 Loader e no fork com integração RA mantido por hacan359. Consulte a [licença](opl/LICENSE) e os [créditos](opl/CREDITS) do OPL.
