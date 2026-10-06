@@ -39,7 +39,7 @@ Snapshot de 2026-10-06:
 ## Primeiros passos
 
 1. Instale e configure o servidor conforme as instruções do [Caduceus](https://github.com/Rian6/caduceus).
-2. Execute `OPNPS2LD.ELF` no PS2.
+2. Execute `OPL-RA.ELF` no PS2 (ou `OPNPS2LD.ELF` se compilou localmente).
 3. Nas configurações de rede do OPL, informe o endereço e a porta do servidor. O compartilhamento padrão é **PS2**, em maiúsculas.
 4. Acesse a biblioteca, selecione um jogo e abra seus detalhes para jogar.
 
