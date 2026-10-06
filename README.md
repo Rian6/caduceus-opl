@@ -15,6 +15,20 @@ Uma versão do **Open PS2 Loader para PlayStation 2** com interface inspirada no
 - Categoria **Conquistas**, com jogos da conta, progresso e filtros de conquistas desbloqueadas, pendentes e hardcore.
 - Inicialização de jogos com ou sem conquistas, conforme a disponibilidade da integração.
 
+## Conquistas diretamente no PS2
+
+**Agora é possível visualizar as conquistas diretamente na tela do PlayStation 2 enquanto o jogo está rodando.**
+
+Ao desbloquear uma conquista, um card aparece no canto superior direito com o nome da conquista e os pontos recebidos. As notificações são enviadas automaticamente pelo Caduceus, integrado ao RetroAchievements, para você acompanhar os desbloqueios sem sair da partida ou olhar para o computador.
+
+<p align="center">
+  <img src="docs/images/image.png" alt="Card de conquista exibido diretamente na tela de um PS2 físico" width="480">
+</p>
+
+*Card de conquistas exibido em um PS2 físico.*
+
+O card conectado é um recurso experimental e ainda está em validação no console físico.
+
 ## Interface
 
 ### Detalhes do jogo
@@ -81,6 +95,8 @@ bash tools/build/build-xmb.sh --achievements
 
 O executável será gerado em `opl/OPNPS2LD.ELF`, com o log em `opl/xmb-build.log`.
 
+Para compilar sem o card, execute o script sem argumentos. `--static-card` gera apenas a demonstração permanente.
+
 ## Desenvolvimento
 
 | Diretório | Conteúdo |
@@ -107,12 +123,6 @@ Consulte a documentação para os detalhes de desenvolvimento:
 ## Créditos e licença
 
 Baseado no Open PS2 Loader e no fork com integração RA mantido por hacan359. Consulte a [licença](opl/LICENSE) e os [créditos](opl/CREDITS) do OPL.
-
-## Card durante o jogo
-
-O build `OPL-RA.ELF` recebe os desbloqueios do Caduceus e mostra um card compacto com titulo e pontos no canto superior direito. O desenho e preparado em pequenas parcelas por quadro e ignora momentos em que o GIF esta ocupado, sem esperar pelo jogo. O teste estatico foi confirmado no PS2 fisico; a ultima revisao do card conectado ainda precisa de validacao no console. Podem ocorrer piscadas conforme o jogo atualiza a tela.
-
-Para compilar sem o card, execute o script sem argumentos. `--static-card` gera apenas a demonstracao permanente. Os testes de host rodam com `python3 tests/run-host.py`.
 
 ## Dados privados
 
