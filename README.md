@@ -31,11 +31,10 @@ As imagens foram capturadas no PCSX2. O projeto está em desenvolvimento e ainda
 
 ## Download
 
-Snapshot de 2026-10-02:
+Snapshot de 2026-10-06:
 
-- [Baixar OPL-RA.ELF](https://github.com/Rian6/caduceus-opl/releases/download/v0.1.0-snapshot.20261002/OPL-RA.ELF)
-- [Baixar OPL-RA-debug.ELF](https://github.com/Rian6/caduceus-opl/releases/download/v0.1.0-snapshot.20261002/OPL-RA-debug.ELF)
-- [Página da release](https://github.com/Rian6/caduceus-opl/releases/tag/v0.1.0-snapshot.20261002)
+- [Baixar OPL-RA.ELF](https://github.com/Rian6/caduceus-opl/releases/download/v0.1.1-snapshot.20261006/OPL-RA.ELF)
+- [Página da release](https://github.com/Rian6/caduceus-opl/releases/tag/v0.1.1-snapshot.20261006)
 
 ## Primeiros passos
 
@@ -77,7 +76,7 @@ Requer Linux ou WSL com **PS2DEV**, **PS2SDK** e **gsKit** instalados. Na raiz d
 ```sh
 git submodule update --init --recursive
 export PS2DEV=/caminho/para/ps2dev
-bash tools/build/build-xmb.sh
+bash tools/build/build-xmb.sh --achievements
 ```
 
 O executável será gerado em `opl/OPNPS2LD.ELF`, com o log em `opl/xmb-build.log`.
@@ -108,3 +107,13 @@ Consulte a documentação para os detalhes de desenvolvimento:
 ## Créditos e licença
 
 Baseado no Open PS2 Loader e no fork com integração RA mantido por hacan359. Consulte a [licença](opl/LICENSE) e os [créditos](opl/CREDITS) do OPL.
+
+## Card durante o jogo
+
+O build `OPL-RA.ELF` recebe os desbloqueios do Caduceus e mostra um card compacto com titulo e pontos no canto superior direito. O desenho e preparado em pequenas parcelas por quadro e ignora momentos em que o GIF esta ocupado, sem esperar pelo jogo. O teste estatico foi confirmado no PS2 fisico; a ultima revisao do card conectado ainda precisa de validacao no console. Podem ocorrer piscadas conforme o jogo atualiza a tela.
+
+Para compilar sem o card, execute o script sem argumentos. `--static-card` gera apenas a demonstracao permanente. Os testes de host rodam com `python3 tests/run-host.py`.
+
+## Dados privados
+
+Credenciais, chaves de pareamento, ISOs, perfis de emulador e caches ficam fora do Git. Configure suas contas e enderecos localmente. As releases incluem somente o executavel e seus checksums; nao incluem jogos ou dados desta maquina.

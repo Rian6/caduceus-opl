@@ -188,7 +188,7 @@ No ambiente WSL deste projeto:
 wsl -d Ubuntu-24.04 -- bash /mnt/d/xerabora-caduceus-xmb/tools/build/build-xmb.sh
 ```
 
-O script usa `PS2DEV` quando definido, ou `/home/rian/ps2dev` como padrão
+O script usa `PS2DEV` quando definido, ou `/usr/local/ps2dev` como padrão
 local, e compila com `PADEMU=1`. Ele força a recompilação dos fontes da
 interface para evitar reutilizar objetos de uma compilação com outros flags.
 

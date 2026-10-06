@@ -1,15 +1,26 @@
 import dgram from 'node:dgram';
 import {RACompatibility} from './ra-compatibility';
 
+let sendUnlock:((value:{id:number;title:string;points:number})=>void)|undefined;
+export function notifyCaduceusUnlock(value:{id:number;title:string;points:number}){sendUnlock?.(value)}
+
 // Catalog compatibility only. No credentials, file paths or telemetry leave the PC.
 export function startCaduceusRABridge(catalog:RACompatibility,prepareIcon?:(hash:string,image?:string|null)=>Promise<void>,sessionReady:()=>boolean=()=>false){
   const socket=dgram.createSocket('udp4');
   let closed=false,windowStart=0,requests=0;
+  let consoleAddress='';
+  sendUnlock=value=>{
+    if(closed||!consoleAddress||!Number.isSafeInteger(value.id)||value.id<=0)return;
+    const title=String(value.title||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,' ').slice(0,63);
+    const points=Math.max(0,Math.min(999999,Math.trunc(Number(value.points)||0)));
+    socket.send(Buffer.from(`RAU1 ${value.id} ${points} ${title}`,'ascii'),18195,consoleAddress);
+  };
   socket.on('error',error=>{console.error('Caduceus OPL compatibility:',error.message);closed=true;try{socket.close()}catch{}});
   socket.on('message',(message,peer)=>{
     if(message.length!==38)return;
     const match=/^CADQ([12]) ([a-f0-9]{32})$/.exec(message.toString('ascii'));
     if(!match)return;
+    consoleAddress=peer.address;
     const now=Date.now();
     if(now-windowStart>=1000){windowStart=now;requests=0}
     if(++requests>32)return;

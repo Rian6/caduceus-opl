@@ -24,3 +24,18 @@ CADUCEUS.KEY
 /pcsx2-test/
 /pcsx2-help*.txt
 /pcsx2-run.log
+
+# Private machine data and generated artifacts
+/artifacts/
+/debug.log
+.env
+.env.*
+!.env.example
+*.enc
+*.iso
+*.ISO
+*.zso
+*.sqlite*
+*.db
+/cache/
+/.release-tools/

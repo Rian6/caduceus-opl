@@ -1,4 +1,4 @@
-param([int]$EmulatorId, [int]$Key = -1, [string]$CaptureName = 'card.png')
+param([int]$EmulatorId, [int]$Key = -1, [string]$CaptureName = 'card.png', [switch]$ScreenCapture)
 $captureDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../pcsx2-test'))
 $null = New-Item -ItemType Directory -Path $captureDirectory -Force
 Add-Type -AssemblyName System.Drawing
@@ -45,9 +45,13 @@ $r = New-Object CardView+R
 $null = [CardView]::GetWindowRect($h,[ref]$r)
 $b = New-Object System.Drawing.Bitmap(($r.Right-$r.L),($r.B-$r.T))
 $g = [System.Drawing.Graphics]::FromImage($b)
-$d = $g.GetHdc()
-$null = [CardView]::PrintWindow($h,$d,2)
-$g.ReleaseHdc($d)
+if ($ScreenCapture) {
+    $g.CopyFromScreen($r.L, $r.T, 0, 0, $b.Size)
+} else {
+    $d = $g.GetHdc()
+    $null = [CardView]::PrintWindow($h,$d,2)
+    $g.ReleaseHdc($d)
+}
 $b.Save((Join-Path $captureDirectory $CaptureName))
 $g.Dispose()
 $b.Dispose()

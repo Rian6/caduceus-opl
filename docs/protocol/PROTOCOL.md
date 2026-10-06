@@ -116,7 +116,15 @@ mismatch means the snapshot changed mid-copy and is dropped.
 
 ## Unlock notice
 
-    PC -> console   RAU1 <achievement-id> <points>
+    PC -> console   RAU1 <achievement-id> <points> [title]
+
+The optional title is the rest of the datagram, including spaces, bounded to
+63 printable ASCII bytes. Legacy messages without a title remain valid and
+show the numeric ID. Caduceus sends this extension from its unlock event to
+the last console that queried catalog compatibility (UDP 18197), at port
+18195. Only one active console per Caduceus instance is supported here.
+Accents are transliterated on the PC. Duplicate legacy notices can be
+upgraded once with a title, without suppressing the richer notification.
 
 Sent when rcheevos unlocks an achievement, to the address the console
 gave in `RAP1`. It is the one message the client sends unprompted, so
